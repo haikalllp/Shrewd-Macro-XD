@@ -4,6 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UacUIApproved>true</UacUIApproved>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>NotesTasks</AssemblyName>
     <RootNamespace>NotesTasks</RootNamespace>
@@ -12,6 +13,7 @@
     <Title>Notes &amp; Tasks</Title>
     <Authors>HaikalLLP</Authors>
     <Description>Task Management and Note Taking Application</Description>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>

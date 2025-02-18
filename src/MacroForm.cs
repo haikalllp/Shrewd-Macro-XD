@@ -36,6 +36,24 @@ namespace NotesTasks
             public IntPtr dwExtraInfo;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct INPUT
+        {
+            public uint type;
+            public MOUSEINPUT mi;
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        };
+
         [DllImport("user32.dll")]
         private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelHookProc lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -52,7 +70,13 @@ namespace NotesTasks
         private static extern bool GetCursorPos(out POINT lpPoint);
 
         [DllImport("user32.dll")]
-        private static extern bool SetCursorPos(int X, int Y);
+        private static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+
+        private const uint MOUSEEVENTF_MOVE = 0x0001;
+        private const uint INPUT_MOUSE = 0;
 
         private IntPtr keyboardHookID = IntPtr.Zero;
         private IntPtr mouseHookID = IntPtr.Zero;
@@ -295,15 +319,14 @@ namespace NotesTasks
             {
                 lock (lockObject)
                 {
-                    if (GetCursorPos(out POINT currentPos))
-                    {
-                        var pattern = jitterPattern[currentStep];
-                        SetCursorPos(
-                            currentPos.X + (pattern.dx * jitterStrength / 7),
-                            currentPos.Y + (pattern.dy * jitterStrength / 7)
-                        );
-                        currentStep = (currentStep + 1) % jitterPattern.Length;
-                    }
+                    var pattern = jitterPattern[currentStep];
+                    INPUT input = new INPUT();
+                    input.type = 0; // INPUT_MOUSE
+                    input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
+                    input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
+                    input.mi.dwFlags = MOUSEEVENTF_MOVE;
+                    SendInput(1, ref input, Marshal.SizeOf(input));
+                    currentStep = (currentStep + 1) % jitterPattern.Length;
                 }
             }
             catch (Exception ex)
