@@ -22,3 +22,5 @@ obj/**/MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
 
 # Nuget packages (if using NuGet)
 *.nupkg
+obj/Debug/net6.0-windows/MouseMacro.assets.cache
+obj/Debug/net6.0-windows/MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
