@@ -1,0 +1,21 @@
+# Build output directories
+bin/
+obj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+
+# Temporary files
+*.tmp
+*.bak
+
+# Log files
+*.log
+
+# User-specific configuration
+*.userprefs
+
+# Nuget packages (if using NuGet)
+*.nupkg
