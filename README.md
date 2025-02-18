@@ -72,31 +72,121 @@ MouseMacro/
 
 ### Prerequisites
 
-- Windows OS (e.g., Windows 10)
-- .NET 6.0 SDK
-- Visual Studio or Visual Studio Code (recommended for editing)
+#### .NET SDK 6.0.428
+This project requires a specific version of the .NET SDK. Follow these steps to download and install:
+
+1. **Download .NET SDK 6.0.428**
+   - **Direct Download Link**: [.NET SDK 6.0.428 (Windows x64)](https://dotnet.microsoft.com/download/dotnet/6.0)
+   - Navigate to the download page and select:
+     - **Build apps - SDK**
+     - **Windows x64** installer
+   
+2. **Installation Options**:
+   a. **Recommended: Web Installer**
+      - Automatically downloads the correct SDK version
+      - Handles dependencies and system requirements
+   
+   b. **Offline Installer**
+      - Useful for systems without direct internet access
+      - Download the full installer from the Microsoft .NET website
+
+3. **Verify Installation**
+   After installation, open a new PowerShell or Command Prompt and run:
+   ```powershell
+   dotnet --version
+   ```
+   Confirm the output shows `6.0.428`
 
 ### Build Instructions
 
-1. Open a terminal in the project root directory
-2. Run the following commands to clean and build the project:
-
-   ```bash
-   dotnet clean
-   dotnet build
+1. **Clone the Repository**
+   ```powershell
+   git clone https://github.com/haikalllp/MouseMacroApex
+   cd MouseMacroApex
    ```
+
+2. **Restore Dependencies**
+   ```powershell
+   dotnet restore
+   ```
+
+3. **Build the Project**
+   ```powershell
+   # Clean previous builds (optional)
+   dotnet clean
+   
+   # Build the project
+   dotnet build --configuration Release
+   ```
+
+4. **Run the Application**
+   ```powershell
+   # Navigate to the release directory
+   cd bin\Release\net6.0-windows
+   
+   # Run the executable
+   # Remember executeable are disguised as 'NotesTasks.exe'
+   .\NotesTasks.exe
+   ```
+
+### Troubleshooting
+
+- **SDK Version Mismatch**: Ensure you have exactly .NET SDK 6.0.428 installed
+- **Build Errors**: 
+  - Verify all dependencies are restored
+  - Check that you're using a compatible Windows version
+  - Confirm Visual Studio or .NET development tools are installed
+
+### Development Environment
+
+**Recommended Tools**:
+- Visual Studio 2022 (Community Edition is free)
+- Visual Studio Code with C# extension
+- JetBrains Rider
+
+**Optional but Recommended**:
+- Install Windows Desktop Development workload in Visual Studio
+- Ensure you have the latest Windows SDK
 
 ## Usage
 
-1. **Setting Toggle Key**:
-   - Click the "Set Key" button
-   - Press the desired key to set as the toggle
-   - Key is immediately saved and displayed
+### Macro Activation and Toggle
 
-2. **Adjusting Jitter Strength**:
-   - Use the slider to set jitter strength (1-20)
-   - Changes take effect immediately
-   - Current strength value is displayed above the slider
+#### Macro Mechanics
+- **Macro Activation**: The jitter macro is only active when **both Left Mouse Button (LMB) and Right Mouse Button (RMB) are held simultaneously**
+- **Toggle State**: You can turn the macro on/off using the configured toggle key
+  - When macro is ON: Jitter will trigger when LMB and RMB are held
+  - When macro is OFF: No jitter will occur, even if mouse buttons are held
+
+#### Detailed Behavior
+1. **Toggle Key**
+   - Press the configured toggle key to switch between ON and OFF states
+   - The current state is displayed in the application window
+   - Default state is OFF when the application starts
+
+2. **Jitter Activation**
+   - Hold down both LMB and RMB at the same time
+   - Jitter effect will only apply when:
+     a) Macro is in ON state
+     b) Both LMB and RMB are held
+   - Releasing either mouse button will immediately stop the jitter
+
+3. **Jitter Strength**
+   - Adjust the jitter strength using the slider in the main window
+   - Strength ranges from 1 (minimal jitter) to 20 (maximum jitter)
+   - Changes to strength take effect immediately
+
+### Example Scenarios
+
+- **Scenario 1**: Macro OFF, LMB + RMB held → No jitter
+- **Scenario 2**: Macro ON, LMB + RMB held → Jitter active
+- **Scenario 3**: Macro ON, only LMB held → No jitter
+- **Scenario 4**: Macro ON, only RMB held → No jitter
+
+### Tips
+- Always check the application window to confirm the current macro state
+- The toggle key provides a quick way to enable/disable the macro
+- Experiment with different jitter strengths to find your preferred setting
 
 ## Architecture and Design
 
