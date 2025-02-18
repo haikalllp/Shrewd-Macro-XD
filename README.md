@@ -1,4 +1,4 @@
-# Mouse Macro Application
+# Notes & Tasks Application
 
 A Windows Forms application built with C# (.NET 6.0) designed for creating and managing mouse macros with customizable jitter effects. This application features a modern, dark-themed UI, support for configuring a toggle key, debug information, system tray integration, and single-instance enforcement.
 
@@ -47,12 +47,12 @@ MouseMacro/
    ```
 
 3. The executable will be generated at:
-   `bin/Release/net6.0-windows/MouseMacro.exe`
+   `bin/Release/net6.0-windows/NotesTasks.exe`
 
 ## Usage
 
 1. **Launching the Application**
-   - Double-click the `MouseMacro.exe` or use the provided shortcut in the project root `Macro Jitter Apex`.
+   - Double-click the `NotesTasks.exe` or use the provided shortcut in the project root `Macro Jitter Apex`.
    - The application window displays the current toggle key, jitter strength, and provides buttons to set keys and toggle debug mode.
 
 2. **Configuring the Toggle Key**

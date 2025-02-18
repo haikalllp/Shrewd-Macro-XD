@@ -2,11 +2,11 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace MouseMacro
+namespace NotesTasks
 {
     internal static class Program
     {
-        private static Mutex mutex = new Mutex(true, "MouseMacroApexJitterGlobalMutex");
+        private static Mutex mutex = new Mutex(true, "NotesTasksGlobalMutex");
 
         [STAThread]
         static void Main()

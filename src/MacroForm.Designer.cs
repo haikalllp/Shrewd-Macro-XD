@@ -1,4 +1,4 @@
-namespace MouseMacro
+namespace NotesTasks
 {
     partial class MacroForm
     {

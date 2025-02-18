@@ -6,15 +6,15 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "MouseMacro/1.0.0": {
+      "NotesTasks/1.0.0": {
         "runtime": {
-          "MouseMacro.dll": {}
+          "NotesTasks.dll": {}
         }
       }
     }
   },
   "libraries": {
-    "MouseMacro/1.0.0": {
+    "NotesTasks/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

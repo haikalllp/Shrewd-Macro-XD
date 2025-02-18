@@ -5,13 +5,13 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>MouseMacro</AssemblyName>
-    <RootNamespace>MouseMacro</RootNamespace>
+    <AssemblyName>NotesTasks</AssemblyName>
+    <RootNamespace>NotesTasks</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ApplicationIcon>assets\logo.ico</ApplicationIcon>
-    <Title>Mouse Macro</Title>
+    <Title>Notes &amp; Tasks</Title>
     <Authors>HaikalLLP</Authors>
-    <Description>Mouse Macro Application for Gaming</Description>
+    <Description>Task Management and Note Taking Application</Description>
   </PropertyGroup>
 
   <ItemGroup>

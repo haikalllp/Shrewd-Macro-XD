@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 
-namespace MouseMacro
+namespace NotesTasks
 {
     public partial class MacroForm : Form
     {
