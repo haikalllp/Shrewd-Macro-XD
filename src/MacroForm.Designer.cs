@@ -31,6 +31,8 @@ namespace MouseMacro
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MacroForm));
             this.mainPanel = new System.Windows.Forms.Panel();
+            this.settingsPanel = new System.Windows.Forms.Panel();
+            this.chkMinimizeToTray = new System.Windows.Forms.CheckBox();
             this.debugPanel = new System.Windows.Forms.Panel();
             this.debugLabel = new System.Windows.Forms.Label();
             this.btnToggleDebug = new System.Windows.Forms.Button();
@@ -38,14 +40,21 @@ namespace MouseMacro
             this.trackBarJitter = new System.Windows.Forms.TrackBar();
             this.lblCurrentKey = new System.Windows.Forms.Label();
             this.btnSetKey = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.trackBarJitter)).BeginInit();
+            this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.trayContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.showWindowMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.trayContextMenu.SuspendLayout();
             this.mainPanel.SuspendLayout();
+            this.settingsPanel.SuspendLayout();
             this.debugPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.trackBarJitter)).BeginInit();
             this.SuspendLayout();
             // 
             // mainPanel
             // 
             this.mainPanel.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
+            this.mainPanel.Controls.Add(this.settingsPanel);
             this.mainPanel.Controls.Add(this.debugPanel);
             this.mainPanel.Controls.Add(this.btnToggleDebug);
             this.mainPanel.Controls.Add(this.lblJitterStrength);
@@ -56,16 +65,36 @@ namespace MouseMacro
             this.mainPanel.Location = new System.Drawing.Point(0, 0);
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.Padding = new System.Windows.Forms.Padding(20);
-            this.mainPanel.Size = new System.Drawing.Size(400, 300);
+            this.mainPanel.Size = new System.Drawing.Size(400, 350);
             this.mainPanel.TabIndex = 0;
+            // 
+            // settingsPanel
+            // 
+            this.settingsPanel.Controls.Add(this.chkMinimizeToTray);
+            this.settingsPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.settingsPanel.Location = new System.Drawing.Point(20, 250);
+            this.settingsPanel.Name = "settingsPanel";
+            this.settingsPanel.Size = new System.Drawing.Size(360, 30);
+            this.settingsPanel.TabIndex = 6;
+            // 
+            // chkMinimizeToTray
+            // 
+            this.chkMinimizeToTray.AutoSize = true;
+            this.chkMinimizeToTray.ForeColor = System.Drawing.Color.LightGray;
+            this.chkMinimizeToTray.Location = new System.Drawing.Point(0, 5);
+            this.chkMinimizeToTray.Name = "chkMinimizeToTray";
+            this.chkMinimizeToTray.Size = new System.Drawing.Size(180, 19);
+            this.chkMinimizeToTray.TabIndex = 0;
+            this.chkMinimizeToTray.Text = "Minimize to System Tray";
+            this.chkMinimizeToTray.UseVisualStyleBackColor = true;
             // 
             // debugPanel
             // 
             this.debugPanel.Controls.Add(this.debugLabel);
             this.debugPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.debugPanel.Location = new System.Drawing.Point(20, 200);
+            this.debugPanel.Location = new System.Drawing.Point(20, 280);
             this.debugPanel.Name = "debugPanel";
-            this.debugPanel.Size = new System.Drawing.Size(360, 80);
+            this.debugPanel.Size = new System.Drawing.Size(360, 50);
             this.debugPanel.TabIndex = 5;
             this.debugPanel.Visible = false;
             // 
@@ -75,7 +104,7 @@ namespace MouseMacro
             this.debugLabel.ForeColor = System.Drawing.Color.LightGray;
             this.debugLabel.Location = new System.Drawing.Point(0, 0);
             this.debugLabel.Name = "debugLabel";
-            this.debugLabel.Size = new System.Drawing.Size(360, 80);
+            this.debugLabel.Size = new System.Drawing.Size(360, 50);
             this.debugLabel.TabIndex = 0;
             this.debugLabel.Text = "Debug Info";
             // 
@@ -136,21 +165,51 @@ namespace MouseMacro
             this.btnSetKey.Text = "Set Toggle Key";
             this.btnSetKey.UseVisualStyleBackColor = false;
             // 
+            // notifyIcon
+            // 
+            this.notifyIcon.ContextMenuStrip = this.trayContextMenu;
+            this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
+            this.notifyIcon.Text = "Mouse Macro";
+            this.notifyIcon.Visible = true;
+            // 
+            // trayContextMenu
+            // 
+            this.trayContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.showWindowMenuItem,
+            this.exitMenuItem});
+            this.trayContextMenu.Name = "trayContextMenu";
+            this.trayContextMenu.Size = new System.Drawing.Size(153, 70);
+            // 
+            // showWindowMenuItem
+            // 
+            this.showWindowMenuItem.Name = "showWindowMenuItem";
+            this.showWindowMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.showWindowMenuItem.Text = "Show Window";
+            // 
+            // exitMenuItem
+            // 
+            this.exitMenuItem.Name = "exitMenuItem";
+            this.exitMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitMenuItem.Text = "Exit";
+            // 
             // MacroForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
-            this.ClientSize = new System.Drawing.Size(400, 300);
+            this.ClientSize = new System.Drawing.Size(400, 350);
             this.Controls.Add(this.mainPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MaximizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(400, 350);
             this.Name = "MacroForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Mouse Macro";
+            this.trayContextMenu.ResumeLayout(false);
             this.mainPanel.ResumeLayout(false);
             this.mainPanel.PerformLayout();
+            this.settingsPanel.ResumeLayout(false);
+            this.settingsPanel.PerformLayout();
             this.debugPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.trackBarJitter)).EndInit();
             this.ResumeLayout(false);
@@ -167,5 +226,11 @@ namespace MouseMacro
         private System.Windows.Forms.TrackBar trackBarJitter;
         private System.Windows.Forms.Label lblCurrentKey;
         private System.Windows.Forms.Button btnSetKey;
+        private System.Windows.Forms.NotifyIcon notifyIcon;
+        private System.Windows.Forms.ContextMenuStrip trayContextMenu;
+        private System.Windows.Forms.ToolStripMenuItem showWindowMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem exitMenuItem;
+        private System.Windows.Forms.Panel settingsPanel;
+        private System.Windows.Forms.CheckBox chkMinimizeToTray;
     }
 }

@@ -69,6 +69,7 @@ namespace MouseMacro
         private readonly object lockObject = new object();
         private bool leftButtonDown = false;
         private bool rightButtonDown = false;
+        private bool isExiting = false;
 
         private readonly (int dx, int dy)[] jitterPattern = new[]
         {
@@ -92,12 +93,48 @@ namespace MouseMacro
                 // Set the icon from the executable itself
                 try
                 {
-                    this.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                    var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                    this.Icon = icon;
+                    notifyIcon.Icon = icon;
                 }
                 catch (Exception ex)
                 {
                     UpdateDebugInfo($"Error loading icon: {ex.Message}");
                 }
+
+                // Initialize tray icon behavior
+                notifyIcon.DoubleClick += (s, e) => ShowWindow();
+                showWindowMenuItem.Click += (s, e) => ShowWindow();
+                exitMenuItem.Click += (s, e) => 
+                {
+                    CleanupAndExit();
+                };
+
+                this.FormClosing += (s, e) =>
+                {
+                    if (!isExiting && chkMinimizeToTray.Checked && e.CloseReason == CloseReason.UserClosing)
+                    {
+                        e.Cancel = true;
+                        this.Hide();
+                        notifyIcon.Visible = true;
+                        UpdateDebugInfo("Application minimized to system tray");
+                    }
+                    else if (isExiting || !chkMinimizeToTray.Checked)
+                    {
+                        // Cleanup when actually closing
+                        CleanupAndExit();
+                    }
+                };
+
+                this.Resize += (s, e) =>
+                {
+                    // Adjust controls for new window size
+                    int padding = mainPanel.Padding.Horizontal;
+                    int availableWidth = mainPanel.Width - padding;
+                    btnSetKey.Width = availableWidth;
+                    trackBarJitter.Width = availableWidth;
+                    btnToggleDebug.Width = availableWidth;
+                };
                 
                 this.Load += (sender, e) => 
                 {
@@ -113,13 +150,13 @@ namespace MouseMacro
                     }
                 };
 
-                this.FormClosing += (sender, e) => 
+                // Handle application exit
+                Application.ApplicationExit += (s, e) =>
                 {
-                    if (keyboardHookID != IntPtr.Zero)
-                        UnhookWindowsHookEx(keyboardHookID);
-                    if (mouseHookID != IntPtr.Zero)
-                        UnhookWindowsHookEx(mouseHookID);
-                    jitterTimer?.Dispose();
+                    if (!isExiting)
+                    {
+                        CleanupAndExit();
+                    }
                 };
             }
             catch (Exception ex)
@@ -292,6 +329,63 @@ namespace MouseMacro
             if (debugLabel.Text.Length > 500)
             {
                 debugLabel.Text = debugLabel.Text.Substring(0, 500) + "...";
+            }
+        }
+
+        private void ShowWindow()
+        {
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            this.Activate();
+            notifyIcon.Visible = false;
+            UpdateDebugInfo("Application restored from system tray");
+        }
+
+        private void CleanupAndExit()
+        {
+            isExiting = true;
+            
+            // Stop timers and hooks
+            try
+            {
+                if (jitterTimer != null)
+                {
+                    jitterTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                    jitterTimer.Dispose();
+                }
+
+                if (keyboardHookID != IntPtr.Zero)
+                {
+                    UnhookWindowsHookEx(keyboardHookID);
+                    keyboardHookID = IntPtr.Zero;
+                }
+
+                if (mouseHookID != IntPtr.Zero)
+                {
+                    UnhookWindowsHookEx(mouseHookID);
+                    mouseHookID = IntPtr.Zero;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+
+            // Cleanup tray icon
+            if (notifyIcon != null)
+            {
+                notifyIcon.Visible = false;
+                notifyIcon.Dispose();
+            }
+
+            // Force process to exit
+            try
+            {
+                Process.GetCurrentProcess().Kill();
+            }
+            catch
+            {
+                Environment.Exit(0);
             }
         }
     }
