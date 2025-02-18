@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
 
 namespace MouseMacro
 {
@@ -59,18 +60,15 @@ namespace MouseMacro
         private readonly LowLevelHookProc mouseProc;
 
         private bool isMacroOn = false;
-        private Keys toggleKey = Keys.Capital;  
-        private int jitterStrength = 3;  
+        private Keys toggleKey = Keys.Capital;
+        private int jitterStrength = 3;
         private bool isSettingKey = false;
-        private Label debugLabel;
-        private Button btnSetKey;
         private System.Threading.Timer jitterTimer;
         private bool isJittering = false;
         private int currentStep = 0;
         private readonly object lockObject = new object();
         private bool leftButtonDown = false;
         private bool rightButtonDown = false;
-        private Label lblCurrentKey;
 
         private readonly (int dx, int dy)[] jitterPattern = new[]
         {
@@ -90,35 +88,67 @@ namespace MouseMacro
             {
                 InitializeComponent();
                 InitializeCustomComponents();
+
+                // Set the icon from the executable itself
+                try
+                {
+                    this.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                }
+                catch (Exception ex)
+                {
+                    UpdateDebugInfo($"Error loading icon: {ex.Message}");
+                }
                 
-                // Initialize hooks after UI is ready
                 this.Load += (sender, e) => 
                 {
                     try
                     {
                         InitializeHooks();
-                        
-                        // Initialize jitter timer (10ms intervals as per Lua script)
-                        jitterTimer = new System.Threading.Timer(
-                            JitterCallback, 
-                            null, 
-                            System.Threading.Timeout.Infinite, 
-                            System.Threading.Timeout.Infinite
-                        );
+                        jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
+                        UpdateTitle();
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Failed to initialize hooks: {ex.Message}", "Error", 
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        UpdateDebugInfo($"Error initializing hooks: {ex.Message}");
                     }
+                };
+
+                this.FormClosing += (sender, e) => 
+                {
+                    if (keyboardHookID != IntPtr.Zero)
+                        UnhookWindowsHookEx(keyboardHookID);
+                    if (mouseHookID != IntPtr.Zero)
+                        UnhookWindowsHookEx(mouseHookID);
+                    jitterTimer?.Dispose();
                 };
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to initialize form: {ex.Message}", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
+                MessageBox.Show($"Error initializing form: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void InitializeCustomComponents()
+        {
+            btnSetKey.Click += (sender, e) => 
+            {
+                isSettingKey = true;
+                btnSetKey.Text = "Press any key...";
+                btnSetKey.Enabled = false;
+            };
+
+            trackBarJitter.ValueChanged += (sender, e) =>
+            {
+                jitterStrength = trackBarJitter.Value;
+                lblJitterStrength.Text = $"Jitter Strength: {jitterStrength}";
+                UpdateDebugInfo($"Jitter strength set to {jitterStrength}");
+            };
+
+            btnToggleDebug.Click += (sender, e) =>
+            {
+                debugPanel.Visible = !debugPanel.Visible;
+                btnToggleDebug.Text = debugPanel.Visible ? "Hide Debug Info" : "Show Debug Info";
+            };
         }
 
         private void InitializeHooks()
@@ -131,223 +161,133 @@ namespace MouseMacro
                 mouseHookID = SetWindowsHookEx(WH_MOUSE_LL, mouseProc,
                     GetModuleHandle(curModule.ModuleName), 0);
             }
+
+            if (keyboardHookID == IntPtr.Zero || mouseHookID == IntPtr.Zero)
+            {
+                throw new Exception("Failed to set keyboard or mouse hook");
+            }
+        }
+
+        private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            if (nCode >= 0)
+            {
+                if (wParam == (IntPtr)WM_KEYDOWN)
+                {
+                    int vkCode = Marshal.ReadInt32(lParam);
+                    Keys key = (Keys)vkCode;
+
+                    if (isSettingKey)
+                    {
+                        toggleKey = key;
+                        isSettingKey = false;
+                        btnSetKey.Text = "Click to Set New Key";
+                        btnSetKey.Enabled = true;
+                        lblCurrentKey.Text = $"Current Key: {key}";
+                        UpdateDebugInfo($"Toggle key set to {key}");
+                        return (IntPtr)1;
+                    }
+
+                    if (key == toggleKey)
+                    {
+                        isMacroOn = !isMacroOn;
+                        UpdateTitle();
+                        UpdateDebugInfo($"Macro turned {(isMacroOn ? "ON" : "OFF")}");
+                        return (IntPtr)1;
+                    }
+                }
+            }
+            return CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
         }
 
         private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
             {
-                MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-                
                 switch ((int)wParam)
                 {
                     case WM_LBUTTONDOWN:
                         leftButtonDown = true;
+                        CheckJitterState();
                         break;
                     case WM_LBUTTONUP:
                         leftButtonDown = false;
+                        CheckJitterState();
                         break;
                     case WM_RBUTTONDOWN:
                         rightButtonDown = true;
+                        CheckJitterState();
                         break;
                     case WM_RBUTTONUP:
                         rightButtonDown = false;
+                        CheckJitterState();
                         break;
                 }
-
-                if (isMacroOn && leftButtonDown && rightButtonDown && !isJittering)
-                {
-                    StartJitter();
-                }
-                else if (!leftButtonDown || !rightButtonDown)
-                {
-                    StopJitter();
-                }
-
-                this.BeginInvoke(new Action(UpdateDebugLabel));
             }
             return CallNextHookEx(mouseHookID, nCode, wParam, lParam);
         }
 
-        private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        private void CheckJitterState()
         {
-            if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
+            bool shouldJitter = isMacroOn && leftButtonDown && rightButtonDown;
+            
+            if (shouldJitter && !isJittering)
             {
-                int vkCode = Marshal.ReadInt32(lParam);
-                
-                if (isSettingKey)
+                isJittering = true;
+                jitterTimer.Change(0, 10);
+                UpdateDebugInfo("Jitter started");
+            }
+            else if (!shouldJitter && isJittering)
+            {
+                isJittering = false;
+                jitterTimer.Change(Timeout.Infinite, 10);
+                UpdateDebugInfo("Jitter stopped");
+            }
+        }
+
+        private void OnJitterTimer(object state)
+        {
+            if (!isJittering) return;
+
+            try
+            {
+                lock (lockObject)
                 {
-                    toggleKey = (Keys)vkCode;
-                    this.BeginInvoke(new Action(() => {
-                        btnSetKey.Text = "Click to Set New Key";
-                        lblCurrentKey.Text = toggleKey.ToString();
-                        isSettingKey = false;
-                        UpdateDebugLabel();
-                    }));
-                    return (IntPtr)1;
-                }
-                
-                if ((Keys)vkCode == toggleKey)
-                {
-                    isMacroOn = !isMacroOn;
-                    this.BeginInvoke(new Action(() => {
-                        this.Text = $"Mouse Macro ({(isMacroOn ? "ON" : "OFF")})";
-                        UpdateDebugLabel();
-                    }));
-                    return (IntPtr)1;
+                    if (GetCursorPos(out POINT currentPos))
+                    {
+                        var pattern = jitterPattern[currentStep];
+                        SetCursorPos(
+                            currentPos.X + (pattern.dx * jitterStrength / 7),
+                            currentPos.Y + (pattern.dy * jitterStrength / 7)
+                        );
+                        currentStep = (currentStep + 1) % jitterPattern.Length;
+                    }
                 }
             }
-            return CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Jitter error: {ex.Message}");
+            }
         }
 
-        private void InitializeCustomComponents()
+        private void UpdateTitle()
         {
-            this.Text = "Mouse Macro";
-            this.Size = new System.Drawing.Size(400, 300);
-            this.FormBorderStyle = FormBorderStyle.Sizable;
-            this.MinimumSize = new System.Drawing.Size(300, 200);
-            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
-                         ControlStyles.AllPaintingInWmPaint |
-                         ControlStyles.UserPaint, true);
-
-            Label lblToggleKeyTitle = new Label();
-            lblToggleKeyTitle.Text = "Toggle Key:";
-            lblToggleKeyTitle.Location = new System.Drawing.Point(20, 20);
-            lblToggleKeyTitle.AutoSize = true;
-            lblToggleKeyTitle.Font = new Font(lblToggleKeyTitle.Font, FontStyle.Bold);
-
-            lblCurrentKey = new Label();
-            lblCurrentKey.Text = toggleKey.ToString();
-            lblCurrentKey.Location = new System.Drawing.Point(100, 20);
-            lblCurrentKey.AutoSize = true;
-            lblCurrentKey.Font = new Font(lblCurrentKey.Font, FontStyle.Bold);
-
-            btnSetKey = new Button();
-            btnSetKey.Text = "Click to Set New Key";
-            btnSetKey.Location = new System.Drawing.Point(20, 50);
-            btnSetKey.Size = new System.Drawing.Size(160, 30);
-            btnSetKey.Click += btnSetKey_Click;
-
-            Label lblJitterStrength = new Label();
-            lblJitterStrength.Text = "Jitter Strength:";
-            lblJitterStrength.Location = new System.Drawing.Point(20, 100);
-            lblJitterStrength.AutoSize = true;
-            lblJitterStrength.Font = new Font(lblJitterStrength.Font, FontStyle.Bold);
-
-            TrackBar trackBarJitter = new TrackBar();
-            trackBarJitter.Location = new System.Drawing.Point(120, 100);
-            trackBarJitter.Size = new System.Drawing.Size(150, 45);
-            trackBarJitter.Minimum = 1;
-            trackBarJitter.Maximum = 20;
-            trackBarJitter.Value = jitterStrength;
-            trackBarJitter.TickFrequency = 1;
-            trackBarJitter.ValueChanged += trackBarJitter_ValueChanged;
-
-            debugLabel = new Label
-            {
-                Dock = DockStyle.Bottom,
-                AutoSize = false,
-                Height = 80,
-                TextAlign = ContentAlignment.MiddleLeft,
-                BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.Black,
-                ForeColor = Color.Lime,
-                Font = new Font("Consolas", 9)
-            };
-
-            this.Controls.Add(lblToggleKeyTitle);
-            this.Controls.Add(lblCurrentKey);
-            this.Controls.Add(btnSetKey);
-            this.Controls.Add(lblJitterStrength);
-            this.Controls.Add(trackBarJitter);
-            this.Controls.Add(debugLabel);
+            this.Text = $"Mouse Macro [{(isMacroOn ? "ON" : "OFF")}]";
         }
 
-        private void UpdateDebugLabel()
+        private void UpdateDebugInfo(string info)
         {
-            if (this.IsDisposed) return;
-
-            this.BeginInvoke(new Action(() =>
+            if (this.InvokeRequired)
             {
-                GetCursorPos(out POINT currentPos);
-                var mouseState = "";
-                if (leftButtonDown) mouseState += "LMB ";
-                if (rightButtonDown) mouseState += "RMB ";
-                if (string.IsNullOrEmpty(mouseState)) mouseState = "None";
-
-                var newText = $"DEBUG:\r\n" +
-                            $"Macro: {(isMacroOn ? "ON" : "OFF")} | Key: {toggleKey} | Strength: {jitterStrength}\r\n" +
-                            $"Mouse Buttons: {mouseState} | Cursor: {currentPos.X},{currentPos.Y}\r\n" +
-                            $"Jittering: {isJittering} | Step: {currentStep}";
-
-                if (debugLabel.Text != newText)
-                {
-                    debugLabel.Text = newText;
-                }
-
-                lblCurrentKey.Text = toggleKey.ToString();
-            }));
-        }
-
-        private void JitterCallback(object state)
-        {
-            if (!isMacroOn || !leftButtonDown || !rightButtonDown)
-            {
-                StopJitter();
+                this.Invoke(new Action(() => UpdateDebugInfo(info)));
                 return;
             }
 
-            lock (lockObject)
+            debugLabel.Text = $"[{DateTime.Now:HH:mm:ss}] {info}\n{debugLabel.Text}";
+            if (debugLabel.Text.Length > 500)
             {
-                GetCursorPos(out POINT currentPos);
-                var pattern = jitterPattern[currentStep];
-                SetCursorPos(currentPos.X + pattern.dx, currentPos.Y + pattern.dy);
-                currentStep = (currentStep + 1) % jitterPattern.Length;
-                
-                this.BeginInvoke(new Action(UpdateDebugLabel));
+                debugLabel.Text = debugLabel.Text.Substring(0, 500) + "...";
             }
-        }
-
-        private void StartJitter()
-        {
-            if (!isJittering)
-            {
-                isJittering = true;
-                currentStep = 0;
-                jitterTimer.Change(0, 10); 
-            }
-        }
-
-        private void StopJitter()
-        {
-            if (isJittering)
-            {
-                isJittering = false;
-                jitterTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
-                this.BeginInvoke(new Action(UpdateDebugLabel));
-            }
-        }
-
-        private void trackBarJitter_ValueChanged(object sender, EventArgs e)
-        {
-            jitterStrength = ((TrackBar)sender).Value;
-            UpdateDebugLabel();
-        }
-
-        private void btnSetKey_Click(object sender, EventArgs e)
-        {
-            isSettingKey = true;
-            btnSetKey.Text = "Press any key...";
-            UpdateDebugLabel();
-        }
-
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            StopJitter();
-            jitterTimer.Dispose();
-            UnhookWindowsHookEx(keyboardHookID);
-            UnhookWindowsHookEx(mouseHookID);
-            base.OnFormClosing(e);
         }
     }
 }

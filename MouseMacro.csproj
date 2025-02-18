@@ -8,6 +8,10 @@
     <AssemblyName>MouseMacro</AssemblyName>
     <RootNamespace>MouseMacro</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ApplicationIcon>assets\logo.ico</ApplicationIcon>
+    <Title>Mouse Macro</Title>
+    <Authors>HaikalLLP</Authors>
+    <Description>Mouse Macro Application for Gaming</Description>
   </PropertyGroup>
 
   <ItemGroup>
