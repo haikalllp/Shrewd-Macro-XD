@@ -1,6 +1,7 @@
 # Build output directories
 bin/
 obj/
+obj/Debug/net6.0-windows/
 
 # Visual Studio files
 .vs/
