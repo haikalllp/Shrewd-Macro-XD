@@ -121,7 +121,7 @@ namespace MouseMacro
             this.lblCurrentKey.Name = "lblCurrentKey";
             this.lblCurrentKey.Size = new System.Drawing.Size(156, 21);
             this.lblCurrentKey.TabIndex = 1;
-            this.lblCurrentKey.Text = "Current Key: CAPS";
+            this.lblCurrentKey.Text = "Current Toggle Key: CAPS";
             // 
             // btnSetKey
             // 
@@ -133,7 +133,7 @@ namespace MouseMacro
             this.btnSetKey.Name = "btnSetKey";
             this.btnSetKey.Size = new System.Drawing.Size(360, 40);
             this.btnSetKey.TabIndex = 0;
-            this.btnSetKey.Text = "Click to Set New Key";
+            this.btnSetKey.Text = "Set Toggle Key";
             this.btnSetKey.UseVisualStyleBackColor = false;
             // 
             // MacroForm

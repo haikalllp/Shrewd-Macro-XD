@@ -1,18 +1,19 @@
 # Mouse Macro Application Architecture
 
 ## Introduction
-This document provides an overview of the architecture for the Mouse Macro Application. The application is designed to allow users to create and manage mouse macros, with a simple UI to change keybinds and adjust settings.
+This document provides an overview of the architecture for the Mouse Macro Application. The application is designed to allow users to create and manage mouse macros, with a modern dark-themed UI to change keybinds and adjust settings.
 
 ## Project Structure
 ```
 MouseMacro/
+├── assets/                  # Application assets
+│   └── logo.ico            # Application icon
 ├── docs/                    # Documentation
 │   ├── architecture.md      # This architecture document
 │   └── LuaScript.lua       # Original Lua implementation (reference)
 ├── src/                    # Source code
 │   ├── MacroForm.cs        # Main form implementation
-│   ├── MacroForm.Designer.cs # Form designer code
-│   └── Program.cs          # Application entry point
+│   └── MacroForm.Designer.cs # Form designer code
 ├── MouseMacro.csproj       # Project file
 └── app.manifest           # Application manifest for admin privileges
 ```
@@ -21,12 +22,19 @@ MouseMacro/
 
 ### 1. User Interface (UI)
 - **Framework**: Windows Forms (WinForms)
-- **Description**: A simple and intuitive interface for users to change keybinds for toggling the macro, and adjust the jitter strength.
+- **Theme**: Modern dark theme with a clean, minimalist design
+- **Description**: A modern and intuitive interface for users to manage macro settings and view debug information
 - **Elements**:
-  - **Toggle Key Display**: Shows the current toggle key in bold text
-  - **Set Key Button**: Allows users to set a new toggle key by clicking and pressing the desired key
-  - **Jitter Strength Slider**: For adjusting the jitter strength (1-20)
+  - **Toggle Key Display**: Shows the current toggle key in bold text with light gray color
+  - **Set Key Button**: Flat-style button with hover effects for setting a new toggle key
+  - **Jitter Strength Slider**: Modern trackbar for adjusting jitter strength (1-20)
+  - **Debug Panel**: Collapsible panel showing real-time debug information
   - **Status Indication**: Window title shows macro state (ON/OFF)
+- **Colors**:
+  - Background: Dark gray (#1E1E1E)
+  - Buttons: Slightly lighter gray (#2D2D2D)
+  - Text: Light gray
+  - Accent: Matches application icon colors
 
 ### 2. Core Logic
 - **Language**: C#
@@ -40,13 +48,23 @@ MouseMacro/
 
 #### 2.2 Jitter Logic
 - **Methods**:
-  - `void OnMouseMove(object sender, MouseEventArgs e)`: Checks if both LMB and RMB are held, and applies jitter if the macro is active
-  - Real-time jitter strength adjustment through the TrackBar
+  - `void OnJitterTimer(object state)`: Implements the jitter pattern with strength adjustment
+  - `void CheckJitterState()`: Manages jitter state based on mouse button states
+- **Features**:
+  - Real-time jitter strength adjustment through TrackBar
+  - Smooth jitter pattern implementation
+  - Debug information display
 
-### 3. Event Handling
+### 3. Debug System
+- **Features**:
+  - Collapsible debug panel
+  - Real-time status updates
+  - Timestamp for each debug message
+  - Mouse button states
+  - Current jitter settings
 - **Methods**:
-  - `void MacroForm_Load(object sender, EventArgs e)`: Sets up the event handlers
-  - `void MacroForm_FormClosing(object sender, FormClosingEventArgs e)`: Cleans up event handlers
+  - `void UpdateDebugInfo(string info)`: Adds timestamped debug information
+  - `void btnToggleDebug_Click`: Toggles debug panel visibility
 
 ## Setup and Configuration
 
@@ -56,9 +74,10 @@ MouseMacro/
 
 2. **Build and Run**:
    ```bash
-   dotnet build
-   dotnet run
+   dotnet build --configuration Release
    ```
+   The executable will be generated at:
+   `bin/Release/net6.0-windows/MouseMacro.exe`
 
 3. **Administrator Privileges**:
    - Required for global keyboard/mouse hooks
@@ -67,23 +86,29 @@ MouseMacro/
 ## User Guide
 
 1. **Running the Application**:
-   - Double-click the MouseMacro.exe in the bin/Debug/net6.0-windows folder
-   - Or create a shortcut to the exe for easy access
+   - Double-click MouseMacro.exe in the bin/Release/net6.0-windows folder
+   - Application icon will be visible in taskbar and window title
 
 2. **Setting the Toggle Key**:
    - Click the "Click to Set New Key" button
    - Press any key to set it as the new toggle key
-   - The current toggle key is displayed in bold
+   - The current toggle key is displayed in bold at the top
 
 3. **Adjusting Jitter Strength**:
    - Use the slider to set jitter strength (1-20)
    - Changes take effect immediately
+   - Current strength value is displayed above the slider
 
-4. **Using the Macro**:
+4. **Using Debug Information**:
+   - Click "Show Debug Info" button to toggle the debug panel
+   - Debug panel shows real-time status updates
+   - Each debug message includes a timestamp
+
+5. **Using the Macro**:
    - Press the toggle key to turn the macro ON/OFF
    - Hold both LMB and RMB to activate the jitter effect
    - Window title shows current state (ON/OFF)
 
 ## Conclusion
 
-This architecture provides a clear framework for a mouse macro application with an intuitive user interface. The application is designed with modular components to ensure maintainability and scalability.
+This architecture provides a framework for a modern, user-friendly mouse macro application. The dark-themed UI offers excellent usability while maintaining a professional appearance. The application is designed with modular components to ensure maintainability and scalability, with added debug capabilities for troubleshooting.

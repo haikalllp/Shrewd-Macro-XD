@@ -137,6 +137,11 @@ namespace MouseMacro
                 btnSetKey.Enabled = false;
             };
 
+            this.KeyDown += (sender, e) =>
+            {
+                // Removed event handler for setting toggle key and toggling macro
+            };
+
             trackBarJitter.ValueChanged += (sender, e) =>
             {
                 jitterStrength = trackBarJitter.Value;
@@ -181,9 +186,9 @@ namespace MouseMacro
                     {
                         toggleKey = key;
                         isSettingKey = false;
-                        btnSetKey.Text = "Click to Set New Key";
+                        btnSetKey.Text = "Set Toggle Key";
                         btnSetKey.Enabled = true;
-                        lblCurrentKey.Text = $"Current Key: {key}";
+                        lblCurrentKey.Text = $"Current Toggle Key: {key}";
                         UpdateDebugInfo($"Toggle key set to {key}");
                         return (IntPtr)1;
                     }
