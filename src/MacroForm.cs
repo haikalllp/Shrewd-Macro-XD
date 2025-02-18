@@ -70,6 +70,7 @@ namespace MouseMacro
         private readonly object lockObject = new object();
         private bool leftButtonDown = false;
         private bool rightButtonDown = false;
+        private Label lblCurrentKey;
 
         private readonly (int dx, int dy)[] jitterPattern = new[]
         {
@@ -85,18 +86,39 @@ namespace MouseMacro
             keyboardProc = KeyboardHookCallback;
             mouseProc = MouseHookCallback;
             
-            InitializeComponent();
-            InitializeCustomComponents();
-            InitializeHooks();
-            
-            jitterTimer = new System.Threading.Timer(
-                JitterCallback, 
-                null, 
-                System.Threading.Timeout.Infinite, 
-                System.Threading.Timeout.Infinite
-            );
-            
-            UpdateDebugLabel();
+            try
+            {
+                InitializeComponent();
+                InitializeCustomComponents();
+                
+                // Initialize hooks after UI is ready
+                this.Load += (sender, e) => 
+                {
+                    try
+                    {
+                        InitializeHooks();
+                        
+                        // Initialize jitter timer (10ms intervals as per Lua script)
+                        jitterTimer = new System.Threading.Timer(
+                            JitterCallback, 
+                            null, 
+                            System.Threading.Timeout.Infinite, 
+                            System.Threading.Timeout.Infinite
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to initialize hooks: {ex.Message}", "Error", 
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to initialize form: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
+            }
         }
 
         private void InitializeHooks()
@@ -157,7 +179,8 @@ namespace MouseMacro
                 {
                     toggleKey = (Keys)vkCode;
                     this.BeginInvoke(new Action(() => {
-                        btnSetKey.Text = $"Click to Set New Key ({toggleKey})";
+                        btnSetKey.Text = "Click to Set New Key";
+                        lblCurrentKey.Text = toggleKey.ToString();
                         isSettingKey = false;
                         UpdateDebugLabel();
                     }));
@@ -183,14 +206,24 @@ namespace MouseMacro
             this.Size = new System.Drawing.Size(400, 300);
             this.FormBorderStyle = FormBorderStyle.Sizable;
             this.MinimumSize = new System.Drawing.Size(300, 200);
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | 
+                         ControlStyles.AllPaintingInWmPaint |
+                         ControlStyles.UserPaint, true);
 
             Label lblToggleKeyTitle = new Label();
             lblToggleKeyTitle.Text = "Toggle Key:";
             lblToggleKeyTitle.Location = new System.Drawing.Point(20, 20);
             lblToggleKeyTitle.AutoSize = true;
+            lblToggleKeyTitle.Font = new Font(lblToggleKeyTitle.Font, FontStyle.Bold);
+
+            lblCurrentKey = new Label();
+            lblCurrentKey.Text = toggleKey.ToString();
+            lblCurrentKey.Location = new System.Drawing.Point(100, 20);
+            lblCurrentKey.AutoSize = true;
+            lblCurrentKey.Font = new Font(lblCurrentKey.Font, FontStyle.Bold);
 
             btnSetKey = new Button();
-            btnSetKey.Text = $"Click to Set New Key ({toggleKey})";
+            btnSetKey.Text = "Click to Set New Key";
             btnSetKey.Location = new System.Drawing.Point(20, 50);
             btnSetKey.Size = new System.Drawing.Size(160, 30);
             btnSetKey.Click += btnSetKey_Click;
@@ -199,6 +232,7 @@ namespace MouseMacro
             lblJitterStrength.Text = "Jitter Strength:";
             lblJitterStrength.Location = new System.Drawing.Point(20, 100);
             lblJitterStrength.AutoSize = true;
+            lblJitterStrength.Font = new Font(lblJitterStrength.Font, FontStyle.Bold);
 
             TrackBar trackBarJitter = new TrackBar();
             trackBarJitter.Location = new System.Drawing.Point(120, 100);
@@ -222,6 +256,7 @@ namespace MouseMacro
             };
 
             this.Controls.Add(lblToggleKeyTitle);
+            this.Controls.Add(lblCurrentKey);
             this.Controls.Add(btnSetKey);
             this.Controls.Add(lblJitterStrength);
             this.Controls.Add(trackBarJitter);
@@ -232,16 +267,26 @@ namespace MouseMacro
         {
             if (this.IsDisposed) return;
 
-            GetCursorPos(out POINT currentPos);
-            var mouseState = "";
-            if (leftButtonDown) mouseState += "LMB ";
-            if (rightButtonDown) mouseState += "RMB ";
-            if (string.IsNullOrEmpty(mouseState)) mouseState = "None";
+            this.BeginInvoke(new Action(() =>
+            {
+                GetCursorPos(out POINT currentPos);
+                var mouseState = "";
+                if (leftButtonDown) mouseState += "LMB ";
+                if (rightButtonDown) mouseState += "RMB ";
+                if (string.IsNullOrEmpty(mouseState)) mouseState = "None";
 
-            debugLabel.Text = $"DEBUG:\r\n" +
+                var newText = $"DEBUG:\r\n" +
                             $"Macro: {(isMacroOn ? "ON" : "OFF")} | Key: {toggleKey} | Strength: {jitterStrength}\r\n" +
                             $"Mouse Buttons: {mouseState} | Cursor: {currentPos.X},{currentPos.Y}\r\n" +
                             $"Jittering: {isJittering} | Step: {currentStep}";
+
+                if (debugLabel.Text != newText)
+                {
+                    debugLabel.Text = newText;
+                }
+
+                lblCurrentKey.Text = toggleKey.ToString();
+            }));
         }
 
         private void JitterCallback(object state)
