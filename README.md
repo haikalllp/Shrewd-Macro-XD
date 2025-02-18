@@ -1,31 +1,71 @@
 # Notes & Tasks Application
 
-A Windows Forms application built with C# (.NET 6.0) designed for creating and managing mouse macros with customizable jitter effects. This application features a modern, dark-themed UI, support for configuring a toggle key, debug information, system tray integration, and single-instance enforcement.
+A Windows Forms application built with C# (.NET 6.0) designed for creating and managing mouse macros with customizable jitter effects. For system integration purposes, the application presents itself as "Notes&Tasks" to maintain a professional appearance.
+
+## System Integration
+
+- **Process Name**: `NotesTasks.exe`
+- **Display Name**: Notes&Tasks
+- **Window Title**: Notes&Tasks - [Status]
+- **System Tray**: Appears as Notes&Tasks with corresponding icon
+- **Task Manager**: Listed as Notes&Tasks
+
+### Design Rationale
+- Professional appearance in enterprise environments
+- Discrete system integration
+- Consistent branding across all system interfaces
 
 ## Features
 
 - **Modern UI**: A sleek, dark-themed interface that provides a clear view of macro settings and debug information.
-- **Toggle Key Configuration**: Easily set a toggle key to activate/deactivate the macro. The active toggle key is displayed clearly on the main window.
-- **Jitter Logic**: Introduces jitter effects for mouse macros with adjustable strength via a trackbar.
-- **Debug Panel**: A collapsible panel that shows real-time debug information, including status updates and error messages.
-- **System Tray Integration**: Option to minimize the application to the system tray instead of exiting. The tray icon includes a context menu for restoring the window or completely exiting the application.
-- **Window Resizing**: The main window is resizable, and controls will adjust accordingly to fit the new size, ensuring a flexible user experience.
-- **Single Instance Enforcement**: Utilizes a global mutex to ensure that only one instance of the application runs at a time.
+- **Toggle Key Configuration**: 
+  - Easily set a toggle key to activate/deactivate the macro
+  - Current toggle key displayed in bold text with light gray color
+  - Flat-style "Set Key" button with hover effects
+- **Jitter Logic**: 
+  - Introduces jitter effects for mouse macros 
+  - Adjustable strength via a modern trackbar (1-20)
+  - Immediate effect on changes
+  - Current strength value displayed above the slider
+- **Debug Panel**: 
+  - Collapsible panel showing real-time debug information
+  - Includes event logging system
+  - Performance metrics tracking
+- **System Tray Integration**: 
+  - Option to minimize to system tray instead of exiting
+  - Tray icon context menu for window restoration or complete exit
+- **Window Resizing**: Responsive design with adjustable controls
+- **Single Instance Enforcement**: Utilizes a global mutex to ensure only one application instance runs
 
 ## Project Structure
 
 ```
 MouseMacro/
-├── assets/                  # Application assets (e.g., logo.ico)
-├── docs/                    # Documentation
-│   ├── architecture.md      # Detailed architecture documentation
-│   └── LuaScript.lua        # Original Lua implementation (reference)
-├── src/                     # Source code
-│   ├── MacroForm.cs         # Main form logic and UI behavior
-│   ├── MacroForm.Designer.cs# Form designer code
-│   └── Program.cs           # Application entry point with single instance enforcement
-├── MouseMacro.csproj        # Project file with build configuration
-└── README.md                # This file
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon for Notes&Tasks branding
+│   └── themes/             # UI theme resources and configurations
+├── bin/                    # Compiled binaries and runtime files
+│   └── Debug/             # Debug build output
+│       └── net6.0-windows/
+│           ├── NotesTasks.exe     # Main executable (Notes&Tasks branded)
+│           ├── NotesTasks.dll     # Core application library
+│           └── *.deps.json        # Runtime dependency configurations
+├── docs/                   # Documentation
+│   ├── architecture.md     # Detailed architecture documentation
+│   ├── update.md           # Change log and updates
+│   └── LuaScript.lua       # Original Lua implementation (reference)
+├── src/                    # Source code
+│   ├── MacroForm.cs        # Main form implementation
+│   │   - Core macro logic
+│   │   - Input handling and hooks
+│   │   - UI event handlers
+│   │   - System tray integration
+│   ├── MacroForm.Designer.cs # Form designer code
+│   │   - UI layout and controls
+│   │   - Component initialization
+│   └── Program.cs          # Application entry point with single instance enforcement
+├── MouseMacro.csproj       # Project file with build configuration
+└── README.md               # This file
 ```
 
 ## Installation and Build
@@ -38,40 +78,25 @@ MouseMacro/
 
 ### Build Instructions
 
-1. Open a terminal in the project root directory (`e:\CODING\Projects\CODE\Macro`).
+1. Open a terminal in the project root directory
 2. Run the following commands to clean and build the project:
 
    ```bash
    dotnet clean
-   dotnet build --configuration Release
+   dotnet build
    ```
-
-3. The executable will be generated at:
-   `bin/Release/net6.0-windows/NotesTasks.exe`
 
 ## Usage
 
-1. **Launching the Application**
-   - Double-click the `NotesTasks.exe` or use the provided shortcut in the project root `Macro Jitter Apex`.
-   - The application window displays the current toggle key, jitter strength, and provides buttons to set keys and toggle debug mode.
+1. **Setting Toggle Key**:
+   - Click the "Set Key" button
+   - Press the desired key to set as the toggle
+   - Key is immediately saved and displayed
 
-2. **Configuring the Toggle Key**
-   - Click the "Set Toggle Key" button and press any key to assign a new toggle key for activating/deactivating the macro.
-   - The selected key will be displayed as "Current Toggle Key: <Key>".
-
-3. **Adjusting Jitter
-   - Use the trackbar to adjust the jitter strength on the fly. The current value is displayed above the slider.
-
-4. **Debug Mode**
-   - Toggle the debug panel by clicking "Show Debug Info". This panel provides real-time updates and error messages.
-
-5. **System Tray Integration and Exit Handling**
-   - Check the "Minimize to System Tray" option to enable tray behavior. When enabled, closing the window minimizes the application to the system tray instead of terminating it.
-   - To restore the application, double-click the tray icon or choose "Show Window" from its context menu.
-   - To completely exit the application, click "Exit" from the tray context menu.
-
-6. **Single Instance Enforcement**
-   - The application prevents multiple instances by using a global mutex. If another instance is detected, an informative message is displayed.
+2. **Adjusting Jitter Strength**:
+   - Use the slider to set jitter strength (1-20)
+   - Changes take effect immediately
+   - Current strength value is displayed above the slider
 
 ## Architecture and Design
 
