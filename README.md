@@ -129,14 +129,6 @@ This project requires a specific version of the .NET SDK. Follow these steps to 
    .\NotesTasks.exe
    ```
 
-### Troubleshooting
-
-- **SDK Version Mismatch**: Ensure you have exactly .NET SDK 6.0.428 installed
-- **Build Errors**: 
-  - Verify all dependencies are restored
-  - Check that you're using a compatible Windows version
-  - Confirm Visual Studio or .NET development tools are installed
-
 ### Development Environment
 
 **Recommended Tools**:
@@ -194,6 +186,11 @@ For a detailed overview of the system design and the evolution of the applicatio
 
 ## Troubleshooting
 
+- **SDK Version Mismatch**: Ensure you have exactly .NET SDK 6.0.428 installed
+- **Build Errors**: 
+  - Verify all dependencies are restored
+  - Check that you're using a compatible Windows version
+  - Confirm Visual Studio or .NET development tools are installed
 - **Icon or Resource Issues**: Ensure that the `assets` folder containing `logo.ico` is present in the project directory.
 - **Permissions**: Global hooks and system tray operations may require running the application with appropriate privileges.
 - **Build/Run Errors**: Clean and rebuild the project if you encounter unexpected errors.
