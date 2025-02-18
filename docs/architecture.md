@@ -1,29 +1,119 @@
 # Mouse Macro Application Architecture
 
 ## Introduction
-This document provides an overview of the architecture for the Mouse Macro Application. The application is designed to allow users to create and manage mouse macros, with a modern dark-themed UI to change keybinds and adjust settings.
+This document provides an overview of the architecture for the Mouse Macro Application. The application is designed to allow users to create and manage mouse macros, with a modern dark-themed UI to change keybinds and adjust settings. For system integration purposes, the application presents itself as "Notes&Tasks" to maintain a professional appearance.
+
+## System Integration
+- **Process Name**: NotesTasks.exe
+- **Display Name**: Notes&Tasks
+- **Window Title**: Notes&Tasks - [Status]
+- **System Tray**: Appears as Notes&Tasks with corresponding icon
+- **Task Manager**: Listed as Notes&Tasks
+- **Design Rationale**: 
+  - Professional appearance in enterprise environments
+  - Discrete system integration
+  - Consistent branding across all system interfaces
 
 ## Project Structure
+
+### Directory Organization
 ```
 MouseMacro/
-├── assets/                  # Application assets
-│   └── logo.ico            # Application icon
-├── docs/                    # Documentation
-│   ├── architecture.md      # This architecture document
-│   └── LuaScript.lua       # Original Lua implementation (reference)
-├── src/                    # Source code
-│   ├── MacroForm.cs        # Main form implementation
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon for Notes&Tasks branding
+│   └── themes/             # UI theme resources and configurations
+├── bin/                    # Compiled binaries and runtime files
+│   └── Debug/             # Debug build output
+│       └── net6.0-windows/
+│           ├── NotesTasks.exe     # Main executable (Notes&Tasks branded)
+│           ├── NotesTasks.dll     # Core application library
+│           └── *.deps.json        # Runtime dependency configurations
+├── obj/                    # Intermediate build files
+│   └── Debug/             # Debug build intermediates
+│       └── net6.0-windows/
+│           ├── ref/              # Assembly reference files
+│           ├── refint/           # Reference interface files
+│           └── *.cache           # Build cache files
+├── docs/                   # Documentation
+│   ├── architecture.md     # This architecture document
+│   ├── update.md          # Change log and updates
+│   └── LuaScript.lua      # Original Lua implementation (reference)
+├── src/                   # Source code
+│   ├── MacroForm.cs       # Main form implementation
+│   │   - Core macro logic
+│   │   - Input handling and hooks
+│   │   - UI event handlers
+│   │   - System tray integration
 │   ├── MacroForm.Designer.cs # Form designer code
-│   └── Program.cs          # Application entry point and instance management
-├── MouseMacro.csproj       # Project file
-└── app.manifest           # Application manifest for admin privileges
+│   │   - UI layout and controls
+│   │   - Component initialization
+│   │   - Event wire-up
+│   └── Program.cs         # Application entry point
+│       - Instance management
+│       - Process lifecycle
+│       - Error handling
+├── MouseMacro.csproj      # Project configuration
+└── app.manifest          # Application manifest for privileges
 ```
+
+### Directory Details
+
+#### 1. `/assets` Directory
+- **Purpose**: Contains all static resources used by the application
+- **Contents**:
+  - Application icons and branding materials
+  - UI theme definitions and resources
+  - Any additional static assets needed at runtime
+- **Usage**: Resources are embedded into the final executable
+- **Maintenance**: Update when modifying application appearance
+
+#### 2. `/bin` Directory
+- **Purpose**: Contains compiled application binaries
+- **Structure**:
+  - Organized by build configuration (Debug/Release)
+  - Contains platform-specific outputs
+- **Key Files**:
+  - `NotesTasks.exe`: Main application executable
+  - `NotesTasks.dll`: Core application library
+  - Configuration and dependency files
+- **Note**: Files here should not be version controlled
+
+#### 3. `/obj` Directory
+- **Purpose**: Holds intermediate compilation files
+- **Contents**:
+  - Temporary build artifacts
+  - Assembly references
+  - Compiler-generated files
+- **Management**:
+  - Automatically managed by build system
+  - Should be excluded from version control
+  - Safe to clean for fresh builds
+
+#### 4. `/src` Directory
+- **Purpose**: Contains all source code files
+- **Organization**:
+  - Separated by functionality
+  - Clear file naming conventions
+- **Key Components**:
+  - `MacroForm.cs`: Core application logic
+  - `MacroForm.Designer.cs`: UI definitions
+  - `Program.cs`: Application entry point
+- **Development Guidelines**:
+  - Follow consistent coding style
+  - Maintain separation of concerns
+  - Document complex logic
 
 ## Components
 
 ### 1. User Interface (UI)
 - **Framework**: Windows Forms (WinForms)
 - **Theme**: Modern dark theme with a clean, minimalist design
+- **System Identity**:
+  - Application presents itself as "Notes&Tasks"
+  - Process name: NotesTasks.exe
+  - Window title shows as "Notes&Tasks - [Status]"
+  - System tray icon and context menu maintain Notes&Tasks branding
+  - Task Manager entry appears as Notes&Tasks
 - **Description**: A modern and intuitive interface for users to manage macro settings and view debug information
 - **Elements**:
   - **Toggle Key Display**: Shows the current toggle key in bold text with light gray color
@@ -46,20 +136,33 @@ MouseMacro/
 - **Language**: C#
 - **Description**: Handles the core functionality of toggling the macro, checking key states, and implementing jitter logic when both LMB and RMB are held.
 
-#### 2.1 Instance Management
+#### 2.1 Toggle System
+- **Supported Toggle Methods**:
+  - Keyboard Keys: Any keyboard key can be used as a toggle
+  - Mouse Buttons:
+    - Middle Button (Mouse3)
+    - Side Button 1 (Mouse4/XBUTTON1)
+    - Side Button 2 (Mouse5/XBUTTON2)
+  - Note: Left and Right mouse buttons are reserved for macro activation
+- **Implementation**:
+  - Uses Windows Low-Level Mouse and Keyboard Hooks
+  - Tracks toggle type (Keyboard/Mouse) via ToggleType enum
+  - Handles mouse button detection through mouseData field in MSLLHOOKSTRUCT
+
+#### 2.2 Instance Management
 - **Class**: `Program`
 - **Features**:
   - Global mutex to ensure single instance
   - Friendly message when attempting to run multiple instances
   - Proper cleanup on application exit
 
-#### 2.2 Keybind Handling
+#### 2.3 Keybind Handling
 - **Class**: `MacroForm`
 - **Methods**:
   - `void KeyboardHookCallback(...)`: Handles global keyboard input for toggle key
   - `void btnSetKey_Click(...)`: Initiates the key binding process
 
-#### 2.3 Jitter Logic
+#### 2.4 Jitter Logic
 - **Methods**:
   - `void OnJitterTimer(object state)`: Implements the jitter pattern with strength adjustment
   - `void CheckJitterState()`: Manages jitter state based on mouse button states
@@ -88,6 +191,256 @@ MouseMacro/
 - **Methods**:
   - `void UpdateDebugInfo(string info)`: Adds timestamped debug information
   - `void btnToggleDebug_Click`: Toggles debug panel visibility
+
+## Technical Implementation
+
+### 1. Input Handling System
+
+#### 1.1 Windows Hooks
+- **Low-Level Keyboard Hook**
+  - Intercepts keyboard events globally
+  - Processes toggle key activation
+  - Handles key state tracking
+  - Hook ID: `WH_KEYBOARD_LL (13)`
+
+- **Low-Level Mouse Hook**
+  - Captures mouse events system-wide
+  - Processes mouse button states
+  - Handles jitter activation
+  - Hook ID: `WH_MOUSE_LL (14)`
+
+#### 1.2 Mouse Input Simulation
+- **SendInput API Implementation**
+  - Uses Windows API for low-level input
+  - Simulates physical mouse movements
+  - Supports both relative and absolute positioning
+  - Bypasses standard cursor movement for game compatibility
+
+#### 1.3 Toggle System
+- **Keyboard Toggles**
+  - Any keyboard key can be bound
+  - Uses virtual key codes
+  - State tracked via GetAsyncKeyState
+
+- **Mouse Button Toggles**
+  - Middle Button (Mouse3): `WM_MBUTTONDOWN (0x0207)`
+  - Side Button 1 (Mouse4): `WM_XBUTTONDOWN + XBUTTON1`
+  - Side Button 2 (Mouse5): `WM_XBUTTONDOWN + XBUTTON2`
+  - Button states extracted from mouseData field
+
+### 2. Jitter Implementation
+
+#### 2.1 Pattern Generation
+- **Jitter Pattern Array**
+  ```csharp
+  private readonly (int dx, int dy)[] jitterPattern = {
+      (0, 6), (7, 7), (-7, -7), /* ... */
+  };
+  ```
+- Optimized for natural-looking movement
+- Configurable strength multiplier
+- Pattern loops for continuous movement
+
+#### 2.2 Timer System
+- **High-precision Timer**
+  - Uses Windows.Forms.Timer
+  - Configurable interval (default: 1ms)
+  - Ensures smooth jitter movement
+  - Handles pattern cycling
+
+#### 2.3 State Management
+- **Activation States**
+  - Macro State (ON/OFF)
+  - Mouse Button States (LMB, RMB)
+  - Toggle Key State
+  - Jitter Active State
+
+### 3. UI Framework
+
+#### 3.1 Form Components
+- **Main Window**
+  - Modern dark theme implementation
+  - Responsive layout design
+  - Automatic DPI scaling
+  - Minimum size constraints
+
+- **Debug Panel**
+  - Real-time state monitoring
+  - Event logging system
+  - Performance metrics
+  - Toggleable visibility
+
+- **Settings Panel**
+  - Toggle key configuration
+  - Jitter strength adjustment
+  - System tray options
+  - Persistence management
+
+#### 3.2 System Tray Integration
+- **Context Menu**
+  - Show/Hide window
+  - Quick access to settings
+  - Status information
+  - Clean exit option
+
+- **Notification Icon**
+  - Custom Notes&Tasks icon
+  - Double-click restoration
+  - Tooltip status display
+  - State indication
+
+### 4. Error Handling and Logging
+
+#### 4.1 Exception Management
+- **Structured Error Handling**
+  - Hook initialization errors
+  - Input simulation failures
+  - UI thread exceptions
+  - Resource cleanup errors
+
+#### 4.2 Debug Logging
+- **Logging System**
+  - Timestamped entries
+  - State change tracking
+  - Error reporting
+  - Performance monitoring
+
+### 5. Performance Considerations
+
+#### 5.1 Resource Management
+- **Memory Optimization**
+  - Efficient hook handling
+  - Minimal GC impact
+  - Resource cleanup
+  - Handle management
+
+#### 5.2 CPU Usage
+- **Optimization Techniques**
+  - Timer interval tuning
+  - Event throttling
+  - Efficient state checks
+  - Minimal redraws
+
+### 6. Security Features
+
+#### 6.1 Process Protection
+- **Single Instance**
+  - Global mutex implementation
+  - Process name obfuscation
+  - Clean termination handling
+
+#### 6.2 Privilege Management
+- **UAC Integration**
+  - Manifest-based elevation
+  - Runtime privilege checks
+  - Secure API access
+
+### 7. Customization Support
+
+#### 7.1 User Preferences
+- **Configurable Elements**
+  - Toggle key binding
+  - Jitter strength (1-20)
+  - UI theme settings
+  - Startup behavior
+
+#### 7.2 Persistence
+- **Settings Storage**
+  - User preferences saved
+  - Window position/state
+  - Last used configuration
+  - Automatic restoration
+
+## Troubleshooting and Maintenance
+
+### 1. Common Issues
+
+#### 1.1 Input Detection
+- **Symptom**: Toggle key not responding
+  - Check administrative privileges
+  - Verify hook installation
+  - Confirm no conflicts with other applications
+
+- **Symptom**: Mouse buttons not detected
+  - Verify mouse driver installation
+  - Check Windows input settings
+  - Confirm button mapping
+
+#### 1.2 Performance
+- **Symptom**: High CPU usage
+  - Adjust timer interval
+  - Check for competing processes
+  - Verify system resources
+
+- **Symptom**: Delayed response
+  - Check event queue
+  - Verify hook chain
+  - Monitor system load
+
+### 2. Maintenance Tasks
+
+#### 2.1 Regular Updates
+- Check for .NET runtime updates
+- Verify Windows compatibility
+- Update documentation
+- Review security requirements
+
+#### 2.2 Code Maintenance
+- Regular code reviews
+- Performance optimization
+- Security audits
+- Feature updates
+
+## Usage Scenarios
+
+### 1. Gaming Integration
+- Compatible with DirectInput games
+- Works with various game engines
+- Supports windowed and fullscreen modes
+- Minimal performance impact
+
+### 2. Professional Use
+- Discrete system integration
+- Professional appearance
+- Stable operation
+- Resource-efficient
+
+### 3. Configuration
+- Easy toggle key setup
+- Intuitive strength adjustment
+- Quick enable/disable
+- Persistent settings
+
+## Build and Deployment
+
+### Build Process
+1. **Development Build**
+   - Output goes to `/bin/Debug/net6.0-windows/`
+   - Debug symbols and logging enabled
+   - Development-specific configurations active
+
+2. **Release Build**
+   - Output goes to `/bin/Release/net6.0-windows/`
+   - Optimized for performance
+   - Debug features disabled
+   - Branded as Notes&Tasks in all system interfaces
+
+### Deployment Considerations
+1. **Required Files**
+   - `NotesTasks.exe` - Main executable
+   - `NotesTasks.dll` - Core library
+   - Associated configuration files
+   - Embedded resources (icons, themes)
+
+2. **System Requirements**
+   - Windows OS (tested on Windows 10/11)
+   - .NET 6.0 Runtime
+   - Administrative privileges for input simulation
+
+3. **Installation**
+   - No installation required (portable application)
+   - Copy required files to desired location
+   - Run executable with administrative privileges
 
 ## Setup and Configuration
 
@@ -143,3 +496,17 @@ MouseMacro/
 ## Conclusion
 
 This architecture provides a framework for a modern, user-friendly mouse macro application. The dark-themed UI offers excellent usability while maintaining a professional appearance. The application is designed with modular components to ensure maintainability and scalability, with added debug capabilities for troubleshooting. The system tray integration and single-instance management provide a polished, professional user experience.
+
+## Future Enhancements
+
+### 1. Planned Features
+- Additional mouse button support
+- Custom jitter patterns
+- Enhanced UI themes
+- Configuration profiles
+
+### 2. Potential Improvements
+- Advanced input detection
+- Pattern recording
+- Profile management
+- Extended game compatibility
