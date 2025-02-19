@@ -17,20 +17,29 @@ A Windows Forms application built with C# (.NET 6.0) designed for creating and m
 
 ## Features
 
-- **Modern UI**: A sleek, dark-themed interface that provides a clear view of macro settings and debug information.
+- **Modern UI**: 
+  - Sleek, dark-themed interface
+  - Split label system with bold values
+  - Thread-safe updates and cross-thread synchronization
+  - Consistent Segoe UI font styling
 - **Toggle Key Configuration**: 
-  - Easily set a toggle key to activate/deactivate the macro
-  - Current toggle key displayed in bold text with light gray color
-  - Flat-style "Set Key" button with hover effects
-- **Jitter Logic**: 
-  - Introduces jitter effects for mouse macros 
-  - Adjustable strength via a modern trackbar (1-20)
-  - Immediate effect on changes
-  - Current strength value displayed above the slider
-- **Debug Panel**: 
-  - Collapsible panel showing real-time debug information
-  - Includes event logging system
-  - Performance metrics tracking
+  - Easy key configuration with visual feedback
+  - Current key displayed with bold styling
+  - Thread-safe key state updates
+- **Dual Macro Modes**:
+  - Default Recoil Reducer
+    - Constant vertical compensation
+    - Primary strength slider (1-20)
+    - Always accessible
+  - Toggle Jitter Mode
+    - Complex movement patterns
+    - Independent strength control
+    - Optional activation
+- **Debug System**: 
+  - Enhanced logging with standardized format
+  - Real-time strength and key updates
+  - Thread-safe message queue
+  - Automatic UI synchronization
 - **System Tray Integration**: 
   - Option to minimize to system tray instead of exiting
   - Tray icon context menu for window restoration or complete exit
@@ -145,35 +154,42 @@ This project requires a specific version of the .NET SDK. Follow these steps to 
 ### Macro Activation and Toggle
 
 #### Macro Mechanics
-- **Macro Activation**: The jitter macro is only active when **both Left Mouse Button (LMB) and Right Mouse Button (RMB) are held simultaneously**
-- **Toggle State**: You can turn the macro on/off using the configured toggle key
-  - When macro is ON: Jitter will trigger when LMB and RMB are held
-  - When macro is OFF: No jitter will occur, even if mouse buttons are held
+- **Default Mode (Recoil Reducer)**:
+  - Active when macro is ON and both LMB + RMB held
+  - Provides constant vertical compensation
+  - Strength adjustable from 1-20
+  - Always available when macro is ON
+
+- **Optional Mode (Jitter)**:
+  - Must be explicitly enabled via toggle
+  - Uses separate strength settings
+  - Independent activation from recoil reducer
+  - Can be disabled when not needed
 
 #### Detailed Behavior
 1. **Toggle Key**
-   - Press the configured toggle key to switch between ON and OFF states
-   - The current state is displayed in the application window
-   - Default state is OFF when the application starts
+   - Controls overall macro ON/OFF state
+   - Affects both recoil and jitter (if enabled)
+   - Current state shown in window title
 
-2. **Jitter Activation**
-   - Hold down both LMB and RMB at the same time
-   - Jitter effect will only apply when:
-     a) Macro is in ON state
-     b) Both LMB and RMB are held
-   - Releasing either mouse button will immediately stop the jitter
+2. **Recoil Reducer**
+   - Primary macro functionality
+   - Activated by holding LMB + RMB
+   - Strength controlled by dedicated slider
+   - Takes effect immediately when macro is ON
 
-3. **Jitter Strength**
-   - Adjust the jitter strength using the slider in the main window
-   - Strength ranges from 1 (minimal jitter) to 20 (maximum jitter)
-   - Changes to strength take effect immediately
+3. **Jitter Mode**
+   - Secondary, optional functionality
+   - Can be toggled on/off independently
+   - Separate strength control (1-20)
+   - Only active when enabled and macro is ON
 
 ### Example Scenarios
 
-- **Scenario 1**: Macro OFF, LMB + RMB held → No jitter
-- **Scenario 2**: Macro ON, LMB + RMB held → Jitter active
-- **Scenario 3**: Macro ON, only LMB held → No jitter
-- **Scenario 4**: Macro ON, only RMB held → No jitter
+- **Scenario 1**: Macro OFF → No effects active
+- **Scenario 2**: Macro ON, Recoil Only → Vertical compensation when LMB + RMB held
+- **Scenario 3**: Macro ON, Jitter Enabled → Both effects when LMB + RMB held
+- **Scenario 4**: Macro ON, Single Button → No effects
 
 ### Tips
 - Always check the application window to confirm the current macro state

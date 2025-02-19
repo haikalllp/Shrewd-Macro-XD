@@ -118,7 +118,8 @@ MouseMacro/
 - **Elements**:
   - **Toggle Key Display**: Shows the current toggle key in bold text with light gray color
   - **Set Key Button**: Flat-style button with hover effects for setting a new toggle key
-  - **Jitter Strength Slider**: Modern trackbar for adjusting jitter strength (1-20)
+  - **Recoil Control**: Primary strength slider (1-20) with bold value display
+  - **Jitter Panel**: Optional mode controls with separate strength slider
   - **Debug Panel**: Collapsible panel showing real-time debug information
   - **Settings Panel**: Contains application settings like minimize to tray option
   - **Status Indication**: Window title shows macro state (ON/OFF)
@@ -134,9 +135,21 @@ MouseMacro/
 
 ### 2. Core Logic
 - **Language**: C#
-- **Description**: Handles the core functionality of toggling the macro, checking key states, and implementing jitter logic when both LMB and RMB are held.
+- **Description**: Handles the core functionality of macro modes, toggle states, and implementing both recoil reduction and jitter patterns.
 
-#### 2.1 Toggle System
+#### 2.1 Macro Modes
+- **Default Mode: Recoil Reducer**
+  - Primary functionality for vertical recoil compensation
+  - Always available when macro is ON
+  - Activated by LMB + RMB combination
+  - Independent strength control (1-20)
+- **Optional Mode: Jitter**
+  - Secondary functionality for complex movement patterns
+  - Can be toggled independently
+  - Uses separate strength control
+  - Maintains its own state
+
+#### 2.2 Toggle System
 - **Supported Toggle Methods**:
   - Keyboard Keys: Any keyboard key can be used as a toggle
   - Mouse Buttons:
@@ -149,26 +162,22 @@ MouseMacro/
   - Tracks toggle type (Keyboard/Mouse) via ToggleType enum
   - Handles mouse button detection through mouseData field in MSLLHOOKSTRUCT
 
-#### 2.2 Instance Management
+#### 2.3 Instance Management
 - **Class**: `Program`
 - **Features**:
   - Global mutex to ensure single instance
   - Friendly message when attempting to run multiple instances
   - Proper cleanup on application exit
 
-#### 2.3 Keybind Handling
-- **Class**: `MacroForm`
+#### 2.4 Macro Logic
 - **Methods**:
-  - `void KeyboardHookCallback(...)`: Handles global keyboard input for toggle key
-  - `void btnSetKey_Click(...)`: Initiates the key binding process
-
-#### 2.4 Jitter Logic
-- **Methods**:
-  - `void OnJitterTimer(object state)`: Implements the jitter pattern with strength adjustment
-  - `void CheckJitterState()`: Manages jitter state based on mouse button states
+  - `void OnRecoilTimer(object state)`: Implements vertical recoil compensation
+  - `void OnJitterTimer(object state)`: Implements complex movement patterns
+  - `void CheckMacroState()`: Manages both recoil and jitter states
 - **Features**:
-  - Real-time jitter strength adjustment through TrackBar
-  - Smooth jitter pattern implementation
+  - Independent strength controls for each mode
+  - Real-time adjustments through TrackBars
+  - Smooth pattern implementation
   - Debug information display
 
 ### 3. System Tray Integration
@@ -191,6 +200,7 @@ MouseMacro/
 - **Methods**:
   - `void UpdateDebugInfo(string info)`: Adds timestamped debug information
   - `void btnToggleDebug_Click`: Toggles debug panel visibility
+
 
 ## Technical Implementation
 
@@ -228,32 +238,40 @@ MouseMacro/
   - Side Button 2 (Mouse5): `WM_XBUTTONDOWN + XBUTTON2`
   - Button states extracted from mouseData field
 
-### 2. Jitter Implementation
+### 2. Macro Implementation
 
 #### 2.1 Pattern Generation
+- **Recoil Reduction Pattern**
+  - Constant vertical movement
+  - Configurable strength (1-20)
+  - Primary macro functionality
+  - Always available when enabled
+
 - **Jitter Pattern Array**
   ```csharp
   private readonly (int dx, int dy)[] jitterPattern = {
       (0, 6), (7, 7), (-7, -7), /* ... */
   };
   ```
-- Optimized for natural-looking movement
-- Configurable strength multiplier
-- Pattern loops for continuous movement
+  - Optional secondary functionality
+  - Complex movement patterns
+  - Independent strength control
+  - Toggle activation
 
 #### 2.2 Timer System
-- **High-precision Timer**
-  - Uses Windows.Forms.Timer
-  - Configurable interval (default: 1ms)
-  - Ensures smooth jitter movement
-  - Handles pattern cycling
+- **Dual Timer Implementation**
+  - Recoil Timer: Constant interval for smooth compensation
+  - Jitter Timer: Pattern-based movement
+  - Both use Windows.Forms.Timer
+  - Independent operation and control
 
 #### 2.3 State Management
 - **Activation States**
-  - Macro State (ON/OFF)
+  - Overall Macro State (ON/OFF)
+  - Recoil State (Primary)
+  - Jitter State (Optional)
   - Mouse Button States (LMB, RMB)
-  - Toggle Key State
-  - Jitter Active State
+  - Mode Selection State
 
 ### 3. UI Framework
 
@@ -264,30 +282,18 @@ MouseMacro/
   - Automatic DPI scaling
   - Minimum size constraints
 
+- **Control Panels**
+  - Recoil strength control (1-20)
+  - Jitter mode toggle
+  - Independent jitter strength (1-20)
+  - Bold value displays for both modes
+
 - **Debug Panel**
   - Real-time state monitoring
-  - Event logging system
+  - Mode status tracking
+  - Strength value logging
   - Performance metrics
-  - Toggleable visibility
 
-- **Settings Panel**
-  - Toggle key configuration
-  - Jitter strength adjustment
-  - System tray options
-  - Persistence management
-
-#### 3.2 System Tray Integration
-- **Context Menu**
-  - Show/Hide window
-  - Quick access to settings
-  - Status information
-  - Clean exit option
-
-- **Notification Icon**
-  - Custom Notes&Tasks icon
-  - Double-click restoration
-  - Tooltip status display
-  - State indication
 
 ### 4. Error Handling and Logging
 
@@ -305,6 +311,7 @@ MouseMacro/
   - Error reporting
   - Performance monitoring
 
+
 ### 5. Performance Considerations
 
 #### 5.1 Resource Management
@@ -321,6 +328,7 @@ MouseMacro/
   - Efficient state checks
   - Minimal redraws
 
+
 ### 6. Security Features
 
 #### 6.1 Process Protection
@@ -335,12 +343,14 @@ MouseMacro/
   - Runtime privilege checks
   - Secure API access
 
+
 ### 7. Customization Support
 
 #### 7.1 User Preferences
 - **Configurable Elements**
   - Toggle key binding
   - Jitter strength (1-20)
+  - Recoil reducer strength (1-20)
   - UI theme settings
   - Startup behavior
 
@@ -350,6 +360,7 @@ MouseMacro/
   - Window position/state
   - Last used configuration
   - Automatic restoration
+
 
 ## Troubleshooting and Maintenance
 
@@ -390,6 +401,7 @@ MouseMacro/
 - Performance optimization
 - Security audits
 - Feature updates
+
 
 ## Usage Scenarios
 
@@ -453,7 +465,7 @@ MouseMacro/
    dotnet build --configuration Release
    ```
    The executable will be generated at:
-   `bin/Release/net6.0-windows/MouseMacro.exe`
+   `bin/Release/net6.0-windows/NotesTasks.exe`
 
 3. **Administrator Privileges**:
    - Required for global keyboard/mouse hooks
@@ -462,7 +474,7 @@ MouseMacro/
 ## User Guide
 
 1. **Running the Application**:
-   - Double-click MouseMacro.exe in the bin/Release/net6.0-windows folder
+   - Double-click NotesTasks.exe in the bin/Release/net6.0-windows folder
    - Application icon will be visible in taskbar and window title
    - Only one instance can run at a time
 

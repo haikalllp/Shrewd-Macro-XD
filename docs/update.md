@@ -68,6 +68,32 @@ private readonly (int dx, int dy)[] recoilPattern = new[]
 - Mode selection persists between macro toggles
 - Administrator privileges still required
 
+## UI Improvements (2025-02-19)
+
+### Enhanced Text Formatting
+- Improved text formatting for better readability
+- Implemented dedicated labels for values and prefixes
+- Added bold styling for important values:
+  - Current toggle key
+  - Jitter strength
+  - Recoil strength
+- Removed complex Graphics-based text rendering in favor of native label controls
+
+### Code Improvements
+- Enhanced thread safety with proper InvokeRequired checks
+- Improved code maintainability by separating label updates
+- Standardized debug message handling
+- Optimized performance by eliminating manual Graphics operations
+
+### Technical Details
+- Split labels into prefix and value components for better control
+- Implemented dedicated update methods:
+  - `UpdateCurrentKey(string key)`
+  - `UpdateJitterStrength(int strength)`
+  - `UpdateRecoilStrength(int strength)`
+- Standardized debug message format across all updates
+- Maintained consistent white text color with Segoe UI font
+
 ## Mouse Button Toggle Support Update (2025-02-18)
 
 ### Overview
