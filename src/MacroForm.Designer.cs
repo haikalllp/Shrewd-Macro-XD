@@ -31,6 +31,13 @@ namespace NotesTasks
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MacroForm));
             this.mainPanel = new System.Windows.Forms.Panel();
+            this.lblJitterActive = new System.Windows.Forms.Label();
+            this.lblRecoilActive = new System.Windows.Forms.Label();
+            this.chkAlwaysRecoil = new System.Windows.Forms.CheckBox();
+            this.chkAlwaysJitter = new System.Windows.Forms.CheckBox();
+            this.btnSetMacroSwitch = new System.Windows.Forms.Button();
+            this.lblMacroSwitchKeyValue = new System.Windows.Forms.Label();
+            this.lblMacroSwitchKeyPrefix = new System.Windows.Forms.Label();
             this.settingsPanel = new System.Windows.Forms.Panel();
             this.lblCurrentKeyPrefix = new System.Windows.Forms.Label();
             this.lblCurrentKeyValue = new System.Windows.Forms.Label();
@@ -39,7 +46,6 @@ namespace NotesTasks
             this.debugPanel = new System.Windows.Forms.Panel();
             this.debugLabel = new System.Windows.Forms.TextBox();
             this.btnToggleDebug = new System.Windows.Forms.Button();
-            this.chkJitterEnabled = new System.Windows.Forms.CheckBox();
             this.strengthPanel1 = new System.Windows.Forms.Panel();
             this.lblRecoilStrengthPrefix = new System.Windows.Forms.Label();
             this.lblRecoilStrengthValue = new System.Windows.Forms.Label();
@@ -68,18 +74,15 @@ namespace NotesTasks
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.mainPanel.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
+            this.mainPanel.Controls.Add(this.lblJitterActive);
+            this.mainPanel.Controls.Add(this.lblRecoilActive);
+            this.mainPanel.Controls.Add(this.chkAlwaysRecoil);
+            this.mainPanel.Controls.Add(this.chkAlwaysJitter);
+            this.mainPanel.Controls.Add(this.btnSetMacroSwitch);
+            this.mainPanel.Controls.Add(this.lblMacroSwitchKeyValue);
+            this.mainPanel.Controls.Add(this.lblMacroSwitchKeyPrefix);
             this.mainPanel.Controls.Add(this.debugPanel);
             this.mainPanel.Controls.Add(this.btnToggleDebug);
-            this.mainPanel.Controls.Add(this.chkJitterEnabled);
-            this.chkJitterEnabled.AutoSize = true;
-            this.chkJitterEnabled.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.chkJitterEnabled.ForeColor = System.Drawing.Color.White;
-            this.chkJitterEnabled.Location = new System.Drawing.Point(16, 208);
-            this.chkJitterEnabled.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
-            this.chkJitterEnabled.Name = "chkJitterEnabled";
-            this.chkJitterEnabled.Size = new System.Drawing.Size(150, 24);
-            this.chkJitterEnabled.TabIndex = 4;
-            this.chkJitterEnabled.Text = "Enable Jitter Mode";
             this.mainPanel.Controls.Add(this.strengthPanel1);
             this.mainPanel.Controls.Add(this.strengthPanel2);
             this.mainPanel.Controls.Add(this.settingsPanel);
@@ -88,6 +91,16 @@ namespace NotesTasks
             this.mainPanel.Padding = new System.Windows.Forms.Padding(16);
             this.mainPanel.Size = new System.Drawing.Size(384, 461);
             this.mainPanel.TabIndex = 0;
+
+            // Adjust strengthPanel1 location
+            this.strengthPanel1.Location = new System.Drawing.Point(16, 200);
+
+            // Adjust strengthPanel2 location
+            this.strengthPanel2.Location = new System.Drawing.Point(16, 280);
+
+            // Adjust debug button location
+            this.btnToggleDebug.Location = new System.Drawing.Point(16, 380);
+
             // 
             // settingsPanel
             // 
@@ -162,10 +175,10 @@ namespace NotesTasks
             this.debugPanel.BackColor = System.Drawing.Color.FromArgb(20, 20, 20);
             this.debugPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.debugPanel.Controls.Add(this.debugLabel);
-            this.debugPanel.Location = new System.Drawing.Point(16, 272);
+            this.debugPanel.Location = new System.Drawing.Point(16, 420);
             this.debugPanel.Name = "debugPanel";
             this.debugPanel.Padding = new System.Windows.Forms.Padding(8);
-            this.debugPanel.Size = new System.Drawing.Size(352, 173);
+            this.debugPanel.Size = new System.Drawing.Size(352, 21);
             this.debugPanel.TabIndex = 7;
             this.debugPanel.Visible = false;
             // 
@@ -181,7 +194,7 @@ namespace NotesTasks
             this.debugLabel.Name = "debugLabel";
             this.debugLabel.ReadOnly = true;
             this.debugLabel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.debugLabel.Size = new System.Drawing.Size(334, 155);
+            this.debugLabel.Size = new System.Drawing.Size(334, 5);
             this.debugLabel.TabIndex = 0;
             this.debugLabel.WordWrap = true;
             // 
@@ -192,7 +205,7 @@ namespace NotesTasks
             this.btnToggleDebug.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnToggleDebug.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnToggleDebug.ForeColor = System.Drawing.Color.White;
-            this.btnToggleDebug.Location = new System.Drawing.Point(16, 240);
+            this.btnToggleDebug.Location = new System.Drawing.Point(16, 380);
             this.btnToggleDebug.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
             this.btnToggleDebug.Name = "btnToggleDebug";
             this.btnToggleDebug.Size = new System.Drawing.Size(352, 40);
@@ -206,7 +219,7 @@ namespace NotesTasks
             this.strengthPanel1.Controls.Add(this.lblRecoilStrengthValue);
             this.strengthPanel1.Controls.Add(this.lblRecoilStrengthPrefix);
             this.strengthPanel1.Controls.Add(this.trackBarRecoil);
-            this.strengthPanel1.Location = new System.Drawing.Point(16, 128);
+            this.strengthPanel1.Location = new System.Drawing.Point(16, 200);
             this.strengthPanel1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
             this.strengthPanel1.Name = "strengthPanel1";
             this.strengthPanel1.Size = new System.Drawing.Size(352, 80);
@@ -256,7 +269,7 @@ namespace NotesTasks
             this.strengthPanel2.Controls.Add(this.lblJitterStrengthValue);
             this.strengthPanel2.Controls.Add(this.lblJitterStrengthPrefix);
             this.strengthPanel2.Controls.Add(this.trackBarJitter);
-            this.strengthPanel2.Location = new System.Drawing.Point(16, 128);
+            this.strengthPanel2.Location = new System.Drawing.Point(16, 280);
             this.strengthPanel2.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
             this.strengthPanel2.Name = "strengthPanel2";
             this.strengthPanel2.Size = new System.Drawing.Size(352, 80);
@@ -350,6 +363,88 @@ namespace NotesTasks
             ((System.ComponentModel.ISupportInitialize)(this.trackBarRecoil)).EndInit();
             this.ResumeLayout(false);
 
+            // Add Switch Macro Mode controls
+            this.lblMacroSwitchKeyPrefix = new System.Windows.Forms.Label();
+            this.lblMacroSwitchKeyValue = new System.Windows.Forms.Label();
+            this.btnSetMacroSwitch = new System.Windows.Forms.Button();
+            
+            // Add Always Mode checkboxes
+            this.chkAlwaysJitter = new System.Windows.Forms.CheckBox();
+            this.chkAlwaysRecoil = new System.Windows.Forms.CheckBox();
+            
+            // Add Active state labels
+            this.lblRecoilActive = new System.Windows.Forms.Label();
+            this.lblJitterActive = new System.Windows.Forms.Label();
+
+            // Configure Switch Macro Mode controls
+            this.lblMacroSwitchKeyPrefix.AutoSize = true;
+            this.lblMacroSwitchKeyPrefix.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lblMacroSwitchKeyPrefix.ForeColor = System.Drawing.Color.White;
+            this.lblMacroSwitchKeyPrefix.Location = new System.Drawing.Point(16, 112);
+            this.lblMacroSwitchKeyPrefix.Name = "lblMacroSwitchKeyPrefix";
+            this.lblMacroSwitchKeyPrefix.Size = new System.Drawing.Size(130, 20);
+            this.lblMacroSwitchKeyPrefix.Text = "Switch Macro Mode:";
+
+            this.lblMacroSwitchKeyValue.AutoSize = true;
+            this.lblMacroSwitchKeyValue.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lblMacroSwitchKeyValue.ForeColor = System.Drawing.Color.White;
+            this.lblMacroSwitchKeyValue.Location = new System.Drawing.Point(150, 112);
+            this.lblMacroSwitchKeyValue.Name = "lblMacroSwitchKeyValue";
+            this.lblMacroSwitchKeyValue.Size = new System.Drawing.Size(20, 20);
+            this.lblMacroSwitchKeyValue.Text = "Q";
+
+            this.btnSetMacroSwitch.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSetMacroSwitch.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSetMacroSwitch.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnSetMacroSwitch.ForeColor = System.Drawing.Color.White;
+            this.btnSetMacroSwitch.Location = new System.Drawing.Point(16, 140);
+            this.btnSetMacroSwitch.Name = "btnSetMacroSwitch";
+            this.btnSetMacroSwitch.Size = new System.Drawing.Size(352, 40);
+            this.btnSetMacroSwitch.Text = "Set Switch Key";
+
+            // Configure Always Mode checkboxes
+            this.chkAlwaysJitter.AutoSize = true;
+            this.chkAlwaysJitter.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.chkAlwaysJitter.ForeColor = System.Drawing.Color.White;
+            this.chkAlwaysJitter.Location = new System.Drawing.Point(16, 340);
+            this.chkAlwaysJitter.Name = "chkAlwaysJitter";
+            this.chkAlwaysJitter.Size = new System.Drawing.Size(150, 24);
+            this.chkAlwaysJitter.Text = "Always Jitter Mode";
+
+            this.chkAlwaysRecoil.AutoSize = true;
+            this.chkAlwaysRecoil.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.chkAlwaysRecoil.ForeColor = System.Drawing.Color.White;
+            this.chkAlwaysRecoil.Location = new System.Drawing.Point(180, 340);
+            this.chkAlwaysRecoil.Name = "chkAlwaysRecoil";
+            this.chkAlwaysRecoil.Size = new System.Drawing.Size(150, 24);
+            this.chkAlwaysRecoil.Text = "Always Recoil Mode";
+
+            // Configure Active state labels
+            this.lblRecoilActive.AutoSize = true;
+            this.lblRecoilActive.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lblRecoilActive.ForeColor = System.Drawing.Color.LightGreen;
+            this.lblRecoilActive.Location = new System.Drawing.Point(250, 200);
+            this.lblRecoilActive.Name = "lblRecoilActive";
+            this.lblRecoilActive.Size = new System.Drawing.Size(60, 20);
+            this.lblRecoilActive.Text = "";
+
+            this.lblJitterActive.AutoSize = true;
+            this.lblJitterActive.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lblJitterActive.ForeColor = System.Drawing.Color.LightGreen;
+            this.lblJitterActive.Location = new System.Drawing.Point(250, 280);
+            this.lblJitterActive.Name = "lblJitterActive";
+            this.lblJitterActive.Size = new System.Drawing.Size(60, 20);
+            this.lblJitterActive.Text = "";
+
+            // Add new controls to the form
+            this.mainPanel.Controls.Add(this.lblMacroSwitchKeyPrefix);
+            this.mainPanel.Controls.Add(this.lblMacroSwitchKeyValue);
+            this.mainPanel.Controls.Add(this.btnSetMacroSwitch);
+            this.mainPanel.Controls.Add(this.chkAlwaysJitter);
+            this.mainPanel.Controls.Add(this.chkAlwaysRecoil);
+            this.mainPanel.Controls.Add(this.lblRecoilActive);
+            this.mainPanel.Controls.Add(this.lblJitterActive);
         }
 
         #endregion
@@ -371,10 +466,16 @@ namespace NotesTasks
         private System.Windows.Forms.ContextMenuStrip trayContextMenu;
         private System.Windows.Forms.ToolStripMenuItem showWindowMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitMenuItem;
-        private System.Windows.Forms.CheckBox chkMinimizeToTray;
-        private System.Windows.Forms.CheckBox chkJitterEnabled;
+        private System.Windows.Forms.Panel settingsPanel;
         private System.Windows.Forms.Panel strengthPanel1;
         private System.Windows.Forms.Panel strengthPanel2;
-        private System.Windows.Forms.Panel settingsPanel;
+        private System.Windows.Forms.CheckBox chkMinimizeToTray;
+        private System.Windows.Forms.Button btnSetMacroSwitch;
+        private System.Windows.Forms.Label lblMacroSwitchKeyPrefix;
+        private System.Windows.Forms.Label lblMacroSwitchKeyValue;
+        private System.Windows.Forms.CheckBox chkAlwaysJitter;
+        private System.Windows.Forms.CheckBox chkAlwaysRecoil;
+        private System.Windows.Forms.Label lblRecoilActive;
+        private System.Windows.Forms.Label lblJitterActive;
     }
 }
