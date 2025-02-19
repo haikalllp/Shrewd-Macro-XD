@@ -39,10 +39,10 @@ namespace NotesTasks
             this.lblMacroSwitchKeyValue = new System.Windows.Forms.Label();
             this.lblMacroSwitchKeyPrefix = new System.Windows.Forms.Label();
             this.settingsPanel = new System.Windows.Forms.Panel();
-            this.lblCurrentKeyPrefix = new System.Windows.Forms.Label();
             this.lblCurrentKeyValue = new System.Windows.Forms.Label();
-            this.chkMinimizeToTray = new System.Windows.Forms.CheckBox();
+            this.lblCurrentKeyPrefix = new System.Windows.Forms.Label();
             this.btnSetKey = new System.Windows.Forms.Button();
+            this.chkMinimizeToTray = new System.Windows.Forms.CheckBox();
             this.debugPanel = new System.Windows.Forms.Panel();
             this.debugLabel = new System.Windows.Forms.TextBox();
             this.btnToggleDebug = new System.Windows.Forms.Button();
@@ -89,17 +89,17 @@ namespace NotesTasks
             this.mainPanel.Location = new System.Drawing.Point(0, 0);
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.Padding = new System.Windows.Forms.Padding(16);
-            this.mainPanel.Size = new System.Drawing.Size(384, 461);
+            this.mainPanel.Size = new System.Drawing.Size(384, 661);
             this.mainPanel.TabIndex = 0;
 
             // Adjust strengthPanel1 location
-            this.strengthPanel1.Location = new System.Drawing.Point(16, 200);
+            this.strengthPanel1.Location = new System.Drawing.Point(16, 196);
 
             // Adjust strengthPanel2 location
-            this.strengthPanel2.Location = new System.Drawing.Point(16, 280);
+            this.strengthPanel2.Location = new System.Drawing.Point(16, 292);
 
             // Adjust debug button location
-            this.btnToggleDebug.Location = new System.Drawing.Point(16, 380);
+            this.btnToggleDebug.Location = new System.Drawing.Point(16, 428);
 
             // 
             // settingsPanel
@@ -124,16 +124,16 @@ namespace NotesTasks
             this.lblCurrentKeyPrefix.Location = new System.Drawing.Point(0, 12);
             this.lblCurrentKeyPrefix.Margin = new System.Windows.Forms.Padding(0);
             this.lblCurrentKeyPrefix.Name = "lblCurrentKeyPrefix";
-            this.lblCurrentKeyPrefix.Size = new System.Drawing.Size(95, 20);
+            this.lblCurrentKeyPrefix.Size = new System.Drawing.Size(120, 20);
             this.lblCurrentKeyPrefix.TabIndex = 0;
-            this.lblCurrentKeyPrefix.Text = "Current Key: ";
+            this.lblCurrentKeyPrefix.Text = "Macro Toggle Key:";
             // 
             // lblCurrentKeyValue
             // 
             this.lblCurrentKeyValue.AutoSize = true;
             this.lblCurrentKeyValue.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.lblCurrentKeyValue.ForeColor = System.Drawing.Color.White;
-            this.lblCurrentKeyValue.Location = new System.Drawing.Point(95, 12);
+            this.lblCurrentKeyValue.Location = new System.Drawing.Point(120, 12);
             this.lblCurrentKeyValue.Margin = new System.Windows.Forms.Padding(0);
             this.lblCurrentKeyValue.Name = "lblCurrentKeyValue";
             this.lblCurrentKeyValue.Size = new System.Drawing.Size(60, 20);
@@ -175,10 +175,10 @@ namespace NotesTasks
             this.debugPanel.BackColor = System.Drawing.Color.FromArgb(20, 20, 20);
             this.debugPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.debugPanel.Controls.Add(this.debugLabel);
-            this.debugPanel.Location = new System.Drawing.Point(16, 420);
+            this.debugPanel.Location = new System.Drawing.Point(16, 484);
             this.debugPanel.Name = "debugPanel";
             this.debugPanel.Padding = new System.Windows.Forms.Padding(8);
-            this.debugPanel.Size = new System.Drawing.Size(352, 21);
+            this.debugPanel.Size = new System.Drawing.Size(352, 173);
             this.debugPanel.TabIndex = 7;
             this.debugPanel.Visible = false;
             // 
@@ -194,7 +194,7 @@ namespace NotesTasks
             this.debugLabel.Name = "debugLabel";
             this.debugLabel.ReadOnly = true;
             this.debugLabel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.debugLabel.Size = new System.Drawing.Size(334, 5);
+            this.debugLabel.Size = new System.Drawing.Size(334, 157);
             this.debugLabel.TabIndex = 0;
             this.debugLabel.WordWrap = true;
             // 
@@ -205,7 +205,7 @@ namespace NotesTasks
             this.btnToggleDebug.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnToggleDebug.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnToggleDebug.ForeColor = System.Drawing.Color.White;
-            this.btnToggleDebug.Location = new System.Drawing.Point(16, 380);
+            this.btnToggleDebug.Location = new System.Drawing.Point(16, 428);
             this.btnToggleDebug.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
             this.btnToggleDebug.Name = "btnToggleDebug";
             this.btnToggleDebug.Size = new System.Drawing.Size(352, 40);
@@ -219,7 +219,7 @@ namespace NotesTasks
             this.strengthPanel1.Controls.Add(this.lblRecoilStrengthValue);
             this.strengthPanel1.Controls.Add(this.lblRecoilStrengthPrefix);
             this.strengthPanel1.Controls.Add(this.trackBarRecoil);
-            this.strengthPanel1.Location = new System.Drawing.Point(16, 200);
+            this.strengthPanel1.Location = new System.Drawing.Point(16, 196);
             this.strengthPanel1.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
             this.strengthPanel1.Name = "strengthPanel1";
             this.strengthPanel1.Size = new System.Drawing.Size(352, 80);
@@ -247,7 +247,7 @@ namespace NotesTasks
             this.lblRecoilStrengthValue.Name = "lblRecoilStrengthValue";
             this.lblRecoilStrengthValue.Size = new System.Drawing.Size(17, 20);
             this.lblRecoilStrengthValue.TabIndex = 1;
-            this.lblRecoilStrengthValue.Text = "3";
+            this.lblRecoilStrengthValue.Text = "1";
             // 
             // trackBarRecoil
             // 
@@ -260,7 +260,7 @@ namespace NotesTasks
             this.trackBarRecoil.Name = "trackBarRecoil";
             this.trackBarRecoil.Size = new System.Drawing.Size(352, 45);
             this.trackBarRecoil.TabIndex = 8;
-            this.trackBarRecoil.Value = 3;
+            this.trackBarRecoil.Value = 1;
             // 
             // strengthPanel2
             // 
@@ -269,7 +269,7 @@ namespace NotesTasks
             this.strengthPanel2.Controls.Add(this.lblJitterStrengthValue);
             this.strengthPanel2.Controls.Add(this.lblJitterStrengthPrefix);
             this.strengthPanel2.Controls.Add(this.trackBarJitter);
-            this.strengthPanel2.Location = new System.Drawing.Point(16, 280);
+            this.strengthPanel2.Location = new System.Drawing.Point(16, 292);
             this.strengthPanel2.Margin = new System.Windows.Forms.Padding(0, 0, 0, 16);
             this.strengthPanel2.Name = "strengthPanel2";
             this.strengthPanel2.Size = new System.Drawing.Size(352, 80);
@@ -344,9 +344,9 @@ namespace NotesTasks
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
-            this.ClientSize = new System.Drawing.Size(384, 461);
+            this.ClientSize = new System.Drawing.Size(384, 661);
             this.Controls.Add(this.mainPanel);
-            this.MinimumSize = new System.Drawing.Size(400, 500);
+            this.MinimumSize = new System.Drawing.Size(400, 700);
             this.Name = "MacroForm";
             this.Text = "Notes&Tasks";
             this.trayContextMenu.ResumeLayout(false);
@@ -407,7 +407,7 @@ namespace NotesTasks
             this.chkAlwaysJitter.AutoSize = true;
             this.chkAlwaysJitter.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.chkAlwaysJitter.ForeColor = System.Drawing.Color.White;
-            this.chkAlwaysJitter.Location = new System.Drawing.Point(16, 340);
+            this.chkAlwaysJitter.Location = new System.Drawing.Point(16, 388);
             this.chkAlwaysJitter.Name = "chkAlwaysJitter";
             this.chkAlwaysJitter.Size = new System.Drawing.Size(150, 24);
             this.chkAlwaysJitter.Text = "Always Jitter Mode";
@@ -415,7 +415,7 @@ namespace NotesTasks
             this.chkAlwaysRecoil.AutoSize = true;
             this.chkAlwaysRecoil.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.chkAlwaysRecoil.ForeColor = System.Drawing.Color.White;
-            this.chkAlwaysRecoil.Location = new System.Drawing.Point(180, 340);
+            this.chkAlwaysRecoil.Location = new System.Drawing.Point(180, 388);
             this.chkAlwaysRecoil.Name = "chkAlwaysRecoil";
             this.chkAlwaysRecoil.Size = new System.Drawing.Size(150, 24);
             this.chkAlwaysRecoil.Text = "Always Recoil Mode";
@@ -424,7 +424,7 @@ namespace NotesTasks
             this.lblRecoilActive.AutoSize = true;
             this.lblRecoilActive.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.lblRecoilActive.ForeColor = System.Drawing.Color.LightGreen;
-            this.lblRecoilActive.Location = new System.Drawing.Point(250, 200);
+            this.lblRecoilActive.Location = new System.Drawing.Point(280, 196);
             this.lblRecoilActive.Name = "lblRecoilActive";
             this.lblRecoilActive.Size = new System.Drawing.Size(60, 20);
             this.lblRecoilActive.Text = "";
@@ -432,7 +432,7 @@ namespace NotesTasks
             this.lblJitterActive.AutoSize = true;
             this.lblJitterActive.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.lblJitterActive.ForeColor = System.Drawing.Color.LightGreen;
-            this.lblJitterActive.Location = new System.Drawing.Point(250, 280);
+            this.lblJitterActive.Location = new System.Drawing.Point(280, 292);
             this.lblJitterActive.Name = "lblJitterActive";
             this.lblJitterActive.Size = new System.Drawing.Size(60, 20);
             this.lblJitterActive.Text = "";
