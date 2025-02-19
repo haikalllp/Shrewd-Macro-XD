@@ -4,14 +4,27 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UacUIApproved>true</UacUIApproved>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>MouseMacro</AssemblyName>
-    <RootNamespace>MouseMacro</RootNamespace>
+    <AssemblyName>NotesTasks</AssemblyName>
+    <RootNamespace>NotesTasks</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ApplicationIcon>assets\logo.ico</ApplicationIcon>
-    <Title>Mouse Macro</Title>
+    <Title>Notes &amp; Tasks</Title>
     <Authors>HaikalLLP</Authors>
-    <Description>Mouse Macro Application for Gaming</Description>
+    <Description>Task Management and Note Taking Application</Description>
+    <SignAssembly>true</SignAssembly>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

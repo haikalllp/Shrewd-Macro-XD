@@ -1,92 +1,236 @@
-# Mouse Macro Application
+# Notes & Tasks (Mouse Macro)
 
-A Windows Forms application built with C# (.NET 6.0) designed for creating and managing mouse macros with customizable jitter effects. This application features a modern, dark-themed UI, support for configuring a toggle key, debug information, system tray integration, and single-instance enforcement.
+A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. For professional system integration, the application presents itself as "Notes&Tasks" 😊.
 
 ## Features
 
-- **Modern UI**: A sleek, dark-themed interface that provides a clear view of macro settings and debug information.
-- **Toggle Key Configuration**: Easily set a toggle key to activate/deactivate the macro. The active toggle key is displayed clearly on the main window.
-- **Jitter Logic**: Introduces jitter effects for mouse macros with adjustable strength via a trackbar.
-- **Debug Panel**: A collapsible panel that shows real-time debug information, including status updates and error messages.
-- **System Tray Integration**: Option to minimize the application to the system tray instead of exiting. The tray icon includes a context menu for restoring the window or completely exiting the application.
-- **Window Resizing**: The main window is resizable, and controls will adjust accordingly to fit the new size, ensuring a flexible user experience.
-- **Single Instance Enforcement**: Utilizes a global mutex to ensure that only one instance of the application runs at a time.
+- **Recoil Compensation**
+  - Vertical movement compensation
+  - Adjustable strength (1-20)
+  - Real-time adjustments
+  - Smooth pattern implementation
 
-## Project Structure
+- **Jitter System**
+  - Complex movement patterns
+  - Independent strength control
+  - Pattern cycling
+  - Configurable activation
 
-```
-MouseMacro/
-├── assets/                  # Application assets (e.g., logo.ico)
-├── docs/                    # Documentation
-│   ├── architecture.md      # Detailed architecture documentation
-│   └── LuaScript.lua        # Original Lua implementation (reference)
-├── src/                     # Source code
-│   ├── MacroForm.cs         # Main form logic and UI behavior
-│   ├── MacroForm.Designer.cs# Form designer code
-│   └── Program.cs           # Application entry point with single instance enforcement
-├── MouseMacro.csproj        # Project file with build configuration
-└── README.md                # This file
-```
+- **Professional Integration**
+  - Clean system tray integration
+  - Modern dark theme UI
+  - Minimal resource usage
+  - Single instance enforcement
 
-## Installation and Build
+## Requirements
 
-### Prerequisites
+### Hardware
+- Windows 10/11 compatible PC
+- DirectX compatible display
+- Mouse with standard buttons
+- Keyboard for hotkey support
 
-- Windows OS (e.g., Windows 10)
-- .NET 6.0 SDK
-- Visual Studio or Visual Studio Code (recommended for editing)
+### Software
+- Windows 10/11 (64-bit)
+- .NET 6.0 Runtime
+- Administrator privileges
+- DirectX 9.0c or later
 
-### Build Instructions
+### Optional
+- Multi-button mouse for extended features
+- High refresh rate display (recommended)
+- SSD for faster startup (recommended)
 
-1. Open a terminal in the project root directory (`e:\CODING\Projects\CODE\Macro`).
-2. Run the following commands to clean and build the project:
+## Installation
 
-   ```bash
-   dotnet clean
-   dotnet build --configuration Release
+1. **Download**
+   - Get the latest release from the releases page
+   - Choose between Debug and Release builds
+
+2. **Setup**
+   - Extract the files to your preferred location
+   - No installation required (portable application)
+   - Run `NotesTasks.exe` with administrator privileges
+
+## Building from Source
+
+### Method 1: Using Build Script
+1. Clone the repository
+2. Double-click `build.bat`
+   - Script automatically requests admin rights
+   - Builds both Debug and Release configurations
+
+### Method 2: Manual Build
+1. Open command prompt
+2. Navigate to project directory
+3. Run commands:
+   ```cmd
+   # Debug build
+   dotnet build -c Debug
+
+   # Release build
+   dotnet build -c Release
    ```
 
-3. The executable will be generated at:
-   `bin/Release/net6.0-windows/MouseMacro.exe`
+### Output Locations
+- Debug: `bin/Debug/net6.0-windows/NotesTasks.exe`
+- Release: `bin/Release/net6.0-windows/NotesTasks.exe`
 
-## Usage
+## Usage Guide
 
-1. **Launching the Application**
-   - Double-click the `MouseMacro.exe` or use the provided shortcut in the project root `Macro Jitter Apex`.
-   - The application window displays the current toggle key, jitter strength, and provides buttons to set keys and toggle debug mode.
+### Basic Controls
+1. **Toggle Key**
+   - Click "Set Toggle Key" button
+   - Press any key to set as toggle
+   - Current toggle key shown in bold
 
-2. **Configuring the Toggle Key**
-   - Click the "Set Toggle Key" button and press any key to assign a new toggle key for activating/deactivating the macro.
-   - The selected key will be displayed as "Current Toggle Key: <Key>".
+2. **Strength Adjustment**
+   - Use slider to set strength (1-20)
+   - Changes apply immediately
+   - Separate controls for recoil and jitter
 
-3. **Adjusting Jitter
-   - Use the trackbar to adjust the jitter strength on the fly. The current value is displayed above the slider.
+3. **System Tray**
+   - Optional minimize to tray
+   - Double-click tray icon to restore
+   - Right-click for context menu
+   - Clean exit via tray menu
 
-4. **Debug Mode**
-   - Toggle the debug panel by clicking "Show Debug Info". This panel provides real-time updates and error messages.
+### Advanced Features
 
-5. **System Tray Integration and Exit Handling**
-   - Check the "Minimize to System Tray" option to enable tray behavior. When enabled, closing the window minimizes the application to the system tray instead of terminating it.
-   - To restore the application, double-click the tray icon or choose "Show Window" from its context menu.
-   - To completely exit the application, click "Exit" from the tray context menu.
+1. **Debug Panel**
+   - Toggle with "Show Debug Info"
+   - Real-time state monitoring
+   - Performance metrics
+   - Input state tracking
 
-6. **Single Instance Enforcement**
-   - The application prevents multiple instances by using a global mutex. If another instance is detected, an informative message is displayed.
+2. **Macro Activation**
+   - Use toggle key for ON/OFF
+   - Hold both LMB + RMB simultaneously for macro activation
+   - You can toggle jiter mode
+   - Window title shows current state
 
-## Architecture and Design
+## Usage Scenarios
 
-For a detailed overview of the system design and the evolution of the application, please refer to the [architecture.md](docs/architecture.md) document in the docs folder. It explains the UI layout, component interactions, and the rationale behind key design decisions.
+### Macro Activation Mechanics
+
+1. **Basic Controls**
+   - Toggle Key: Turns the entire macro system ON/OFF
+   - Activation Trigger: Both LMB (Left Mouse Button) + RMB (Right Mouse Button) must be held simultaneously
+   - Window Title: Shows current macro state (ON/OFF)
+
+2. **Using Recoil Reducer**
+   - First ensure macro is ON using toggle key
+   - Hold both LMB + RMB simultaneously to activate
+   - Recoil compensation starts immediately
+   - Release either button to stop
+   - Adjust strength (1-20) using the slider
+
+3. **Using Jitter Mode**
+   - Enable Jitter mode using the toggle
+   - Ensure macro is ON using toggle key
+   - Hold both LMB + RMB simultaneously to activate
+   - Jitter pattern starts immediately
+   - Release either button to stop
+   - Adjust strength independently (1-20)
+
+### Example Scenarios
+
+1. **Recoil Only**
+   ```
+   1. Press Toggle Key → Macro ON
+   2. Hold LMB + RMB together → Recoil compensation active
+   3. Release either button → Recoil compensation stops
+   4. Adjust strength as needed
+   ```
+
+2. **Recoil with Jitter**
+   ```
+   1. Press Toggle Key → Macro ON
+   2. Enable Jitter mode
+   3. Hold LMB + RMB together → Both effects active
+   4. Release either button → All effects stop
+   5. Adjust both strengths independently
+   ```
+
+3. **No Effects**
+   ```
+   - Macro OFF → No effects regardless of buttons
+   - Macro ON but single button → No effects
+   - Macro ON but buttons pressed separately → No effects
+   ```
+
+### Important Notes
+- Effects ONLY activate when BOTH buttons are held simultaneously
+- Releasing either button immediately stops all effects
+- Toggle key provides quick way to disable all functionality
+- Jitter can be toggled independently but requires same activation (LMB + RMB)
+- Always check window title to confirm macro state
 
 ## Troubleshooting
 
-- **Icon or Resource Issues**: Ensure that the `assets` folder containing `logo.ico` is present in the project directory.
-- **Permissions**: Global hooks and system tray operations may require running the application with appropriate privileges.
-- **Build/Run Errors**: Clean and rebuild the project if you encounter unexpected errors.
+### Common Issues
+
+1. **"Another instance is running"**
+   - Check Task Manager
+   - End existing process if necessary
+   - Restart application
+
+2. **Admin Rights Required**
+   - Run as administrator
+   - Use build.bat for automatic elevation
+   - Check app.manifest settings
+
+3. **Performance Issues**
+   - Switch to Release build
+   - Check system resources
+   - Adjust timer intervals
+   - Monitor debug panel
+
+## Development
+
+### Environment Setup
+1. Install Visual Studio 2022 or later
+2. Install .NET 6.0 SDK
+3. Clone repository
+4. Open solution file
+
+### Project Structure
+```
+MouseMacro/
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon
+├── bin/                    # Compiled binaries
+│   ├── Debug/             # Debug build output
+│   └── Release/           # Release build output
+├── docs/                   # Documentation
+├── obj/                    # Intermediate build files
+│   ├── Debug/             # Debug build intermediates
+│   │   └── net6.0-windows/
+│   │       ├── ref/       # Assembly reference files
+│   │       ├── refint/    # Reference interface files
+│   │       └── *.cache    # Build cache files
+│   └── Release/           # Release build intermediates
+├── src/                    # Source code
+│   ├── MacroForm.cs       # Main form implementation
+│   ├── MacroForm.Designer.cs # Form designer code
+│   └── Program.cs         # Application entry point
+├── MouseMacro.csproj      # Project configuration
+├── README.md              # Project documentation and setup guide
+└── app.manifest           # Application manifest
+```
+
+## Contributing
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Submit pull request
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgements
+## Acknowledgments
 
-Thanks to the development team for designing this intuitive and reliable mouse macro application.
+- Windows Forms (.NET 6.0)
+- Windows API (user32.dll)
+- .NET Community
