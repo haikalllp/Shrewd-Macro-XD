@@ -208,8 +208,8 @@ namespace NotesTasks
 
         private void InitializeCustomComponents()
         {
-            // Set initial text
-            lblCurrentKey.Text = "Current Key: Capital";
+            // Set initial text with bold formatting
+            UpdateCurrentKey(toggleKey.ToString());
 
             btnSetKey.Click += (sender, e) => 
             {
@@ -221,14 +221,14 @@ namespace NotesTasks
             trackBarJitter.ValueChanged += (sender, e) =>
             {
                 jitterStrength = trackBarJitter.Value;
-                lblJitterStrength.Text = $"Jitter Strength: {jitterStrength}";
+                UpdateJitterStrength(jitterStrength);
                 UpdateDebugInfo($"Jitter strength set to {jitterStrength}");
             };
 
             trackBarRecoil.ValueChanged += (sender, e) =>
             {
                 recoilStrength = trackBarRecoil.Value;
-                lblRecoilStrength.Text = $"Recoil Strength: {recoilStrength}";
+                UpdateRecoilStrength(recoilStrength);
                 UpdateDebugInfo($"Recoil strength set to {recoilStrength}");
             };
 
@@ -236,7 +236,7 @@ namespace NotesTasks
             {
                 jitterEnabled = chkJitterEnabled.Checked;
                 string mode = jitterEnabled ? "Jitter" : "Recoil Reducer";
-                UpdateDebugInfo($"Switched to {mode} mode");
+                UpdateDebugInfo($"Switched to {mode} mode - Strength: {(jitterEnabled ? jitterStrength : recoilStrength)}");
                 UpdateTitle();
                 
                 // Show/hide appropriate controls
@@ -250,9 +250,9 @@ namespace NotesTasks
                 btnToggleDebug.Text = debugPanel.Visible ? "Hide Debug Info" : "Show Debug Info";
             };
 
-            // Initialize visibility
-            strengthPanel1.Visible = !jitterEnabled; // Recoil controls
-            strengthPanel2.Visible = jitterEnabled;  // Jitter controls
+            // Initialize visibility and labels
+            strengthPanel1.Visible = !jitterEnabled;
+            strengthPanel2.Visible = jitterEnabled;
         }
 
         private void InitializeHooks()
@@ -288,15 +288,13 @@ namespace NotesTasks
                         isSettingKey = false;
                         btnSetKey.Text = "Set Toggle Key";
                         btnSetKey.Enabled = true;
-                        lblCurrentKey.Text = $"Current Key: {key}";
+                        UpdateCurrentKey(toggleKey.ToString());
                         UpdateDebugInfo($"Toggle key set to {key}");
                         return (IntPtr)1; // Handle the key
                     }
                     else if (currentToggleType == ToggleType.Keyboard && key == toggleKey)
                     {
-                        isMacroOn = !isMacroOn;
-                        UpdateTitle();
-                        UpdateDebugInfo($"Macro turned {(isMacroOn ? "ON" : "OFF")}");
+                        ToggleMacro();
                         return (IntPtr)1; // Handle the key
                     }
                 }
@@ -319,7 +317,7 @@ namespace NotesTasks
                         isSettingKey = false;
                         btnSetKey.Text = "Set Toggle Key";
                         btnSetKey.Enabled = true;
-                        lblCurrentKey.Text = "Current Key: Mouse3 (Middle)";
+                        UpdateCurrentKey("Mouse3 (Middle)");
                         UpdateDebugInfo("Toggle key set to Mouse3 (Middle)");
                         return (IntPtr)1; // Handle the key
                     }
@@ -334,7 +332,7 @@ namespace NotesTasks
                             isSettingKey = false;
                             btnSetKey.Text = "Set Toggle Key";
                             btnSetKey.Enabled = true;
-                            lblCurrentKey.Text = "Current Key: Mouse4";
+                            UpdateCurrentKey("Mouse4");
                             UpdateDebugInfo("Toggle key set to Mouse4");
                             return (IntPtr)1; // Handle the key
                         }
@@ -344,7 +342,7 @@ namespace NotesTasks
                             isSettingKey = false;
                             btnSetKey.Text = "Set Toggle Key";
                             btnSetKey.Enabled = true;
-                            lblCurrentKey.Text = "Current Key: Mouse5";
+                            UpdateCurrentKey("Mouse5");
                             UpdateDebugInfo("Toggle key set to Mouse5");
                             return (IntPtr)1; // Handle the key
                         }
@@ -358,9 +356,7 @@ namespace NotesTasks
                         (currentToggleType == ToggleType.MouseX1 && msg == WM_XBUTTONDOWN && IsXButton1(lParam)) ||
                         (currentToggleType == ToggleType.MouseX2 && msg == WM_XBUTTONDOWN && IsXButton2(lParam)))
                     {
-                        isMacroOn = !isMacroOn;
-                        UpdateTitle();
-                        UpdateDebugInfo($"Macro turned {(isMacroOn ? "ON" : "OFF")}");
+                        ToggleMacro();
                         return (IntPtr)1; // Handle the key
                     }
                     else
@@ -410,13 +406,27 @@ namespace NotesTasks
             {
                 isJittering = true;
                 jitterTimer.Change(0, 10);
-                UpdateDebugInfo($"{(jitterEnabled ? "Jitter" : "Recoil")} started");
+                if (jitterEnabled)
+                {
+                    UpdateDebugInfo($"Jitter started - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}");
+                }
+                else
+                {
+                    UpdateDebugInfo($"Recoil Reducer started - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}");
+                }
             }
             else if (!shouldActivate && isJittering)
             {
                 isJittering = false;
                 jitterTimer.Change(Timeout.Infinite, 10);
-                UpdateDebugInfo($"{(jitterEnabled ? "Jitter" : "Recoil")} stopped");
+                if (jitterEnabled)
+                {
+                    UpdateDebugInfo($"Jitter stopped - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}");
+                }
+                else
+                {
+                    UpdateDebugInfo($"Recoil Reducer stopped - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}");
+                }
             }
         }
 
@@ -464,6 +474,39 @@ namespace NotesTasks
         {
             string mode = jitterEnabled ? "Jitter" : "Recoil Reducer";
             this.Text = $"Notes&Tasks [{(isMacroOn ? "ON" : "OFF")}] - {mode} Mode";
+        }
+
+        private void UpdateCurrentKey(string key)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string>(UpdateCurrentKey), key);
+                return;
+            }
+            lblCurrentKeyValue.Text = key;
+            UpdateDebugInfo($"Toggle key updated to: {key}");
+        }
+
+        private void UpdateJitterStrength(int strength)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<int>(UpdateJitterStrength), strength);
+                return;
+            }
+            lblJitterStrengthValue.Text = strength.ToString();
+            UpdateDebugInfo($"Jitter strength updated to: {strength}");
+        }
+
+        private void UpdateRecoilStrength(int strength)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<int>(UpdateRecoilStrength), strength);
+                return;
+            }
+            lblRecoilStrengthValue.Text = strength.ToString();
+            UpdateDebugInfo($"Recoil strength updated to: {strength}");
         }
 
         private void UpdateDebugInfo(string message)
@@ -546,6 +589,14 @@ namespace NotesTasks
             {
                 Environment.Exit(0);
             }
+        }
+
+        private void ToggleMacro()
+        {
+            isMacroOn = !isMacroOn;
+            UpdateTitle();
+            string mode = jitterEnabled ? "Jitter" : "Recoil Reducer";
+            UpdateDebugInfo($"Macro {(isMacroOn ? "Enabled" : "Disabled")} - Mode: {mode}, Key: **{toggleKey}**");
         }
     }
 }
