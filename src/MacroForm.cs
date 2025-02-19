@@ -128,7 +128,7 @@ namespace NotesTasks
         {
             keyboardProc = KeyboardHookCallback;
             mouseProc = MouseHookCallback;
-            
+
             try
             {
                 InitializeComponent();
@@ -149,7 +149,7 @@ namespace NotesTasks
                 // Initialize tray icon behavior
                 notifyIcon.DoubleClick += (s, e) => ShowWindow();
                 showWindowMenuItem.Click += (s, e) => ShowWindow();
-                exitMenuItem.Click += (s, e) => 
+                exitMenuItem.Click += (s, e) =>
                 {
                     CleanupAndExit();
                 };
@@ -180,8 +180,8 @@ namespace NotesTasks
                     trackBarRecoilReduction.Width = availableWidth;
                     btnToggleDebug.Width = availableWidth;
                 };
-                
-                this.Load += (sender, e) => 
+
+                this.Load += (sender, e) =>
                 {
                     try
                     {
@@ -215,7 +215,7 @@ namespace NotesTasks
             // Set initial text with bold formatting
             UpdateCurrentKey(toggleKey.ToString());
 
-            btnSetKey.Click += (sender, e) => 
+            btnSetKey.Click += (sender, e) =>
             {
                 isSettingKey = true;
                 btnSetKey.Text = "Press any key...";
@@ -364,7 +364,7 @@ namespace NotesTasks
                 if (isSettingKey)
                 {
                     int msg = wParam.ToInt32();
-                    
+
                     // Don't allow LMB or RMB as they're used for macro activation
                     if (msg == WM_MBUTTONDOWN)
                     {
@@ -380,7 +380,7 @@ namespace NotesTasks
                     {
                         MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
                         int xButton = (int)((hookStruct.mouseData >> 16) & 0xFFFF);
-                        
+
                         if (xButton == XBUTTON1)
                         {
                             currentToggleType = ToggleType.MouseX1;
@@ -457,7 +457,7 @@ namespace NotesTasks
         {
             // Always require both mouse buttons
             bool shouldActivate = isMacroOn && leftButtonDown && rightButtonDown;
-            
+
             if (shouldActivate && !isJittering)
             {
                 isJittering = true;
@@ -465,7 +465,7 @@ namespace NotesTasks
 
                 // Use alwaysJitterMode/alwaysRecoilReductionMode to determine which macro to run
                 bool useJitter = alwaysJitterMode || (!alwaysRecoilReductionMode && jitterEnabled);
-                
+
                 if (useJitter)
                 {
                     UpdateDebugInfo($"Jitter started - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}, Always Jitter={alwaysJitterMode}");
@@ -481,7 +481,7 @@ namespace NotesTasks
                 jitterTimer.Change(Timeout.Infinite, 10);
 
                 bool useJitter = alwaysJitterMode || (!alwaysRecoilReductionMode && jitterEnabled);
-                
+
                 if (useJitter)
                 {
                     UpdateDebugInfo($"Jitter stopped - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}, Always Jitter={alwaysJitterMode}");
@@ -635,7 +635,7 @@ namespace NotesTasks
         private void CleanupAndExit()
         {
             isExiting = true;
-            
+
             // Stop timers and hooks
             try
             {
@@ -698,7 +698,7 @@ namespace NotesTasks
 
             // Toggle between jitter and recoil reduction modes
             jitterEnabled = !jitterEnabled;
-            
+
             UpdateTitle();
             string mode = jitterEnabled ? "Jitter" : "Recoil Reduction";
             UpdateDebugInfo($"Macro mode switched to: {mode}");
@@ -715,6 +715,21 @@ namespace NotesTasks
 
             lblRecoilReductionActive.Text = (!jitterEnabled && isMacroOn) ? "[Active]" : "";
             lblJitterActive.Text = (jitterEnabled && isMacroOn) ? "[Active]" : "";
+        }
+
+        private void lblJitterActive_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblCurrentKeyPrefix_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void strengthPanel2_Paint(object sender, PaintEventArgs e)
+        {
+            // This is an empty Paint event handler for strengthPanel2
         }
     }
 }
