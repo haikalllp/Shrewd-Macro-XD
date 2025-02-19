@@ -1,0 +1,14 @@
+E:\CODING\Projects\CODE\Macro\bin\Release\net6.0-windows\NotesTasks.exe
+E:\CODING\Projects\CODE\Macro\bin\Release\net6.0-windows\NotesTasks.deps.json
+E:\CODING\Projects\CODE\Macro\bin\Release\net6.0-windows\NotesTasks.runtimeconfig.json
+E:\CODING\Projects\CODE\Macro\bin\Release\net6.0-windows\NotesTasks.dll
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\NotesTasks.MacroForm.resources
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\MouseMacro.csproj.GenerateResource.cache
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\MouseMacro.AssemblyInfoInputs.cache
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\MouseMacro.AssemblyInfo.cs
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\MouseMacro.csproj.CoreCompileInputs.cache
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\NotesTasks.dll
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\refint\NotesTasks.dll
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\MouseMacro.genruntimeconfig.cache
+E:\CODING\Projects\CODE\Macro\obj\Release\net6.0-windows\ref\NotesTasks.dll
