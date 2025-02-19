@@ -1,5 +1,75 @@
 # Mouse Macro Update Log
 
+## Mode Switching and Always Mode Update (2025-02-19)
+
+### Overview
+Added new mode switching functionality allowing users to toggle between Jitter and Recoil Reduction modes, along with Always Mode options for locking into a specific mode. This update provides more flexibility and control over macro behavior.
+
+### Detailed Changes
+
+#### 1. Mode Switching System
+- Added macro switch key (Default: Q) to toggle between modes
+- Independent strength controls for each mode
+- Visual indicators for active mode
+- Default values optimized for each mode:
+  - Recoil Reduction: 1 (default)
+  - Jitter: 3 (default)
+
+#### 2. Always Mode Options
+- Added "Always Jitter Mode" checkbox
+- Added "Always Recoil Reduction Mode" checkbox
+- Locks macro to selected mode
+- Prevents mode switching while active
+- Independent from macro toggle key
+
+#### 3. UI Enhancements
+```csharp
+private void UpdateModeLabels()
+{
+    lblJitterActive.Text = jitterEnabled || alwaysJitterMode ? "[Active]" : "";
+    lblRecoilReductionActive.Text = !jitterEnabled || alwaysRecoilReductionMode ? "[Active]" : "";
+}
+```
+
+#### 4. State Management
+- Enhanced state tracking for mode switching
+- Added safety checks for always mode conflicts
+- Improved debug information display
+- Updated window title to reflect current mode
+
+### User-Facing Changes
+
+1. Mode Switching:
+   - Press Q (default) to switch between modes
+   - Active mode indicated in UI
+   - Strength settings preserved per mode
+   - Real-time mode switching
+
+2. Always Mode:
+   - Enable "Always Jitter Mode" to lock to jitter
+   - Enable "Always Recoil Reduction Mode" to lock to recoil reduction
+   - Prevents accidental mode switching
+   - Quick access to preferred mode
+
+3. Visual Feedback:
+   - Active mode indicators
+   - Updated window title
+   - Enhanced debug information
+   - Clear strength labels per mode
+
+### Technical Implementation
+- Separate strength tracking for each mode
+- Mode-specific activation logic
+- Enhanced state management system
+- Improved UI responsiveness
+- Thread-safe mode switching
+
+### Notes
+- Both modes still require LMB + RMB for activation
+- Mode switch key can be customized
+- Always modes persist between sessions
+- Administrator privileges required
+
 ## Recoil Reducer Update (2025-02-19)
 
 ### Overview
@@ -219,73 +289,3 @@ private enum ToggleType
 - Administrator privileges are still required for proper functionality
 - System tray functionality remains unchanged
 - Jitter strength adjustment works the same with all toggle types
-
-## Mode Switching and Always Mode Update (2025-02-19)
-
-### Overview
-Added new mode switching functionality allowing users to toggle between Jitter and Recoil Reduction modes, along with Always Mode options for locking into a specific mode. This update provides more flexibility and control over macro behavior.
-
-### Detailed Changes
-
-#### 1. Mode Switching System
-- Added macro switch key (Default: Q) to toggle between modes
-- Independent strength controls for each mode
-- Visual indicators for active mode
-- Default values optimized for each mode:
-  - Recoil Reduction: 1 (default)
-  - Jitter: 3 (default)
-
-#### 2. Always Mode Options
-- Added "Always Jitter Mode" checkbox
-- Added "Always Recoil Reduction Mode" checkbox
-- Locks macro to selected mode
-- Prevents mode switching while active
-- Independent from macro toggle key
-
-#### 3. UI Enhancements
-```csharp
-private void UpdateModeLabels()
-{
-    lblJitterActive.Text = jitterEnabled || alwaysJitterMode ? "[Active]" : "";
-    lblRecoilReductionActive.Text = !jitterEnabled || alwaysRecoilReductionMode ? "[Active]" : "";
-}
-```
-
-#### 4. State Management
-- Enhanced state tracking for mode switching
-- Added safety checks for always mode conflicts
-- Improved debug information display
-- Updated window title to reflect current mode
-
-### User-Facing Changes
-
-1. Mode Switching:
-   - Press Q (default) to switch between modes
-   - Active mode indicated in UI
-   - Strength settings preserved per mode
-   - Real-time mode switching
-
-2. Always Mode:
-   - Enable "Always Jitter Mode" to lock to jitter
-   - Enable "Always Recoil Reduction Mode" to lock to recoil reduction
-   - Prevents accidental mode switching
-   - Quick access to preferred mode
-
-3. Visual Feedback:
-   - Active mode indicators
-   - Updated window title
-   - Enhanced debug information
-   - Clear strength labels per mode
-
-### Technical Implementation
-- Separate strength tracking for each mode
-- Mode-specific activation logic
-- Enhanced state management system
-- Improved UI responsiveness
-- Thread-safe mode switching
-
-### Notes
-- Both modes still require LMB + RMB for activation
-- Mode switch key can be customized
-- Always modes persist between sessions
-- Administrator privileges required
