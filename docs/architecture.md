@@ -103,6 +103,7 @@ MouseMacro/
   - Maintain separation of concerns
   - Document complex logic
 
+
 ## Components
 
 ### 1. User Interface (UI)
@@ -294,7 +295,6 @@ MouseMacro/
   - Strength value logging
   - Performance metrics
 
-
 ### 4. Error Handling and Logging
 
 #### 4.1 Exception Management
@@ -310,7 +310,6 @@ MouseMacro/
   - State change tracking
   - Error reporting
   - Performance monitoring
-
 
 ### 5. Performance Considerations
 
@@ -328,7 +327,6 @@ MouseMacro/
   - Efficient state checks
   - Minimal redraws
 
-
 ### 6. Security Features
 
 #### 6.1 Process Protection
@@ -342,7 +340,6 @@ MouseMacro/
   - Manifest-based elevation
   - Runtime privilege checks
   - Secure API access
-
 
 ### 7. Customization Support
 
@@ -471,6 +468,7 @@ MouseMacro/
    - Required for global keyboard/mouse hooks
    - Configured in app.manifest
 
+
 ## User Guide
 
 1. **Running the Application**:
@@ -505,20 +503,8 @@ MouseMacro/
    - Window title shows current state (ON/OFF)
    - Window can be resized as needed
 
+
 ## Conclusion
 
 This architecture provides a framework for a modern, user-friendly mouse macro application. The dark-themed UI offers excellent usability while maintaining a professional appearance. The application is designed with modular components to ensure maintainability and scalability, with added debug capabilities for troubleshooting. The system tray integration and single-instance management provide a polished, professional user experience.
 
-## Future Enhancements
-
-### 1. Planned Features
-- Additional mouse button support
-- Custom jitter patterns
-- Enhanced UI themes
-- Configuration profiles
-
-### 2. Potential Improvements
-- Advanced input detection
-- Pattern recording
-- Profile management
-- Extended game compatibility
