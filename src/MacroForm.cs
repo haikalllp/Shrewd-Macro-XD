@@ -225,6 +225,21 @@ namespace NotesTasks
 
         private void InitializeEventHandlers()
         {
+            btnToggleDebug.Click += (sender, e) =>
+            {
+                debugPanel.Visible = !debugPanel.Visible;
+                btnToggleDebug.Text = debugPanel.Visible ? "Hide Debug Info" : "Show Debug Info";
+                UpdateDebugInfo("Debug panel visibility toggled");
+            };
+
+            btnSetKey.Click += (sender, e) =>
+            {
+                isSettingKey = true;
+                btnSetKey.Text = "Press any key...";
+                btnSetKey.Enabled = false;
+                UpdateDebugInfo("Waiting for new toggle key...");
+            };
+
             trackBarJitter.ValueChanged += (sender, e) =>
             {
                 jitterStrength = trackBarJitter.Value;
@@ -293,22 +308,12 @@ namespace NotesTasks
                 SettingsManager.SaveSettings();
             };
 
-            btnSetKey.Click += (sender, e) =>
-            {
-                if (currentMacroKey != Keys.None)
-                {
-                    SettingsManager.CurrentSettings.MacroToggleKey = currentMacroKey.ToString();
-                    SettingsManager.SaveSettings();
-                }
-            };
-
             btnSetMacroSwitch.Click += (sender, e) =>
             {
-                if (currentSwitchKey != Keys.None)
-                {
-                    SettingsManager.CurrentSettings.ModeSwitchKey = currentSwitchKey.ToString();
-                    SettingsManager.SaveSettings();
-                }
+                isSettingMacroSwitchKey = true;
+                btnSetMacroSwitch.Text = "Press any key...";
+                btnSetMacroSwitch.Enabled = false;
+                UpdateDebugInfo("Waiting for new switch key...");
             };
         }
 
@@ -378,145 +383,194 @@ namespace NotesTasks
             }
         }
 
-        private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0)
-            {
-                if (wParam == (IntPtr)WM_KEYDOWN)
-                {
-                    int vkCode = Marshal.ReadInt32(lParam);
-                    Keys key = (Keys)vkCode;
-
-                    if (isSettingKey)
-                    {
-                        currentToggleType = ToggleType.Keyboard;
-                        toggleKey = key;
-                        isSettingKey = false;
-                        btnSetKey.Text = "Set Toggle Key";
-                        btnSetKey.Enabled = true;
-                        UpdateCurrentKey(toggleKey.ToString());
-                        UpdateDebugInfo($"Toggle key set to {key}");
-                        return (IntPtr)1; // Handle the key
-                    }
-                    else if (isSettingMacroSwitchKey)
-                    {
-                        macroSwitchKey = key;
-                        isSettingMacroSwitchKey = false;
-                        btnSetMacroSwitch.Text = "Set Switch Key";
-                        btnSetMacroSwitch.Enabled = true;
-                        UpdateSwitchKey(macroSwitchKey.ToString());
-                        UpdateDebugInfo($"Macro switch key set to {key}");
-                        return (IntPtr)1; // Handle the key
-                    }
-                    else if (currentToggleType == ToggleType.Keyboard && key == toggleKey)
-                    {
-                        ToggleMacro();
-                        return (IntPtr)1; // Handle the key
-                    }
-                    else if (key == macroSwitchKey && !alwaysJitterMode && !alwaysRecoilReductionMode)
-                    {
-                        HandleModeSwitch();
-                        return (IntPtr)1; // Handle the key
-                    }
-                }
-            }
-            return CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
-        }
-
         private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
             {
-                if (isSettingKey)
-                {
-                    int msg = wParam.ToInt32();
+                MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
 
-                    // Don't allow LMB or RMB as they're used for macro activation
-                    if (msg == WM_MBUTTONDOWN)
+                // Handle LMB and RMB for macro activation
+                switch ((int)wParam)
+                {
+                    case WM_LBUTTONDOWN:
+                        leftButtonDown = true;
+                        CheckJitterState();
+                        break;
+                    case WM_LBUTTONUP:
+                        leftButtonDown = false;
+                        CheckJitterState();
+                        break;
+                    case WM_RBUTTONDOWN:
+                        rightButtonDown = true;
+                        CheckJitterState();
+                        break;
+                    case WM_RBUTTONUP:
+                        rightButtonDown = false;
+                        CheckJitterState();
+                        break;
+                }
+
+                // Handle extra mouse buttons for toggle/switch
+                if (wParam == (IntPtr)WM_XBUTTONDOWN)
+                {
+                    bool isXButton1 = (hookStruct.mouseData >> 16) == 1;
+                    bool isXButton2 = (hookStruct.mouseData >> 16) == 2;
+                    
+                    if (isSettingKey)
                     {
-                        currentToggleType = ToggleType.MouseMiddle;
                         isSettingKey = false;
                         btnSetKey.Text = "Set Toggle Key";
                         btnSetKey.Enabled = true;
-                        UpdateCurrentKey("Mouse3 (Middle)");
-                        UpdateDebugInfo("Toggle key set to Mouse3 (Middle)");
-                        return (IntPtr)1; // Handle the key
+                        string buttonName = isXButton1 ? "XButton1" : "XButton2";
+                        currentMacroKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
+                        UpdateCurrentKey(buttonName);
+                        SettingsManager.CurrentSettings.MacroToggleKey = buttonName;
+                        SettingsManager.SaveSettings();
+                        UpdateDebugInfo($"Toggle key set to {buttonName}");
+                        return (IntPtr)1;
                     }
-                    else if (msg == WM_XBUTTONDOWN)
+                    else if (isSettingMacroSwitchKey)
                     {
-                        MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-                        int xButton = (int)((hookStruct.mouseData >> 16) & 0xFFFF);
-
-                        if (xButton == XBUTTON1)
-                        {
-                            currentToggleType = ToggleType.MouseX1;
-                            isSettingKey = false;
-                            btnSetKey.Text = "Set Toggle Key";
-                            btnSetKey.Enabled = true;
-                            UpdateCurrentKey("Mouse4");
-                            UpdateDebugInfo("Toggle key set to Mouse4");
-                            return (IntPtr)1; // Handle the key
-                        }
-                        else if (xButton == XBUTTON2)
-                        {
-                            currentToggleType = ToggleType.MouseX2;
-                            isSettingKey = false;
-                            btnSetKey.Text = "Set Toggle Key";
-                            btnSetKey.Enabled = true;
-                            UpdateCurrentKey("Mouse5");
-                            UpdateDebugInfo("Toggle key set to Mouse5");
-                            return (IntPtr)1; // Handle the key
-                        }
+                        isSettingMacroSwitchKey = false;
+                        btnSetMacroSwitch.Text = "Set Switch Key";
+                        btnSetMacroSwitch.Enabled = true;
+                        string buttonName = isXButton1 ? "XButton1" : "XButton2";
+                        currentSwitchKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
+                        UpdateSwitchKey(buttonName);
+                        SettingsManager.CurrentSettings.ModeSwitchKey = buttonName;
+                        SettingsManager.SaveSettings();
+                        UpdateDebugInfo($"Switch key set to {buttonName}");
+                        return (IntPtr)1;
                     }
-                }
-                else
-                {
-                    // Check for toggle activation via mouse buttons
-                    int msg = wParam.ToInt32();
-                    if ((currentToggleType == ToggleType.MouseMiddle && msg == WM_MBUTTONDOWN) ||
-                        (currentToggleType == ToggleType.MouseX1 && msg == WM_XBUTTONDOWN && IsXButton1(lParam)) ||
-                        (currentToggleType == ToggleType.MouseX2 && msg == WM_XBUTTONDOWN && IsXButton2(lParam)))
+                    else if ((isXButton1 && currentMacroKey == Keys.XButton1) || 
+                            (isXButton2 && currentMacroKey == Keys.XButton2))
                     {
                         ToggleMacro();
-                        return (IntPtr)1; // Handle the key
+                        return (IntPtr)1;
                     }
-                    else
+                    else if ((isXButton1 && currentSwitchKey == Keys.XButton1) || 
+                            (isXButton2 && currentSwitchKey == Keys.XButton2))
                     {
-                        switch ((int)wParam)
+                        if (!alwaysJitterMode && !alwaysRecoilReductionMode)
                         {
-                            case WM_LBUTTONDOWN:
-                                leftButtonDown = true;
-                                CheckJitterState();
-                                break;
-                            case WM_LBUTTONUP:
-                                leftButtonDown = false;
-                                CheckJitterState();
-                                break;
-                            case WM_RBUTTONDOWN:
-                                rightButtonDown = true;
-                                CheckJitterState();
-                                break;
-                            case WM_RBUTTONUP:
-                                rightButtonDown = false;
-                                CheckJitterState();
-                                break;
+                            HandleModeSwitch();
                         }
+                        return (IntPtr)1;
+                    }
+                }
+                else if (wParam == (IntPtr)WM_MBUTTONDOWN)
+                {
+                    if (isSettingKey)
+                    {
+                        isSettingKey = false;
+                        btnSetKey.Text = "Set Toggle Key";
+                        btnSetKey.Enabled = true;
+                        currentMacroKey = Keys.MButton;
+                        UpdateCurrentKey("MButton");
+                        SettingsManager.CurrentSettings.MacroToggleKey = "MButton";
+                        SettingsManager.SaveSettings();
+                        UpdateDebugInfo("Toggle key set to Middle Mouse Button");
+                        return (IntPtr)1;
+                    }
+                    else if (isSettingMacroSwitchKey)
+                    {
+                        isSettingMacroSwitchKey = false;
+                        btnSetMacroSwitch.Text = "Set Switch Key";
+                        btnSetMacroSwitch.Enabled = true;
+                        currentSwitchKey = Keys.MButton;
+                        UpdateSwitchKey("MButton");
+                        SettingsManager.CurrentSettings.ModeSwitchKey = "MButton";
+                        SettingsManager.SaveSettings();
+                        UpdateDebugInfo("Switch key set to Middle Mouse Button");
+                        return (IntPtr)1;
+                    }
+                    else if (currentMacroKey == Keys.MButton)
+                    {
+                        ToggleMacro();
+                        return (IntPtr)1;
+                    }
+                    else if (currentSwitchKey == Keys.MButton)
+                    {
+                        if (!alwaysJitterMode && !alwaysRecoilReductionMode)
+                        {
+                            HandleModeSwitch();
+                        }
+                        return (IntPtr)1;
                     }
                 }
             }
-            return CallNextHookEx(mouseHookID, nCode, wParam, lParam);
+            return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
         }
 
-        private bool IsXButton1(IntPtr lParam)
+        private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-            return ((hookStruct.mouseData >> 16) & 0xFFFF) == XBUTTON1;
-        }
+            if (nCode >= 0)
+            {
+                int vkCode = Marshal.ReadInt32(lParam);
+                Keys key = (Keys)vkCode;
 
-        private bool IsXButton2(IntPtr lParam)
-        {
-            MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-            return ((hookStruct.mouseData >> 16) & 0xFFFF) == XBUTTON2;
+                // Don't allow LMB or RMB as they are reserved for activation
+                if (key == Keys.LButton || key == Keys.RButton)
+                {
+                    if (isSettingKey || isSettingMacroSwitchKey)
+                    {
+                        UpdateDebugInfo("Left and Right mouse buttons cannot be used as they are reserved for activation");
+                        if (isSettingKey)
+                        {
+                            isSettingKey = false;
+                            btnSetKey.Text = "Set Toggle Key";
+                            btnSetKey.Enabled = true;
+                        }
+                        if (isSettingMacroSwitchKey)
+                        {
+                            isSettingMacroSwitchKey = false;
+                            btnSetMacroSwitch.Text = "Set Switch Key";
+                            btnSetMacroSwitch.Enabled = true;
+                        }
+                        return (IntPtr)1;
+                    }
+                    return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+                }
+
+                if (wParam == (IntPtr)WM_KEYDOWN)
+                {
+                    if (isSettingKey)
+                    {
+                        isSettingKey = false;
+                        btnSetKey.Text = "Set Toggle Key";
+                        btnSetKey.Enabled = true;
+                        currentMacroKey = key;
+                        UpdateCurrentKey(key.ToString());
+                        SettingsManager.CurrentSettings.MacroToggleKey = key.ToString();
+                        SettingsManager.SaveSettings();
+                        UpdateDebugInfo($"Toggle key set to {key}");
+                        return (IntPtr)1;
+                    }
+                    else if (isSettingMacroSwitchKey)
+                    {
+                        isSettingMacroSwitchKey = false;
+                        btnSetMacroSwitch.Text = "Set Switch Key";
+                        btnSetMacroSwitch.Enabled = true;
+                        currentSwitchKey = key;
+                        UpdateSwitchKey(key.ToString());
+                        SettingsManager.CurrentSettings.ModeSwitchKey = key.ToString();
+                        SettingsManager.SaveSettings();
+                        UpdateDebugInfo($"Switch key set to {key}");
+                        return (IntPtr)1;
+                    }
+                    else if (key == currentMacroKey)
+                    {
+                        ToggleMacro();
+                        return (IntPtr)1;
+                    }
+                    else if (key == currentSwitchKey && !alwaysJitterMode && !alwaysRecoilReductionMode)
+                    {
+                        HandleModeSwitch();
+                        return (IntPtr)1;
+                    }
+                }
+            }
+            return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
         }
 
         private void CheckJitterState()
