@@ -94,6 +94,71 @@ private readonly (int dx, int dy)[] recoilPattern = new[]
 - Standardized debug message format across all updates
 - Maintained consistent white text color with Segoe UI font
 
+## Build System Update (2025-02-19)
+
+### Overview
+Added an automated build script (`build.bat`) to streamline the build process for both Debug and Release configurations. The script includes automatic administrator privilege elevation and comprehensive error handling.
+
+### Build Script Features
+
+#### 1. Automatic Admin Elevation
+```batch
+:: Auto-elevation mechanism
+net session >nul 2>&1
+if %errorLevel% == 0 (
+    goto :admin
+) else (
+    echo Requesting administrative privileges...
+    goto :UACPrompt
+)
+```
+- Automatically detects if admin privileges are needed
+- Requests elevation via UAC prompt if necessary
+- Seamlessly continues execution after elevation
+
+#### 2. Build Process Steps
+1. **Solution Cleaning**
+   - Runs `dotnet clean` to remove previous build artifacts
+   - Manually removes `bin` and `obj` directories
+   - Ensures clean build environment
+
+2. **Package Restoration**
+   - Executes `dotnet restore` to update dependencies
+   - Verifies all required packages are available
+
+3. **Dual Configuration Build**
+   - Builds Debug configuration for development
+   - Builds Release configuration for distribution
+   - Maintains separate output directories for each
+
+#### 3. Error Handling
+- Checks return code after each critical operation
+- Displays clear error messages on failure
+- Pauses execution to show error details
+- Prevents continuation if any step fails
+
+### Usage Instructions
+1. **Simple Execution**
+   - Double-click `build.bat` in File Explorer
+   - Script will automatically request admin rights if needed
+
+2. **Command Line Usage**
+   ```cmd
+   build.bat
+   ```
+   - Can be run from any command prompt
+   - No manual "Run as Administrator" needed
+
+3. **Output Locations**
+   - Debug: `bin\Debug\net6.0-windows\NotesTasks.exe`
+   - Release: `bin\Release\net6.0-windows\NotesTasks.exe`
+
+### Technical Implementation
+- Uses native Windows batch scripting
+- Leverages VBScript for UAC elevation
+- Implements proper directory handling with `%~dp0`
+- Maintains clean error handling with exit codes
+
 ## Mouse Button Toggle Support Update (2025-02-18)
 
 ### Overview

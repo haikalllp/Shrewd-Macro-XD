@@ -1,220 +1,236 @@
-# Notes & Tasks Application
+# Notes & Tasks (Mouse Macro)
 
-A Windows Forms application built with C# (.NET 6.0) designed for creating and managing mouse macros with customizable jitter effects. For system integration purposes, the application presents itself as "Notes&Tasks" to maintain a professional appearance.
-
-## System Integration
-
-- **Process Name**: `NotesTasks.exe`
-- **Display Name**: Notes&Tasks
-- **Window Title**: Notes&Tasks - [Status]
-- **System Tray**: Appears as Notes&Tasks with corresponding icon
-- **Task Manager**: Listed as Notes&Tasks
-
-### Design Rationale
-- Professional appearance in enterprise environments
-- Discrete system integration
-- Consistent branding across all system interfaces
+A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. For professional system integration, the application presents itself as "Notes&Tasks" 😊.
 
 ## Features
 
-- **Modern UI**: 
-  - Sleek, dark-themed interface
-  - Split label system with bold values
-  - Thread-safe updates and cross-thread synchronization
-  - Consistent Segoe UI font styling
-- **Toggle Key Configuration**: 
-  - Easy key configuration with visual feedback
-  - Current key displayed with bold styling
-  - Thread-safe key state updates
-- **Dual Macro Modes**:
-  - Default Recoil Reducer
-    - Constant vertical compensation
-    - Primary strength slider (1-20)
-    - Always accessible
-  - Toggle Jitter Mode
-    - Complex movement patterns
-    - Independent strength control
-    - Optional activation
-- **Debug System**: 
-  - Enhanced logging with standardized format
-  - Real-time strength and key updates
-  - Thread-safe message queue
-  - Automatic UI synchronization
-- **System Tray Integration**: 
-  - Option to minimize to system tray instead of exiting
-  - Tray icon context menu for window restoration or complete exit
-- **Window Resizing**: Responsive design with adjustable controls
-- **Single Instance Enforcement**: Utilizes a global mutex to ensure only one application instance runs
+- **Recoil Compensation**
+  - Vertical movement compensation
+  - Adjustable strength (1-20)
+  - Real-time adjustments
+  - Smooth pattern implementation
 
-## Project Structure
+- **Jitter System**
+  - Complex movement patterns
+  - Independent strength control
+  - Pattern cycling
+  - Configurable activation
 
-```
-MouseMacro/
-├── assets/                  # Application resources
-│   ├── logo.ico            # Application icon for Notes&Tasks branding
-│   └── themes/             # UI theme resources and configurations
-├── bin/                    # Compiled binaries and runtime files
-│   └── Debug/             # Debug build output
-│       └── net6.0-windows/
-│           ├── NotesTasks.exe     # Main executable (Notes&Tasks branded)
-│           ├── NotesTasks.dll     # Core application library
-│           └── *.deps.json        # Runtime dependency configurations
-├── docs/                   # Documentation
-│   ├── architecture.md     # Detailed architecture documentation
-│   ├── update.md           # Change log and updates
-│   └── LuaScript.lua       # Original Lua implementation (reference)
-├── src/                    # Source code
-│   ├── MacroForm.cs        # Main form implementation
-│   │   - Core macro logic
-│   │   - Input handling and hooks
-│   │   - UI event handlers
-│   │   - System tray integration
-│   ├── MacroForm.Designer.cs # Form designer code
-│   │   - UI layout and controls
-│   │   - Component initialization
-│   └── Program.cs          # Application entry point with single instance enforcement
-├── MouseMacro.csproj       # Project file with build configuration
-└── README.md               # This file
-```
+- **Professional Integration**
+  - Clean system tray integration
+  - Modern dark theme UI
+  - Minimal resource usage
+  - Single instance enforcement
 
-## Installation and Build
+## Requirements
 
-### Prerequisites
+### Hardware
+- Windows 10/11 compatible PC
+- DirectX compatible display
+- Mouse with standard buttons
+- Keyboard for hotkey support
 
-#### .NET SDK 6.0.428
-This project requires a specific version of the .NET SDK. Follow these steps to download and install:
+### Software
+- Windows 10/11 (64-bit)
+- .NET 6.0 Runtime
+- Administrator privileges
+- DirectX 9.0c or later
 
-1. **Download .NET SDK 6.0.428**
-   - **Direct Download Link**: [.NET SDK 6.0.428 (Windows x64)](https://dotnet.microsoft.com/download/dotnet/6.0)
-   - Navigate to the download page and select:
-     - **Build apps - SDK**
-     - **Windows x64** installer
-   
-2. **Installation Options**:
-   a. **Recommended: Web Installer**
-      - Automatically downloads the correct SDK version
-      - Handles dependencies and system requirements
-   
-   b. **Offline Installer**
-      - Useful for systems without direct internet access
-      - Download the full installer from the Microsoft .NET website
+### Optional
+- Multi-button mouse for extended features
+- High refresh rate display (recommended)
+- SSD for faster startup (recommended)
 
-3. **Verify Installation**
-   After installation, open a new PowerShell or Command Prompt and run:
-   ```powershell
-   dotnet --version
-   ```
-   Confirm the output shows `6.0.428`
+## Installation
 
-### Build Instructions
+1. **Download**
+   - Get the latest release from the releases page
+   - Choose between Debug and Release builds
 
-1. **Clone the Repository**
-   ```powershell
-   git clone https://github.com/haikalllp/MouseMacroApex
-   cd MouseMacroApex
+2. **Setup**
+   - Extract the files to your preferred location
+   - No installation required (portable application)
+   - Run `NotesTasks.exe` with administrator privileges
+
+## Building from Source
+
+### Method 1: Using Build Script
+1. Clone the repository
+2. Double-click `build.bat`
+   - Script automatically requests admin rights
+   - Builds both Debug and Release configurations
+
+### Method 2: Manual Build
+1. Open command prompt
+2. Navigate to project directory
+3. Run commands:
+   ```cmd
+   # Debug build
+   dotnet build -c Debug
+
+   # Release build
+   dotnet build -c Release
    ```
 
-2. **Restore Dependencies**
-   ```powershell
-   dotnet restore
-   ```
+### Output Locations
+- Debug: `bin/Debug/net6.0-windows/NotesTasks.exe`
+- Release: `bin/Release/net6.0-windows/NotesTasks.exe`
 
-3. **Build the Project**
-   ```powershell
-   # Clean previous builds (optional)
-   dotnet clean
-   
-   # Build the project
-   dotnet build --configuration Release
-   ```
+## Usage Guide
 
-4. **Run the Application**
-   ```powershell
-   # Navigate to the release directory
-   cd bin\Release\net6.0-windows
-   
-   # Run the executable
-   # Remember executeable are disguised as 'NotesTasks.exe'
-   .\NotesTasks.exe
-   ```
-
-### Development Environment
-
-**Recommended Tools**:
-- Visual Studio 2022 (Community Edition is free)
-- Visual Studio Code with C# extension
-- JetBrains Rider
-
-**Optional but Recommended**:
-- Install Windows Desktop Development workload in Visual Studio
-- Ensure you have the latest Windows SDK
-
-## Usage
-
-### Macro Activation and Toggle
-
-#### Macro Mechanics
-- **Default Mode (Recoil Reducer)**:
-  - Active when macro is ON and both LMB + RMB held
-  - Provides constant vertical compensation
-  - Strength adjustable from 1-20
-  - Always available when macro is ON
-
-- **Optional Mode (Jitter)**:
-  - Must be explicitly enabled via toggle
-  - Uses separate strength settings
-  - Independent activation from recoil reducer
-  - Can be disabled when not needed
-
-#### Detailed Behavior
+### Basic Controls
 1. **Toggle Key**
-   - Controls overall macro ON/OFF state
-   - Affects both recoil and jitter (if enabled)
-   - Current state shown in window title
+   - Click "Set Toggle Key" button
+   - Press any key to set as toggle
+   - Current toggle key shown in bold
 
-2. **Recoil Reducer**
-   - Primary macro functionality
-   - Activated by holding LMB + RMB
-   - Strength controlled by dedicated slider
-   - Takes effect immediately when macro is ON
+2. **Strength Adjustment**
+   - Use slider to set strength (1-20)
+   - Changes apply immediately
+   - Separate controls for recoil and jitter
 
-3. **Jitter Mode**
-   - Secondary, optional functionality
-   - Can be toggled on/off independently
-   - Separate strength control (1-20)
-   - Only active when enabled and macro is ON
+3. **System Tray**
+   - Optional minimize to tray
+   - Double-click tray icon to restore
+   - Right-click for context menu
+   - Clean exit via tray menu
+
+### Advanced Features
+
+1. **Debug Panel**
+   - Toggle with "Show Debug Info"
+   - Real-time state monitoring
+   - Performance metrics
+   - Input state tracking
+
+2. **Macro Activation**
+   - Use toggle key for ON/OFF
+   - Hold both LMB + RMB simultaneously for macro activation
+   - You can toggle jiter mode
+   - Window title shows current state
+
+## Usage Scenarios
+
+### Macro Activation Mechanics
+
+1. **Basic Controls**
+   - Toggle Key: Turns the entire macro system ON/OFF
+   - Activation Trigger: Both LMB (Left Mouse Button) + RMB (Right Mouse Button) must be held simultaneously
+   - Window Title: Shows current macro state (ON/OFF)
+
+2. **Using Recoil Reducer**
+   - First ensure macro is ON using toggle key
+   - Hold both LMB + RMB simultaneously to activate
+   - Recoil compensation starts immediately
+   - Release either button to stop
+   - Adjust strength (1-20) using the slider
+
+3. **Using Jitter Mode**
+   - Enable Jitter mode using the toggle
+   - Ensure macro is ON using toggle key
+   - Hold both LMB + RMB simultaneously to activate
+   - Jitter pattern starts immediately
+   - Release either button to stop
+   - Adjust strength independently (1-20)
 
 ### Example Scenarios
 
-- **Scenario 1**: Macro OFF → No effects active
-- **Scenario 2**: Macro ON, Recoil Only → Vertical compensation when LMB + RMB held
-- **Scenario 3**: Macro ON, Jitter Enabled → Both effects when LMB + RMB held
-- **Scenario 4**: Macro ON, Single Button → No effects
+1. **Recoil Only**
+   ```
+   1. Press Toggle Key → Macro ON
+   2. Hold LMB + RMB together → Recoil compensation active
+   3. Release either button → Recoil compensation stops
+   4. Adjust strength as needed
+   ```
 
-### Tips
-- Always check the application window to confirm the current macro state
-- The toggle key provides a quick way to enable/disable the macro
-- Experiment with different jitter strengths to find your preferred setting
+2. **Recoil with Jitter**
+   ```
+   1. Press Toggle Key → Macro ON
+   2. Enable Jitter mode
+   3. Hold LMB + RMB together → Both effects active
+   4. Release either button → All effects stop
+   5. Adjust both strengths independently
+   ```
 
-## Architecture and Design
+3. **No Effects**
+   ```
+   - Macro OFF → No effects regardless of buttons
+   - Macro ON but single button → No effects
+   - Macro ON but buttons pressed separately → No effects
+   ```
 
-For a detailed overview of the system design and the evolution of the application, please refer to the [architecture.md](docs/architecture.md) document in the docs folder. It explains the UI layout, component interactions, and the rationale behind key design decisions.
+### Important Notes
+- Effects ONLY activate when BOTH buttons are held simultaneously
+- Releasing either button immediately stops all effects
+- Toggle key provides quick way to disable all functionality
+- Jitter can be toggled independently but requires same activation (LMB + RMB)
+- Always check window title to confirm macro state
 
 ## Troubleshooting
 
-- **SDK Version Mismatch**: Ensure you have exactly .NET SDK 6.0.428 installed
-- **Build Errors**: 
-  - Verify all dependencies are restored
-  - Check that you're using a compatible Windows version
-  - Confirm Visual Studio or .NET development tools are installed
-- **Icon or Resource Issues**: Ensure that the `assets` folder containing `logo.ico` is present in the project directory.
-- **Permissions**: Global hooks and system tray operations may require running the application with appropriate privileges.
-- **Build/Run Errors**: Clean and rebuild the project if you encounter unexpected errors.
+### Common Issues
+
+1. **"Another instance is running"**
+   - Check Task Manager
+   - End existing process if necessary
+   - Restart application
+
+2. **Admin Rights Required**
+   - Run as administrator
+   - Use build.bat for automatic elevation
+   - Check app.manifest settings
+
+3. **Performance Issues**
+   - Switch to Release build
+   - Check system resources
+   - Adjust timer intervals
+   - Monitor debug panel
+
+## Development
+
+### Environment Setup
+1. Install Visual Studio 2022 or later
+2. Install .NET 6.0 SDK
+3. Clone repository
+4. Open solution file
+
+### Project Structure
+```
+MouseMacro/
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon
+├── bin/                    # Compiled binaries
+│   ├── Debug/             # Debug build output
+│   └── Release/           # Release build output
+├── docs/                   # Documentation
+├── obj/                    # Intermediate build files
+│   ├── Debug/             # Debug build intermediates
+│   │   └── net6.0-windows/
+│   │       ├── ref/       # Assembly reference files
+│   │       ├── refint/    # Reference interface files
+│   │       └── *.cache    # Build cache files
+│   └── Release/           # Release build intermediates
+├── src/                    # Source code
+│   ├── MacroForm.cs       # Main form implementation
+│   ├── MacroForm.Designer.cs # Form designer code
+│   └── Program.cs         # Application entry point
+├── MouseMacro.csproj      # Project configuration
+├── README.md              # Project documentation and setup guide
+└── app.manifest           # Application manifest
+```
+
+## Contributing
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Submit pull request
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgements
+## Acknowledgments
 
-Thanks to the development team for designing this intuitive and reliable mouse macro application.
+- Windows Forms (.NET 6.0)
+- Windows API (user32.dll)
+- .NET Community
