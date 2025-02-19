@@ -122,7 +122,11 @@ namespace NotesTasks
             (0, 6), (7, 7), (-7, -7), (0, 6)
         };
 
-        private const int BASE_RECOIL_STRENGTH = 3;
+        private const double BASE_RECOIL_STRENGTH = 0.65;
+        private const double BASE_RECOIL_STRENGTH_2 = 1.5;
+        private const double LOW_LEVEL_1_SPEED = 0.5;
+        private const double LOW_LEVEL_2_SPEED = 1.5;
+        private const double LOW_LEVEL_3_SPEED = 2.5;
 
         public MacroForm()
         {
@@ -519,7 +523,34 @@ namespace NotesTasks
                     {
                         // Recoil reduction mode - constant downward movement
                         input.mi.dx = 0;
-                        input.mi.dy = (int)(BASE_RECOIL_STRENGTH * recoilReductionStrength);
+                        // Adjust speed based on recoil reduction strength below 4
+                        if (recoilReductionStrength < 4)
+                        {
+                            switch (recoilReductionStrength)
+                            {
+                                case 1:
+                                    input.mi.dy = Math.Max(1, (int)Math.Round(LOW_LEVEL_1_SPEED));
+                                    break;
+                                case 2:
+                                    input.mi.dy = Math.Max(1, (int)Math.Round(LOW_LEVEL_2_SPEED));
+                                    break;
+                                case 3:
+                                    input.mi.dy = Math.Max(1, (int)Math.Round(LOW_LEVEL_3_SPEED));
+                                    break;
+                            }
+                        }
+
+                        // Adjust speed based on recoil reduction strength between 4 and 10
+                        else if (recoilReductionStrength >= 4 && recoilReductionStrength <= 10)
+                        {
+                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength));
+                        }
+
+                        // Adjust speed based on recoil reduction strength above 10
+                        else
+                        {
+                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH_2 * recoilReductionStrength));
+                        }
                     }
 
                     input.mi.dwFlags = MOUSEEVENTF_MOVE;
