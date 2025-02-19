@@ -128,6 +128,51 @@ MouseMacro/
   - Privilege management
   - Secure API access
 
+### 5. Settings Configuration System
+- **Settings Management**
+  - JSON-based configuration
+  - Persistent storage
+  - Automatic saving
+  - Default value handling
+
+#### 5.1 Settings Storage
+- **Location**: Executable directory
+- **Format**: JSON configuration file
+- **Auto-creation**: Generated with defaults if missing
+
+#### 5.2 Managed Settings
+```csharp
+// Jitter settings
+- JitterStrength (Default: 3)
+- JitterEnabled
+- AlwaysJitterMode
+
+// Recoil reduction settings
+- RecoilReductionStrength (Default: 1)
+- RecoilReductionEnabled
+- AlwaysRecoilReductionMode
+
+// Key bindings
+- MacroToggleKey (Default: "Capital")
+- ModeSwitchKey (Default: "Q")
+
+// UI preferences
+- MinimizeToTray (Default: false)
+- StartMinimized (Default: false)
+```
+
+#### 5.3 Settings Implementation
+- **Automatic Saving**: Settings are saved immediately after any change
+- **Loading**: Settings loaded on application startup
+- **Error Handling**: Fallback to defaults if file is corrupted
+- **Thread Safety**: Safe concurrent access to settings
+
+#### 5.4 UI Integration
+- Settings reflected in real-time in the UI
+- Visual feedback for saved settings
+- Mode indicators update automatically
+- Key binding display updates
+
 ## Macro Implementation Details
 
 ### 1. Core Macro Logic

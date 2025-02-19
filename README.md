@@ -18,6 +18,7 @@ A professional Windows Forms application for advanced mouse input management, fe
 
 - **Mode Switching**
   - Toggle between modes (Default: Q)
+  - Support for mouse buttons 3-5 for key bindings
   - Always mode options
   - Active state indicators
   - Independent mode states
@@ -27,6 +28,12 @@ A professional Windows Forms application for advanced mouse input management, fe
   - Modern dark theme UI
   - Minimal resource usage
   - Single instance enforcement
+  
+- **Settings Saved with JSON**
+  - Settings saved automatically into a JSON file
+  - JSON file located at the executable directory
+  - Settings automatically saved while running the Application
+  - Settings automatically loaded upon starting the Application
 
 ## Requirements
 
@@ -85,15 +92,19 @@ A professional Windows Forms application for advanced mouse input management, fe
 ## Usage Guide
 
 ### Basic Controls
-1. **Toggle Key (Macro ON/OFF)**
+1. **Macro Toggle Key (Macro ON/OFF)**
    - Click "Set Toggle Key" button
-   - Press any key to set as toggle
-   - Current toggle key shown in bold
+   - Press any key to set as macro toggle
+   - Default: 'Capital' key
+   - Supports keyboard and mouse buttons (Mouse3-5)
+   - LMB/RMB reserved for activation
 
 2. **Mode Switch Key**
-   - Default: Q key
-   - Switches between Jitter and Recoil Reduction
-   - Only works when not in Always mode
+   - Click "Set Switch Key" button
+   - Press any key to set as switch toggle
+   - Default: 'Q' key
+   - Supports keyboard and mouse buttons (Mouse3-5)
+   - LMB/RMB reserved for activation
 
 3. **Strength Adjustment**
    - Use slider to set strength (1-20)
@@ -158,6 +169,16 @@ A professional Windows Forms application for advanced mouse input management, fe
 - Each mode maintains its own strength setting
 - Visual indicators show current active mode
 - Window title reflects current state
+
+### Settings Configuration
+- Settings stored in JSON format next to executable
+- All preferences automatically saved
+- Settings include:
+  - Key bindings
+  - Mode preferences
+  - UI configuration
+  - Strength values
+- Invalid settings automatically reset to defaults
 
 ## Troubleshooting
 

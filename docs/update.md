@@ -1,5 +1,85 @@
 # Mouse Macro Update Log
 
+## Settings Configuration System Update (2025-02-19)
+
+### Overview
+Implemented a comprehensive settings configuration system that persists all user preferences across sessions using JSON file storage. This update ensures all macro settings, key bindings, and UI preferences are automatically saved and restored.
+
+### Detailed Changes
+
+#### 1. Settings Storage System
+- Added JSON-based configuration file
+- Located in executable directory
+- Automatic creation with defaults
+- Real-time saving on changes
+
+#### 2. Managed Settings
+```csharp
+// Jitter settings
+JitterStrength = 3;        // Default
+JitterEnabled = false;     // Toggled by mode switch
+AlwaysJitterMode = false;  // Locks to jitter mode
+
+// Recoil reduction settings
+RecoilReductionStrength = 1;    // Default
+RecoilReductionEnabled = false; // Toggled by mode switch
+AlwaysRecoilReductionMode = false; // Locks to recoil mode
+
+// Key bindings
+MacroToggleKey = "Capital";  // Default
+ModeSwitchKey = "Q";        // Default
+
+// UI preferences
+MinimizeToTray = false;    // Default
+StartMinimized = false;    // Default
+```
+
+#### 3. Settings Manager Implementation
+- Thread-safe settings access
+- Automatic error recovery
+- Default value fallbacks
+- Real-time UI updates
+
+#### 4. Mouse Button Support
+- Added support for Mouse3-5 for both toggle and switch keys
+- Protected LMB/RMB from being set as they're used for activation
+- Proper saving of mouse button bindings
+- Clear UI feedback for key settings
+
+### User-Facing Changes
+
+1. Persistent Settings:
+   - All settings automatically saved
+   - Settings restored on startup
+   - No manual configuration needed
+   - Immediate saving on changes
+
+2. Key Binding Improvements:
+   - Support for keyboard keys
+   - Support for Mouse3 (middle button)
+   - Support for Mouse4 (XButton1)
+   - Support for Mouse5 (XButton2)
+   - Protection against using LMB/RMB
+
+3. UI Enhancements:
+   - Real-time setting updates
+   - Clear key binding display
+   - Mode state persistence
+   - Debug panel toggle state
+
+### Technical Implementation
+- Uses Newtonsoft.Json for serialization
+- File-based persistence system
+- Automatic error handling
+- Thread-safe operations
+- Real-time UI synchronization
+
+### Notes
+- Configuration file created automatically if missing
+- Invalid settings fall back to defaults
+- All UI states persist between sessions
+- Administrator privileges required for file operations
+
 ## Mode Switching and Always Mode Update (2025-02-19)
 
 ### Overview
