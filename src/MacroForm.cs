@@ -96,8 +96,9 @@ namespace NotesTasks
             MouseX2
         }
         private ToggleType currentToggleType = ToggleType.Keyboard;
-        private Keys toggleKey = Keys.F2;  // Default
+        private Keys toggleKey = Keys.Capital;  // Changed default to Capital
         private int jitterStrength = 3;
+        private int recoilStrength = 3;  // New field for recoil strength
         private bool isSettingKey = false;
         private System.Threading.Timer jitterTimer;
         private bool isJittering = false;
@@ -106,6 +107,7 @@ namespace NotesTasks
         private bool leftButtonDown = false;
         private bool rightButtonDown = false;
         private bool isExiting = false;
+        private bool jitterEnabled = false;
 
         private readonly (int dx, int dy)[] jitterPattern = new[]
         {
@@ -115,6 +117,8 @@ namespace NotesTasks
             (7, 7), (-7, -7), (0, 7), (7, 7), (-7, -7),
             (0, 6), (7, 7), (-7, -7), (0, 6)
         };
+
+        private const int BASE_RECOIL_STRENGTH = 3;
 
         public MacroForm()
         {
@@ -169,6 +173,7 @@ namespace NotesTasks
                     int availableWidth = mainPanel.Width - padding;
                     btnSetKey.Width = availableWidth;
                     trackBarJitter.Width = availableWidth;
+                    trackBarRecoil.Width = availableWidth;
                     btnToggleDebug.Width = availableWidth;
                 };
                 
@@ -203,16 +208,14 @@ namespace NotesTasks
 
         private void InitializeCustomComponents()
         {
+            // Set initial text
+            lblCurrentKey.Text = "Current Key: Capital";
+
             btnSetKey.Click += (sender, e) => 
             {
                 isSettingKey = true;
                 btnSetKey.Text = "Press any key...";
                 btnSetKey.Enabled = false;
-            };
-
-            this.KeyDown += (sender, e) =>
-            {
-                // Removed event handler for setting toggle key and toggling macro
             };
 
             trackBarJitter.ValueChanged += (sender, e) =>
@@ -222,11 +225,34 @@ namespace NotesTasks
                 UpdateDebugInfo($"Jitter strength set to {jitterStrength}");
             };
 
+            trackBarRecoil.ValueChanged += (sender, e) =>
+            {
+                recoilStrength = trackBarRecoil.Value;
+                lblRecoilStrength.Text = $"Recoil Strength: {recoilStrength}";
+                UpdateDebugInfo($"Recoil strength set to {recoilStrength}");
+            };
+
+            chkJitterEnabled.CheckedChanged += (sender, e) =>
+            {
+                jitterEnabled = chkJitterEnabled.Checked;
+                string mode = jitterEnabled ? "Jitter" : "Recoil Reducer";
+                UpdateDebugInfo($"Switched to {mode} mode");
+                UpdateTitle();
+                
+                // Show/hide appropriate controls
+                strengthPanel1.Visible = !jitterEnabled;
+                strengthPanel2.Visible = jitterEnabled;
+            };
+
             btnToggleDebug.Click += (sender, e) =>
             {
                 debugPanel.Visible = !debugPanel.Visible;
                 btnToggleDebug.Text = debugPanel.Visible ? "Hide Debug Info" : "Show Debug Info";
             };
+
+            // Initialize visibility
+            strengthPanel1.Visible = !jitterEnabled; // Recoil controls
+            strengthPanel2.Visible = jitterEnabled;  // Jitter controls
         }
 
         private void InitializeHooks()
@@ -378,19 +404,19 @@ namespace NotesTasks
 
         private void CheckJitterState()
         {
-            bool shouldJitter = isMacroOn && leftButtonDown && rightButtonDown;
+            bool shouldActivate = isMacroOn && leftButtonDown && rightButtonDown;
             
-            if (shouldJitter && !isJittering)
+            if (shouldActivate && !isJittering)
             {
                 isJittering = true;
                 jitterTimer.Change(0, 10);
-                UpdateDebugInfo("Jitter started");
+                UpdateDebugInfo($"{(jitterEnabled ? "Jitter" : "Recoil")} started");
             }
-            else if (!shouldJitter && isJittering)
+            else if (!shouldActivate && isJittering)
             {
                 isJittering = false;
                 jitterTimer.Change(Timeout.Infinite, 10);
-                UpdateDebugInfo("Jitter stopped");
+                UpdateDebugInfo($"{(jitterEnabled ? "Jitter" : "Recoil")} stopped");
             }
         }
 
@@ -402,40 +428,67 @@ namespace NotesTasks
             {
                 lock (lockObject)
                 {
-                    var pattern = jitterPattern[currentStep];
                     INPUT input = new INPUT();
-                    input.type = 0; // INPUT_MOUSE
-                    input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
-                    input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
+                    input.type = INPUT_MOUSE;
+
+                    if (jitterEnabled)
+                    {
+                        // Jitter mode
+                        var pattern = jitterPattern[currentStep];
+                        input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
+                        input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
+                        currentStep = (currentStep + 1) % jitterPattern.Length;
+                    }
+                    else
+                    {
+                        // Recoil reducer mode - constant downward movement
+                        input.mi.dx = 0;
+                        input.mi.dy = (int)(BASE_RECOIL_STRENGTH * recoilStrength);
+                    }
+
                     input.mi.dwFlags = MOUSEEVENTF_MOVE;
+                    input.mi.mouseData = 0;
+                    input.mi.time = 0;
+                    input.mi.dwExtraInfo = IntPtr.Zero;
+
                     SendInput(1, ref input, Marshal.SizeOf(input));
-                    currentStep = (currentStep + 1) % jitterPattern.Length;
                 }
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Jitter error: {ex.Message}");
+                UpdateDebugInfo($"Movement error: {ex.Message}");
             }
         }
 
         private void UpdateTitle()
         {
-            this.Text = $"Mouse Macro [{(isMacroOn ? "ON" : "OFF")}]";
+            string mode = jitterEnabled ? "Jitter" : "Recoil Reducer";
+            this.Text = $"Notes&Tasks [{(isMacroOn ? "ON" : "OFF")}] - {mode} Mode";
         }
 
-        private void UpdateDebugInfo(string info)
+        private void UpdateDebugInfo(string message)
         {
-            if (this.InvokeRequired)
+            if (debugLabel.InvokeRequired)
             {
-                this.Invoke(new Action(() => UpdateDebugInfo(info)));
+                debugLabel.Invoke(new Action(() => UpdateDebugInfo(message)));
                 return;
             }
 
-            debugLabel.Text = $"[{DateTime.Now:HH:mm:ss}] {info}\n{debugLabel.Text}";
-            if (debugLabel.Text.Length > 500)
+            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            string newLine = $"[{timestamp}] {message}";
+
+            // Keep last 100 lines of debug info
+            var lines = debugLabel.Lines.ToList();
+            lines.Add(newLine);
+            if (lines.Count > 100)
             {
-                debugLabel.Text = debugLabel.Text.Substring(0, 500) + "...";
+                lines.RemoveAt(0);
             }
+            debugLabel.Lines = lines.ToArray();
+
+            // Auto-scroll to bottom
+            debugLabel.SelectionStart = debugLabel.TextLength;
+            debugLabel.ScrollToCaret();
         }
 
         private void ShowWindow()

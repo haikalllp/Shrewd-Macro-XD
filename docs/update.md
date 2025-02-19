@@ -1,5 +1,73 @@
 # Mouse Macro Update Log
 
+## Recoil Reducer Update (2025-02-19)
+
+### Overview
+Added a new recoil reducer mode as the default macro behavior, with the original jitter functionality now available as a toggleable option. This update provides users with more control over their mouse movement patterns.
+
+### Detailed Changes
+
+#### 1. New Recoil Reducer Mode
+- Added a dedicated recoil pattern focusing on vertical movement
+- Pattern designed for consistent downward compensation
+- Uses the same strength slider as jitter mode
+- Set as the default macro behavior
+
+#### 2. Jitter Mode Toggle
+- Added checkbox to enable/disable jitter mode
+- Original jitter pattern preserved when enabled
+- Seamless switching between modes
+- Strength slider affects both modes proportionally
+
+#### 3. Pattern Implementation
+```csharp
+// Recoil pattern (vertical movement only)
+private readonly (int dx, int dy)[] recoilPattern = new[]
+{
+    (0, 7), (0, 7), (0, 6), (0, 7), (0, 7),
+    (0, 6), (0, 7), (0, 7), (0, 6), (0, 7),
+    (0, 6), (0, 7), (0, 7), (0, 6), (0, 7),
+    (0, 7), (0, 6), (0, 7), (0, 7), (0, 6),
+    (0, 7), (0, 7), (0, 6), (0, 7)
+};
+```
+
+#### 4. UI Updates
+- Added "Enable Jitter Mode" checkbox
+- Updated window title to show current mode
+- Enhanced debug information to display mode changes
+- Maintained existing strength slider functionality
+- Improved strength label to show current mode
+
+### User-Facing Changes
+1. Default Behavior:
+   - Recoil reducer mode active by default
+   - Vertical-only movement for consistent recoil control
+   - Strength slider affects vertical movement intensity
+
+2. Jitter Mode Option:
+   - Can be enabled via checkbox
+   - Restores original horizontal + vertical jitter pattern
+   - Maintains same strength adjustment system
+
+3. Mode Switching:
+   - Real-time switching between modes
+   - No need to toggle macro off/on when changing modes
+   - Current mode displayed in window title and strength label
+
+### Technical Implementation
+- Separate pattern arrays for recoil and jitter modes
+- Unified strength adjustment system
+- Seamless pattern switching logic
+- Enhanced debug information for mode changes
+- Updated UI labels to reflect current mode
+
+### Notes
+- Both modes use the same activation method (LMB + RMB)
+- Strength slider (1-20) affects both modes equally
+- Mode selection persists between macro toggles
+- Administrator privileges still required
+
 ## Mouse Button Toggle Support Update (2025-02-18)
 
 ### Overview
