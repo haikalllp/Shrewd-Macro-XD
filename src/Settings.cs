@@ -6,7 +6,7 @@ namespace Macro
     {
         // Jitter settings
         public int JitterStrength { get; set; } = 3;
-        public bool JitterEnabled { get; set; } = false;  // Will be toggled by switch mode key
+        public bool JitterEnabled { get; set; } = false;  
         public bool AlwaysJitterMode { get; set; } = false;
 
         // Recoil reduction settings
