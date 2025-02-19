@@ -4,17 +4,23 @@ A professional Windows Forms application for advanced mouse input management, fe
 
 ## Features
 
-- **Recoil Compensation**
+- **Recoil Reduction System**
   - Vertical movement compensation
   - Adjustable strength (1-20)
+  - Default strength: 1
   - Real-time adjustments
-  - Smooth pattern implementation
 
 - **Jitter System**
   - Complex movement patterns
-  - Independent strength control
+  - Strength control (1-20)
+  - Default strength: 3
   - Pattern cycling
-  - Configurable activation
+
+- **Mode Switching**
+  - Toggle between modes (Default: Q)
+  - Always mode options
+  - Active state indicators
+  - Independent mode states
 
 - **Professional Integration**
   - Clean system tray integration
@@ -79,92 +85,79 @@ A professional Windows Forms application for advanced mouse input management, fe
 ## Usage Guide
 
 ### Basic Controls
-1. **Toggle Key**
+1. **Toggle Key (Macro ON/OFF)**
    - Click "Set Toggle Key" button
    - Press any key to set as toggle
    - Current toggle key shown in bold
 
-2. **Strength Adjustment**
+2. **Mode Switch Key**
+   - Default: Q key
+   - Switches between Jitter and Recoil Reduction
+   - Only works when not in Always mode
+
+3. **Strength Adjustment**
    - Use slider to set strength (1-20)
    - Changes apply immediately
-   - Separate controls for recoil and jitter
+   - Recoil Reduction default: 1
+   - Jitter default: 3
 
-3. **System Tray**
+4. **Always Mode Options**
+   - Always Jitter Mode: Locks to jitter
+   - Always Recoil Reduction Mode: Locks to recoil reduction
+   - Prevents mode switching while active
+
+5. **System Tray**
    - Optional minimize to tray
    - Double-click tray icon to restore
    - Right-click for context menu
    - Clean exit via tray menu
 
-### Advanced Features
+### Usage Scenarios
 
-1. **Debug Panel**
-   - Toggle with "Show Debug Info"
-   - Real-time state monitoring
-   - Performance metrics
-   - Input state tracking
+#### 1. Dynamic Mode Switching
+```
+1. Press Toggle Key → Macro ON
+2. Press Q to switch between modes
+3. Hold LMB + RMB → Current mode activates
+4. Release buttons → Effect stops
+5. Press Q again → Switch to other mode
+```
 
-2. **Macro Activation**
-   - Use toggle key for ON/OFF
-   - Hold both LMB + RMB simultaneously for macro activation
-   - You can toggle jiter mode
-   - Window title shows current state
+#### 2. Always Jitter Mode
+```
+1. Enable "Always Jitter Mode" checkbox
+2. Press Toggle Key → Macro ON
+3. Hold LMB + RMB → Jitter pattern active
+4. Release buttons → Jitter stops
+5. Q key has no effect (locked to jitter)
+```
 
-## Usage Scenarios
+#### 3. Always Recoil Reduction Mode
+```
+1. Enable "Always Recoil Reduction Mode"
+2. Press Toggle Key → Macro ON
+3. Hold LMB + RMB → Recoil reduction active
+4. Release buttons → Effect stops
+5. Q key has no effect (locked to recoil reduction)
+```
 
-### Macro Activation Mechanics
-
-1. **Basic Controls**
-   - Toggle Key: Turns the entire macro system ON/OFF
-   - Activation Trigger: Both LMB (Left Mouse Button) + RMB (Right Mouse Button) must be held simultaneously
-   - Window Title: Shows current macro state (ON/OFF)
-
-2. **Using Recoil Reducer**
-   - First ensure macro is ON using toggle key
-   - Hold both LMB + RMB simultaneously to activate
-   - Recoil compensation starts immediately
-   - Release either button to stop
-   - Adjust strength (1-20) using the slider
-
-3. **Using Jitter Mode**
-   - Enable Jitter mode using the toggle
-   - Ensure macro is ON using toggle key
-   - Hold both LMB + RMB simultaneously to activate
-   - Jitter pattern starts immediately
-   - Release either button to stop
-   - Adjust strength independently (1-20)
-
-### Example Scenarios
-
-1. **Recoil Only**
-   ```
-   1. Press Toggle Key → Macro ON
-   2. Hold LMB + RMB together → Recoil compensation active
-   3. Release either button → Recoil compensation stops
-   4. Adjust strength as needed
-   ```
-
-2. **Recoil with Jitter**
-   ```
-   1. Press Toggle Key → Macro ON
-   2. Enable Jitter mode
-   3. Hold LMB + RMB together → Both effects active
-   4. Release either button → All effects stop
-   5. Adjust both strengths independently
-   ```
-
-3. **No Effects**
-   ```
-   - Macro OFF → No effects regardless of buttons
-   - Macro ON but single button → No effects
-   - Macro ON but buttons pressed separately → No effects
-   ```
+#### 4. Strength Optimization
+```
+1. Start with default strengths:
+   - Recoil Reduction: 1
+   - Jitter: 3
+2. Test each mode
+3. Adjust strength per mode as needed
+4. Settings persist between mode switches
+```
 
 ### Important Notes
-- Effects ONLY activate when BOTH buttons are held simultaneously
-- Releasing either button immediately stops all effects
-- Toggle key provides quick way to disable all functionality
-- Jitter can be toggled independently but requires same activation (LMB + RMB)
-- Always check window title to confirm macro state
+- Effects ONLY activate when BOTH buttons are held
+- Mode switch key (Q) works in real-time
+- Always mode prevents accidental switching
+- Each mode maintains its own strength setting
+- Visual indicators show current active mode
+- Window title reflects current state
 
 ## Troubleshooting
 

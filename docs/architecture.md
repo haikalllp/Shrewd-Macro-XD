@@ -75,16 +75,24 @@ MouseMacro/
   - State tracking via GetAsyncKeyState
 
 ### 2. Macro Engine
-- **Recoil Reduction**
+- **Recoil Reduction System**
   - Vertical compensation
   - Strength control (1-20)
   - Primary functionality
+  - Default strength: 1
   
 - **Jitter System**
   - Complex movement patterns
-  - Independent strength control
+  - Strength control (1-20)
   - Optional activation
+  - Default strength: 3
   
+- **Mode Switching**
+  - Toggle between Jitter and Recoil Reduction modes
+  - Default switch key: Q
+  - Always mode options (locks to either Jitter or Recoil Reduction mode at all times)
+  - Independent mode states
+
 - **Timer Management**
   - Dual timer implementation
   - Independent operation
@@ -97,9 +105,11 @@ MouseMacro/
   - DPI scaling support
   
 - **Controls**
-  - Toggle key display/configuration
+  - Macro Toggle key display/configuration (Default: Capital)
+  - Macro Switch key configuration (Default: Q)
   - Strength sliders (1-20)
-  - Mode toggles
+  - Mode toggles and indicators
+  - Always mode checkboxes
   - Debug panel (collapsible)
   
 - **System Tray**
@@ -123,19 +133,19 @@ MouseMacro/
 ### 1. Core Macro Logic
 - **Language**: C#
 - **Primary Components**: 
-  - Recoil compensation system
+  - Recoil reduction system
   - Jitter pattern generation
   - State management
   - Timer-based execution
 
-#### 1.1 Recoil Compensation
+#### 1.1 Recoil Reduction System
 - **Implementation**:
   ```csharp
-  private void OnRecoilTimer(object state)
+  private void OnRecoilReductionTimer(object state)
   {
-      if (IsRecoilActive)
+      if (IsRecoilReductionActive)
       {
-          int strength = recoilStrength.Value;
+          int strength = recoilReductionStrength.Value;
           SendInput.MoveMouse(0, strength);
       }
   }
@@ -179,18 +189,39 @@ MouseMacro/
 
 #### 2.1 Activation States
 ```csharp
-private bool IsRecoilActive => 
+private bool IsRecoilReductionActive => 
     MacroEnabled && 
     (GetAsyncKeyState(VK_LBUTTON) < 0) && 
     (GetAsyncKeyState(VK_RBUTTON) < 0);
 
 private bool IsJitterActive =>
     MacroEnabled && 
-    JitterEnabled && 
-    IsRecoilActive;
+    (JitterEnabled || alwaysJitterMode) && 
+    !alwaysRecoilReductionMode && 
+    IsRecoilReductionActive;
 ```
 
-#### 2.2 Toggle System
+#### 2.2 Mode Management
+```csharp
+private void ToggleMacroMode()
+{
+    // If either always mode is on, we can't switch modes
+    if (alwaysJitterMode || alwaysRecoilReductionMode)
+        return;
+
+    // Toggle between jitter and recoil reduction modes
+    jitterEnabled = !jitterEnabled;
+    UpdateModeLabels();
+}
+
+private void UpdateModeLabels()
+{
+    lblJitterActive.Text = jitterEnabled || alwaysJitterMode ? "[Active]" : "";
+    lblRecoilReductionActive.Text = !jitterEnabled || alwaysRecoilReductionMode ? "[Active]" : "";
+}
+```
+
+#### 2.3 Toggle System
 - **Keyboard Implementation**:
   ```csharp
   private IntPtr KeyboardProc(int nCode, IntPtr wParam, IntPtr lParam)
@@ -233,17 +264,17 @@ private bool IsJitterActive =>
 
 #### 3.1 Timer Configuration
 ```csharp
-private readonly System.Windows.Forms.Timer recoilTimer;
+private readonly System.Windows.Forms.Timer recoilReductionTimer;
 private readonly System.Windows.Forms.Timer jitterTimer;
 
 private void InitializeTimers()
 {
-    recoilTimer = new System.Windows.Forms.Timer
+    recoilReductionTimer = new System.Windows.Forms.Timer
     {
         Interval = 16,  // ~60Hz
         Enabled = true
     };
-    recoilTimer.Tick += OnRecoilTimer;
+    recoilReductionTimer.Tick += OnRecoilReductionTimer;
 
     jitterTimer = new System.Windows.Forms.Timer
     {
@@ -256,7 +287,7 @@ private void InitializeTimers()
 
 #### 3.2 Performance Optimization
 - **Timer Intervals**:
-  - Recoil: 16ms (60Hz) for smooth movement
+  - Recoil Reduction: 16ms (60Hz) for smooth movement
   - Jitter: 25ms (40Hz) for pattern execution
   - Balanced for performance and responsiveness
 
@@ -266,7 +297,7 @@ private void InitializeTimers()
   {
       if (disposing)
       {
-          recoilTimer?.Dispose();
+          recoilReductionTimer?.Dispose();
           jitterTimer?.Dispose();
       }
       base.Dispose(disposing);
@@ -330,7 +361,7 @@ private void UpdateDebugInfo()
     {
         var info = $"[{DateTime.Now:HH:mm:ss.fff}] " +
                    $"Macro: {(MacroEnabled ? "ON" : "OFF")} | " +
-                   $"Recoil: {(IsRecoilActive ? "Active" : "Inactive")} | " +
+                   $"Recoil Reduction: {(IsRecoilReductionActive ? "Active" : "Inactive")} | " +
                    $"Jitter: {(IsJitterActive ? "Active" : "Inactive")} | " +
                    $"LMB: {(GetAsyncKeyState(VK_LBUTTON) < 0)} | " +
                    $"RMB: {(GetAsyncKeyState(VK_RBUTTON) < 0)}";
