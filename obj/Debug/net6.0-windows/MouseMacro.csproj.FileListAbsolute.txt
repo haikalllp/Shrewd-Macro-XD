@@ -2,7 +2,6 @@ E:\CODING\Projects\CODE\Macro\bin\Debug\net6.0-windows\NotesTasks.exe
 E:\CODING\Projects\CODE\Macro\bin\Debug\net6.0-windows\NotesTasks.deps.json
 E:\CODING\Projects\CODE\Macro\bin\Debug\net6.0-windows\NotesTasks.runtimeconfig.json
 E:\CODING\Projects\CODE\Macro\bin\Debug\net6.0-windows\NotesTasks.dll
-E:\CODING\Projects\CODE\Macro\bin\Debug\net6.0-windows\NotesTasks.pdb
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\NotesTasks.MacroForm.resources
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\MouseMacro.csproj.GenerateResource.cache
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
@@ -12,6 +11,5 @@ E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\MouseMacro.csproj.CoreCom
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\MouseMacro.sourcelink.json
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\NotesTasks.dll
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\refint\NotesTasks.dll
-E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\NotesTasks.pdb
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\MouseMacro.genruntimeconfig.cache
 E:\CODING\Projects\CODE\Macro\obj\Debug\net6.0-windows\ref\NotesTasks.dll
