@@ -96,9 +96,14 @@ namespace NotesTasks
             MouseX1,
             MouseX2
         }
+
+        // Surpress warnings as first time build might not know about these
+        #pragma warning disable CS0414
         private ToggleType currentToggleType = ToggleType.Keyboard;
         private Keys toggleKey = Keys.Capital;  // Default to Capital
         private Keys macroSwitchKey = Keys.Q;  // Default to Q
+        #pragma warning restore CS0414
+
         private int jitterStrength = 3;  // Default to 3
         private int recoilReductionStrength = 1;  // Default to 1
         private bool isSettingKey = false;
