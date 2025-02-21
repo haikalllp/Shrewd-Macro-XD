@@ -28,7 +28,7 @@ A professional Windows Forms application for advanced mouse input management, fe
   - Modern dark theme UI
   - Minimal resource usage
   - Single instance enforcement
-  
+
 - **Settings Saved with JSON**
   - Settings saved automatically into a JSON file
   - JSON file located at the executable directory
