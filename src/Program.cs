@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace NotesTasks
 {
@@ -14,6 +15,33 @@ namespace NotesTasks
         {
             try
             {
+                // Check for administrative privileges
+                WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                bool isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
+
+                if (!isAdmin)
+                {
+                    // Restart the application with admin rights
+                    ProcessStartInfo startInfo = new ProcessStartInfo();
+                    startInfo.UseShellExecute = true;
+                    startInfo.WorkingDirectory = Environment.CurrentDirectory;
+                    startInfo.FileName = Application.ExecutablePath;
+                    startInfo.Verb = "runas";
+                    
+                    try
+                    {
+                        Process.Start(startInfo);
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("This application requires administrative privileges to run.", "Mouse Macro",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
+
                 // Try to get mutex ownership
                 if (!mutex.WaitOne(TimeSpan.Zero, true))
                 {
