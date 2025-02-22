@@ -186,14 +186,14 @@ namespace NotesTasks
             trackBarRecoilReduction.TrackColor = Color.FromArgb(214, 37, 106);
             trackBarRecoilReduction.Value = 1;
             // 
-            // lblRecoilReductionActive
+            // lblRecoilReductionActive (RecoilReduction Active Label)
             // 
             lblRecoilReductionActive.AutoSize = true;
             lblRecoilReductionActive.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
-            lblRecoilReductionActive.ForeColor = Color.LightGreen;
-            lblRecoilReductionActive.Location = new Point(382, 13);
+            lblRecoilReductionActive.ForeColor = Color.FromArgb(250, 91, 101);
+            lblRecoilReductionActive.Location = new Point(350, 5);
             lblRecoilReductionActive.Name = "lblRecoilReductionActive";
-            lblRecoilReductionActive.Size = new Size(0, 19);
+            lblRecoilReductionActive.Size = new Size(0, 20);
             lblRecoilReductionActive.TabIndex = 1;
             lblRecoilReductionActive.TextAlign = ContentAlignment.MiddleRight;
             // 
@@ -249,14 +249,14 @@ namespace NotesTasks
             trackBarJitter.TrackColor = Color.FromArgb(214, 37, 106);
             trackBarJitter.Value = 3;
             // 
-            // lblJitterActive
+            // lblJitterActive (Jitter Active Label)
             // 
             lblJitterActive.AutoSize = true;
             lblJitterActive.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
-            lblJitterActive.ForeColor = Color.LightGreen;
-            lblJitterActive.Location = new Point(382, 12);
+            lblJitterActive.ForeColor = Color.FromArgb(250, 91, 101);
+            lblJitterActive.Location = new Point(350, 5);
             lblJitterActive.Name = "lblJitterActive";
-            lblJitterActive.Size = new Size(0, 19);
+            lblJitterActive.Size = new Size(0, 20);
             lblJitterActive.TabIndex = 0;
             lblJitterActive.TextAlign = ContentAlignment.MiddleRight;
             lblJitterActive.Click += lblJitterActive_Click;

@@ -131,11 +131,11 @@ namespace NotesTasks
             (0, 6), (7, 7), (-7, -7), (0, 6)
         };
 
-        private const double BASE_RECOIL_STRENGTH = 0.65;
-        private const double BASE_RECOIL_STRENGTH_2 = 1.5;
-        private const double LOW_LEVEL_1_SPEED = 0.5;
-        private const double LOW_LEVEL_2_SPEED = 1.5;
-        private const double LOW_LEVEL_3_SPEED = 2.5;
+        private const double BASE_RECOIL_STRENGTH = 0.75;
+        private const double BASE_RECOIL_STRENGTH_2 = 2.0;
+        private const double LOW_LEVEL_1_SPEED = 0.25;
+        private const double LOW_LEVEL_2_SPEED = 0.5;
+        private const double LOW_LEVEL_3_SPEED = 0.75;
 
         public MacroForm()
         {
@@ -645,33 +645,24 @@ namespace NotesTasks
                     {
                         // Recoil reduction mode - constant downward movement
                         input.mi.dx = 0;
-                        // Adjust speed based on recoil reduction strength below 4
-                        if (recoilReductionStrength < 4)
+                        // Low Range (1-6): Ultra-precise movements with logarithmic scaling
+                        if (recoilReductionStrength <= 6)
                         {
-                            switch (recoilReductionStrength)
-                            {
-                                case 1:
-                                    input.mi.dy = Math.Max(1, (int)Math.Round(LOW_LEVEL_1_SPEED));
-                                    break;
-                                case 2:
-                                    input.mi.dy = Math.Max(1, (int)Math.Round(LOW_LEVEL_2_SPEED));
-                                    break;
-                                case 3:
-                                    input.mi.dy = Math.Max(1, (int)Math.Round(LOW_LEVEL_3_SPEED));
-                                    break;
-                            }
+                            double logBase = 1.5;
+                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
                         }
-
-                        // Adjust speed based on recoil reduction strength between 4 and 10
-                        else if (recoilReductionStrength >= 4 && recoilReductionStrength <= 10)
+                        // Mid Range (7-13): Standard recoil control with linear scaling
+                        else if (recoilReductionStrength <= 13)
                         {
-                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength));
+                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength * 1.2));
                         }
-
-                        // Adjust speed based on recoil reduction strength above 10
+                        // High Range (14-20): Aggressive compensation with enhanced exponential scaling
                         else
                         {
-                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH_2 * recoilReductionStrength));
+                            // Using a more aggressive scaling factor to ensure consistent speed increase
+                            double baseValue = BASE_RECOIL_STRENGTH * 15.6; // Starting from level 13's approximate value
+                            double scalingFactor = 1.3; // Increased scaling factor for more aggressive progression
+                            input.mi.dy = Math.Max(1, (int)Math.Round(baseValue * Math.Pow(scalingFactor, recoilReductionStrength - 13)));
                         }
                     }
 
