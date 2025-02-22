@@ -98,11 +98,11 @@ namespace NotesTasks
         }
 
         // Surpress warnings as first time build might not know about these
-        #pragma warning disable CS0414
+#pragma warning disable CS0414
         private ToggleType currentToggleType = ToggleType.Keyboard;
         private Keys toggleKey = Keys.Capital;  // Default to Capital
         private Keys macroSwitchKey = Keys.Q;  // Default to Q
-        #pragma warning restore CS0414
+#pragma warning restore CS0414
 
         private int jitterStrength = 3;  // Default to 3
         private int recoilReductionStrength = 1;  // Default to 1
@@ -173,13 +173,10 @@ namespace NotesTasks
 
                 this.Resize += (s, e) =>
                 {
-                    // Adjust controls for new window size
-                    int padding = mainPanel.Padding.Horizontal;
-                    int availableWidth = mainPanel.Width - padding;
-                    btnSetKey.Width = availableWidth;
-                    trackBarJitter.Width = availableWidth;
-                    trackBarRecoilReduction.Width = availableWidth;
-                    btnToggleDebug.Width = availableWidth;
+                    // Let the anchor properties handle control resizing
+                    // Controls will maintain their relative positions and sizes
+                    mainPanel.PerformLayout();
+                    this.PerformLayout();
                 };
 
                 this.Load += (sender, e) =>
@@ -329,13 +326,13 @@ namespace NotesTasks
             // Load all saved settings
             trackBarJitter.Value = settings.JitterStrength;
             chkAlwaysJitter.Checked = settings.AlwaysJitterMode;
-            
+
             trackBarRecoilReduction.Value = settings.RecoilReductionStrength;
             chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
-            
+
             // Load UI preferences
             chkMinimizeToTray.Checked = settings.MinimizeToTray;
-            
+
             // Update variables
             jitterStrength = settings.JitterStrength;
             jitterEnabled = settings.JitterEnabled;
@@ -343,17 +340,17 @@ namespace NotesTasks
             recoilReductionStrength = settings.RecoilReductionStrength;
             recoilReductionEnabled = settings.RecoilReductionEnabled;
             alwaysRecoilReductionMode = settings.AlwaysRecoilReductionMode;
-            
+
             // Load hotkeys
             if (!string.IsNullOrEmpty(settings.MacroToggleKey))
                 currentMacroKey = (Keys)Enum.Parse(typeof(Keys), settings.MacroToggleKey);
             if (!string.IsNullOrEmpty(settings.ModeSwitchKey))
                 currentSwitchKey = (Keys)Enum.Parse(typeof(Keys), settings.ModeSwitchKey);
-            
+
             // Update strength labels
             UpdateJitterStrength(jitterStrength);
             UpdateRecoilReductionStrength(recoilReductionStrength);
-                
+
             UpdateTitle();
             UpdateModeLabels();
         }
@@ -361,7 +358,7 @@ namespace NotesTasks
         private void SaveCurrentSettings()
         {
             var settings = SettingsManager.CurrentSettings;
-            
+
             settings.JitterStrength = jitterStrength;
             settings.JitterEnabled = jitterEnabled;
             settings.AlwaysJitterMode = alwaysJitterMode;
@@ -371,7 +368,7 @@ namespace NotesTasks
             settings.MinimizeToTray = chkMinimizeToTray.Checked;
             settings.MacroToggleKey = currentMacroKey.ToString();
             settings.ModeSwitchKey = currentSwitchKey.ToString();
-            
+
             SettingsManager.SaveSettings();
         }
 
@@ -424,7 +421,7 @@ namespace NotesTasks
                 {
                     bool isXButton1 = (hookStruct.mouseData >> 16) == 1;
                     bool isXButton2 = (hookStruct.mouseData >> 16) == 2;
-                    
+
                     if (isSettingKey)
                     {
                         isSettingKey = false;
@@ -451,13 +448,13 @@ namespace NotesTasks
                         UpdateDebugInfo($"Switch key set to {buttonName}");
                         return (IntPtr)1;
                     }
-                    else if ((isXButton1 && currentMacroKey == Keys.XButton1) || 
+                    else if ((isXButton1 && currentMacroKey == Keys.XButton1) ||
                             (isXButton2 && currentMacroKey == Keys.XButton2))
                     {
                         ToggleMacro();
                         return (IntPtr)1;
                     }
-                    else if ((isXButton1 && currentSwitchKey == Keys.XButton1) || 
+                    else if ((isXButton1 && currentSwitchKey == Keys.XButton1) ||
                             (isXButton2 && currentSwitchKey == Keys.XButton2))
                     {
                         if (!alwaysJitterMode && !alwaysRecoilReductionMode)
@@ -934,6 +931,11 @@ namespace NotesTasks
             toolTip.SetToolTip(chkAlwaysRecoilReduction, "Always keep Recoil Reduction enabled");
             toolTip.SetToolTip(trackBarRecoilReduction, "Adjust Recoil Reduction strength");
             toolTip.SetToolTip(chkMinimizeToTray, "Minimize to system tray when closing");
+        }
+
+        private void chkMinimizeToTray_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
