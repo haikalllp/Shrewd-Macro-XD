@@ -32,7 +32,7 @@ namespace NotesTasks
             mainPanel = new Panel();
             debugPanel = new Panel();
             debugLabel = new TextBox();
-            btnToggleDebug = new Button();
+            btnToggleDebug = new ModernButton();
             strengthPanel1 = new Panel();
             lblRecoilReductionStrengthValue = new Label();
             lblRecoilReductionStrengthPrefix = new Label();
@@ -46,10 +46,10 @@ namespace NotesTasks
             settingsPanel = new Panel();
             lblCurrentKeyValue = new Label();
             lblCurrentKeyPrefix = new Label();
-            btnSetKey = new Button();
+            btnSetKey = new ModernButton();
             chkMinimizeToTray = new CheckBox();
             lblMacroSwitchKeyValue = new Label();
-            btnSetMacroSwitch = new Button();
+            btnSetMacroSwitch = new ModernButton();
             lblMacroSwitchKeyPrefix = new Label();
             chkAlwaysJitter = new CheckBox();
             chkAlwaysRecoilReduction = new CheckBox();
@@ -70,7 +70,7 @@ namespace NotesTasks
             // mainPanel
             // 
             mainPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            mainPanel.BackColor = Color.FromArgb(30, 30, 30);
+            mainPanel.BackColor = Color.FromArgb(16, 2, 31);
             mainPanel.Controls.Add(debugPanel);
             mainPanel.Controls.Add(btnToggleDebug);
             mainPanel.Controls.Add(strengthPanel1);
@@ -120,12 +120,12 @@ namespace NotesTasks
             // 
             btnToggleDebug.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             btnToggleDebug.FlatStyle = FlatStyle.Flat;
-            btnToggleDebug.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            btnToggleDebug.Font = new Font("JetBrains Mono", 10F, FontStyle.Regular, GraphicsUnit.Point);
             btnToggleDebug.ForeColor = Color.White;
             btnToggleDebug.Location = new Point(14, 464);
             btnToggleDebug.Margin = new Padding(0, 0, 0, 12);
             btnToggleDebug.Name = "btnToggleDebug";
-            btnToggleDebug.Size = new Size(465, 30);
+            btnToggleDebug.Size = new Size(465, 35);
             btnToggleDebug.TabIndex = 5;
             btnToggleDebug.Text = "Show Debug Info";
             // 
@@ -145,7 +145,7 @@ namespace NotesTasks
             // lblRecoilReductionStrengthValue
             // 
             lblRecoilReductionStrengthValue.AutoSize = true;
-            lblRecoilReductionStrengthValue.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold, GraphicsUnit.Point);
+            lblRecoilReductionStrengthValue.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Bold, GraphicsUnit.Point);
             lblRecoilReductionStrengthValue.ForeColor = Color.White;
             lblRecoilReductionStrengthValue.Location = new Point(167, 6);
             lblRecoilReductionStrengthValue.Margin = new Padding(0);
@@ -157,7 +157,7 @@ namespace NotesTasks
             // lblRecoilReductionStrengthPrefix
             // 
             lblRecoilReductionStrengthPrefix.AutoSize = true;
-            lblRecoilReductionStrengthPrefix.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            lblRecoilReductionStrengthPrefix.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
             lblRecoilReductionStrengthPrefix.ForeColor = Color.White;
             lblRecoilReductionStrengthPrefix.Location = new Point(0, 6);
             lblRecoilReductionStrengthPrefix.Margin = new Padding(0);
@@ -205,7 +205,7 @@ namespace NotesTasks
             // lblJitterStrengthValue
             // 
             lblJitterStrengthValue.AutoSize = true;
-            lblJitterStrengthValue.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold, GraphicsUnit.Point);
+            lblJitterStrengthValue.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Bold, GraphicsUnit.Point);
             lblJitterStrengthValue.ForeColor = Color.White;
             lblJitterStrengthValue.Location = new Point(99, 6);
             lblJitterStrengthValue.Margin = new Padding(0);
@@ -217,7 +217,7 @@ namespace NotesTasks
             // lblJitterStrengthPrefix
             // 
             lblJitterStrengthPrefix.AutoSize = true;
-            lblJitterStrengthPrefix.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            lblJitterStrengthPrefix.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
             lblJitterStrengthPrefix.ForeColor = Color.White;
             lblJitterStrengthPrefix.Location = new Point(0, 6);
             lblJitterStrengthPrefix.Margin = new Padding(0);
@@ -269,7 +269,7 @@ namespace NotesTasks
             // lblCurrentKeyValue
             // 
             lblCurrentKeyValue.AutoSize = true;
-            lblCurrentKeyValue.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold, GraphicsUnit.Point);
+            lblCurrentKeyValue.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Bold, GraphicsUnit.Point);
             lblCurrentKeyValue.ForeColor = Color.White;
             lblCurrentKeyValue.Location = new Point(121, 24);
             lblCurrentKeyValue.Margin = new Padding(0);
@@ -281,7 +281,7 @@ namespace NotesTasks
             // lblCurrentKeyPrefix
             // 
             lblCurrentKeyPrefix.AutoSize = true;
-            lblCurrentKeyPrefix.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            lblCurrentKeyPrefix.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
             lblCurrentKeyPrefix.ForeColor = Color.White;
             lblCurrentKeyPrefix.Location = new Point(0, 24);
             lblCurrentKeyPrefix.Margin = new Padding(0);
@@ -295,12 +295,12 @@ namespace NotesTasks
             // 
             btnSetKey.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             btnSetKey.FlatStyle = FlatStyle.Flat;
-            btnSetKey.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            btnSetKey.Font = new Font("JetBrains Mono", 10F, FontStyle.Regular, GraphicsUnit.Point);
             btnSetKey.ForeColor = Color.White;
             btnSetKey.Location = new Point(0, 47);
             btnSetKey.Margin = new Padding(0, 0, 0, 12);
             btnSetKey.Name = "btnSetKey";
-            btnSetKey.Size = new Size(465, 30);
+            btnSetKey.Size = new Size(465, 35);
             btnSetKey.TabIndex = 1;
             btnSetKey.Text = "Set Toggle Key";
             // 
@@ -308,7 +308,7 @@ namespace NotesTasks
             // 
             chkMinimizeToTray.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             chkMinimizeToTray.AutoSize = true;
-            chkMinimizeToTray.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            chkMinimizeToTray.Font = new Font("JetBrains Mono", 10F, FontStyle.Regular, GraphicsUnit.Point);
             chkMinimizeToTray.ForeColor = Color.White;
             chkMinimizeToTray.Location = new Point(333, 2);
             chkMinimizeToTray.Margin = new Padding(3, 2, 3, 2);
@@ -332,19 +332,19 @@ namespace NotesTasks
             // 
             btnSetMacroSwitch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             btnSetMacroSwitch.FlatStyle = FlatStyle.Flat;
-            btnSetMacroSwitch.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            btnSetMacroSwitch.Font = new Font("JetBrains Mono", 10F, FontStyle.Regular, GraphicsUnit.Point);
             btnSetMacroSwitch.ForeColor = Color.White;
             btnSetMacroSwitch.Location = new Point(0, 128);
             btnSetMacroSwitch.Margin = new Padding(0, 0, 0, 12);
             btnSetMacroSwitch.Name = "btnSetMacroSwitch";
-            btnSetMacroSwitch.Size = new Size(465, 30);
+            btnSetMacroSwitch.Size = new Size(465, 35);
             btnSetMacroSwitch.TabIndex = 4;
             btnSetMacroSwitch.Text = "Set Switch Key";
             // 
             // lblMacroSwitchKeyPrefix
             // 
             lblMacroSwitchKeyPrefix.AutoSize = true;
-            lblMacroSwitchKeyPrefix.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            lblMacroSwitchKeyPrefix.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
             lblMacroSwitchKeyPrefix.ForeColor = Color.White;
             lblMacroSwitchKeyPrefix.Location = new Point(0, 105);
             lblMacroSwitchKeyPrefix.Name = "lblMacroSwitchKeyPrefix";
@@ -355,7 +355,7 @@ namespace NotesTasks
             // chkAlwaysJitter
             // 
             chkAlwaysJitter.AutoSize = true;
-            chkAlwaysJitter.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            chkAlwaysJitter.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
             chkAlwaysJitter.ForeColor = Color.White;
             chkAlwaysJitter.Location = new Point(14, 417);
             chkAlwaysJitter.Margin = new Padding(3, 2, 3, 2);
@@ -367,7 +367,7 @@ namespace NotesTasks
             // chkAlwaysRecoilReduction
             // 
             chkAlwaysRecoilReduction.AutoSize = true;
-            chkAlwaysRecoilReduction.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
+            chkAlwaysRecoilReduction.Font = new Font("JetBrains Mono", 10.2F, FontStyle.Regular, GraphicsUnit.Point);
             chkAlwaysRecoilReduction.ForeColor = Color.White;
             chkAlwaysRecoilReduction.Location = new Point(181, 417);
             chkAlwaysRecoilReduction.Margin = new Padding(3, 2, 3, 2);
@@ -408,7 +408,7 @@ namespace NotesTasks
             ClientSize = new Size(493, 655);
             Controls.Add(mainPanel);
             Margin = new Padding(3, 2, 3, 2);
-            MinimumSize = new Size(352, 422);
+            MinimumSize = new Size(493, 422);
             Name = "MacroForm";
             Text = "Notes&Tasks";
             mainPanel.ResumeLayout(false);
@@ -428,9 +428,8 @@ namespace NotesTasks
         }
 
         #endregion
-
         private System.Windows.Forms.Panel mainPanel;
-        private System.Windows.Forms.Button btnSetKey;
+        private ModernButton btnSetKey;
         private System.Windows.Forms.Label lblCurrentKeyPrefix;
         private System.Windows.Forms.Label lblCurrentKeyValue;
         private System.Windows.Forms.TrackBar trackBarJitter;
@@ -439,7 +438,7 @@ namespace NotesTasks
         private System.Windows.Forms.TrackBar trackBarRecoilReduction;
         private System.Windows.Forms.Label lblRecoilReductionStrengthPrefix;
         private System.Windows.Forms.Label lblRecoilReductionStrengthValue;
-        private System.Windows.Forms.Button btnToggleDebug;
+        private ModernButton btnToggleDebug;
         private System.Windows.Forms.Panel debugPanel;
         private System.Windows.Forms.TextBox debugLabel;
         private System.Windows.Forms.NotifyIcon notifyIcon;
@@ -450,7 +449,7 @@ namespace NotesTasks
         private System.Windows.Forms.Panel strengthPanel1;
         private System.Windows.Forms.Panel strengthPanel2;
         private System.Windows.Forms.CheckBox chkMinimizeToTray;
-        private System.Windows.Forms.Button btnSetMacroSwitch;
+        private ModernButton btnSetMacroSwitch;
         private System.Windows.Forms.Label lblMacroSwitchKeyPrefix;
         private System.Windows.Forms.Label lblMacroSwitchKeyValue;
         private System.Windows.Forms.CheckBox chkAlwaysJitter;

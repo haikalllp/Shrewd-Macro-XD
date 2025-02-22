@@ -6,10 +6,19 @@
         "keybind"
     ],
     "cSpell.ignoreWords": [
+        "Argb",
         "KBDLLHOOKSTRUCT",
+        "LBUTTONDOWN",
+        "LBUTTONUP",
+        "MBUTTONDOWN",
         "MOUSEEVENTF",
         "MOUSEINPUT",
         "MSLLHOOKSTRUCT",
+        "RBUTTONDOWN",
+        "RBUTTONUP",
+        "Segoe",
+        "Surpress",
+        "XBUTTON",
         "XBUTTONDOWN",
         "lpfn",
         "refint"
