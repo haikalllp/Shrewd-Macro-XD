@@ -349,6 +349,10 @@ namespace NotesTasks
                 currentMacroKey = (Keys)Enum.Parse(typeof(Keys), settings.MacroToggleKey);
             if (!string.IsNullOrEmpty(settings.ModeSwitchKey))
                 currentSwitchKey = (Keys)Enum.Parse(typeof(Keys), settings.ModeSwitchKey);
+            
+            // Update strength labels
+            UpdateJitterStrength(jitterStrength);
+            UpdateRecoilReductionStrength(recoilReductionStrength);
                 
             UpdateTitle();
             UpdateModeLabels();

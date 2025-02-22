@@ -36,12 +36,12 @@ namespace NotesTasks
             strengthPanel1 = new Panel();
             lblRecoilReductionStrengthValue = new Label();
             lblRecoilReductionStrengthPrefix = new Label();
-            trackBarRecoilReduction = new TrackBar();
+            trackBarRecoilReduction = new ModernTrackBar();
             lblRecoilReductionActive = new Label();
             strengthPanel2 = new Panel();
             lblJitterStrengthValue = new Label();
             lblJitterStrengthPrefix = new Label();
-            trackBarJitter = new TrackBar();
+            trackBarJitter = new ModernTrackBar();
             lblJitterActive = new Label();
             settingsPanel = new Panel();
             lblCurrentKeyValue = new Label();
@@ -432,10 +432,10 @@ namespace NotesTasks
         private ModernButton btnSetKey;
         private System.Windows.Forms.Label lblCurrentKeyPrefix;
         private System.Windows.Forms.Label lblCurrentKeyValue;
-        private System.Windows.Forms.TrackBar trackBarJitter;
+        private ModernTrackBar trackBarJitter;
         private System.Windows.Forms.Label lblJitterStrengthPrefix;
         private System.Windows.Forms.Label lblJitterStrengthValue;
-        private System.Windows.Forms.TrackBar trackBarRecoilReduction;
+        private ModernTrackBar trackBarRecoilReduction;
         private System.Windows.Forms.Label lblRecoilReductionStrengthPrefix;
         private System.Windows.Forms.Label lblRecoilReductionStrengthValue;
         private ModernButton btnToggleDebug;
