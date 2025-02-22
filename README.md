@@ -227,6 +227,8 @@ MouseMacro/
 ├── src/                    # Source code
 │   ├── MacroForm.cs       # Main form implementation
 │   ├── MacroForm.Designer.cs # Form designer code
+│   ├── ModernButton.cs    # Custom button control
+│   ├── ModernTrackBar.cs  # Custom trackbar control
 │   └── Program.cs         # Application entry point
 ├── MouseMacro.csproj      # Project configuration
 ├── README.md              # Project documentation and setup guide

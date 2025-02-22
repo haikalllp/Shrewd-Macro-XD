@@ -21,6 +21,7 @@
         "XBUTTON",
         "XBUTTONDOWN",
         "lpfn",
-        "refint"
+        "refint",
+        "trackbar"
     ]
 }

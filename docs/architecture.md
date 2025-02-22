@@ -50,6 +50,8 @@ MouseMacro/
 ├── src/                    # Source code
 │   ├── MacroForm.cs       # Main form implementation
 │   ├── MacroForm.Designer.cs # Form designer code
+│   ├── ModernButton.cs    # Custom button control
+│   ├── ModernTrackBar.cs  # Custom trackbar control
 │   └── Program.cs         # Application entry point
 ├── MouseMacro.csproj      # Project configuration
 ├── README.md              # Project documentation and setup guide
@@ -100,11 +102,24 @@ MouseMacro/
 
 ### 3. User Interface
 - **Main Window**
-  - Modern dark theme
-  - Responsive layout
+  - Modern dark theme with consistent color scheme
+  - Responsive layout with fluid transitions
   - DPI scaling support
+  - Professional visual design
   
-- **Controls**
+- **Custom Controls**
+  - ModernButton
+    - Customizable hover and click effects
+    - Smooth color transitions
+    - Consistent styling with theme
+    - Professional rounded corners
+  - ModernTrackBar
+    - Custom slider design
+    - Visual value feedback
+    - Smooth drag operations
+    - Theme-consistent appearance
+  
+- **Standard Controls**
   - Macro Toggle key display/configuration (Default: Capital)
   - Macro Switch key configuration (Default: Q)
   - Strength sliders (1-20)
