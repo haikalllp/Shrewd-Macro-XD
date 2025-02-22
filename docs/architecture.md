@@ -79,8 +79,11 @@ MouseMacro/
 ### 2. Macro Engine
 - **Recoil Reduction System**
   - Vertical compensation
-  - Strength control (1-20)
-  - Primary functionality
+  - Three-tier strength distribution:
+    - Tier 1 (1-6): Linear scaling
+    - Tier 2 (7-13): Enhanced scaling
+    - Tier 3 (14-20): Maximum impact
+  - Dynamic strength adjustment
   - Default strength: 1
   
 - **Jitter System**
@@ -206,14 +209,26 @@ MouseMacro/
       if (IsRecoilReductionActive)
       {
           int strength = recoilReductionStrength.Value;
-          SendInput.MoveMouse(0, strength);
+          int scaledStrength = CalculateScaledStrength(strength);
+          SendInput.MoveMouse(0, scaledStrength);
       }
+  }
+
+  private int CalculateScaledStrength(int strength)
+  {
+      if (strength <= 6) // Tier 1
+          return strength;
+      else if (strength <= 13) // Tier 2
+          return 6 + (strength - 6) * 2;
+      else // Tier 3
+          return 20 + (strength - 13) * 3;
   }
   ```
 - **Features**:
   - Vertical movement compensation
-  - Adjustable strength (1-20)
-  - Real-time strength adjustment
+  - Three-tier strength scaling system
+  - Dynamic strength calculation
+  - Optimized performance
   - Smooth movement patterns
 
 #### 1.2 Jitter System

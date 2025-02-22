@@ -648,21 +648,34 @@ namespace NotesTasks
                         // Low Range (1-6): Ultra-precise movements with logarithmic scaling
                         if (recoilReductionStrength <= 6)
                         {
-                            double logBase = 1.5;
-                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
+                            if (recoilReductionStrength == 1)
+                            {
+                                // Special case for strength 1 - minimal movement
+                                input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
+                            }
+                            else
+                            {
+                                double logBase = 1.5;
+                                input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
+                            }
                         }
                         // Mid Range (7-13): Standard recoil control with linear scaling
-                        else if (recoilReductionStrength <= 13)
+                        else if (recoilReductionStrength <= 14)
                         {
                             input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength * 1.2));
                         }
                         // High Range (14-20): Aggressive compensation with enhanced exponential scaling
                         else
                         {
-                            // Using a more aggressive scaling factor to ensure consistent speed increase
-                            double baseValue = BASE_RECOIL_STRENGTH * 15.6; // Starting from level 13's approximate value
-                            double scalingFactor = 1.3; // Increased scaling factor for more aggressive progression
-                            input.mi.dy = Math.Max(1, (int)Math.Round(baseValue * Math.Pow(scalingFactor, recoilReductionStrength - 13)));
+                            // Using an even more aggressive scaling factor for maximum effect
+                            double baseValue = BASE_RECOIL_STRENGTH * 20.0; // Increased base value for stronger effect
+                            double scalingFactor = 1.3; // Higher scaling factor for more dramatic progression
+                            double exponentialBoost = 1.2; // Additional multiplier for enhanced scaling
+                            input.mi.dy = Math.Max(1, (int)Math.Round(
+                                baseValue *
+                                Math.Pow(scalingFactor, recoilReductionStrength - 13) *
+                                Math.Pow(exponentialBoost, (recoilReductionStrength - 13) / 2)
+                            ));
                         }
                     }
 
