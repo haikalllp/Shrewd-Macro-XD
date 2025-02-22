@@ -10,7 +10,7 @@ This document provides an overview of the Mouse Macro Application architecture. 
 - **Display Name**: Notes&Tasks
 - **Window Title**: Notes&Tasks - [Status]
 - **System Tray**: Notes&Tasks with corresponding icon
-- **Design Rationale**: 
+- **Design Rationale**:
   - Professional appearance in enterprise environments
   - Discrete system integration
   - Consistent branding across interfaces
@@ -177,7 +177,7 @@ MouseMacro/
 
 ### 1. Core Macro Logic
 - **Language**: C#
-- **Primary Components**: 
+- **Primary Components**:
   - Recoil reduction system
   - Jitter pattern generation
   - State management

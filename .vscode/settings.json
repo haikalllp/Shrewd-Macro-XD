@@ -1,0 +1,17 @@
+{
+    "cSpell.words": [
+        "capslock",
+        "kaos",
+        "KAOS",
+        "keybind"
+    ],
+    "cSpell.ignoreWords": [
+        "KBDLLHOOKSTRUCT",
+        "MOUSEEVENTF",
+        "MOUSEINPUT",
+        "MSLLHOOKSTRUCT",
+        "XBUTTONDOWN",
+        "lpfn",
+        "refint"
+    ]
+}
