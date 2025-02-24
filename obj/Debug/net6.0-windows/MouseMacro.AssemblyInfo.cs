@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Task Management and Note Taking Application")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f9551f9d5dd75af4e73c9703dd05e54b59304bde")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0c30795985ea8440241d75cd0aaf366459bdac37")]
 [assembly: System.Reflection.AssemblyProductAttribute("NotesTasks")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NotesTasks")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
