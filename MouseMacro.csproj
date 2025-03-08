@@ -6,16 +6,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UacUIApproved>true</UacUIApproved>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>NotesTasks</AssemblyName>
-    <RootNamespace>NotesTasks</RootNamespace>
+    <AssemblyName>Notes&amp;Tasks</AssemblyName>
+    <RootNamespace>Notes&amp;Tasks</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ApplicationIcon>assets\logo.ico</ApplicationIcon>
     <Title>Notes &amp; Tasks</Title>
-    <Authors>HaikalLLP</Authors>
+    <Authors>HaikalllP</Authors>
     <Description>Task Management and Note Taking Application</Description>
     <SignAssembly>true</SignAssembly>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <Version>1.0.0.1</Version> <!-- Incrementing the version for the next release -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

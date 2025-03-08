@@ -1,6 +1,6 @@
 using System;
 
-namespace Macro
+namespace NotesTasks
 {
     public class Settings
     {

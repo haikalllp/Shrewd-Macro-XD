@@ -28,7 +28,7 @@ namespace NotesTasks
                     startInfo.WorkingDirectory = Environment.CurrentDirectory;
                     startInfo.FileName = Application.ExecutablePath;
                     startInfo.Verb = "runas";
-                    
+
                     try
                     {
                         Process.Start(startInfo);
@@ -36,7 +36,7 @@ namespace NotesTasks
                     }
                     catch (Exception)
                     {
-                        MessageBox.Show("This application requires administrative privileges to run.", "Mouse Macro",
+                        MessageBox.Show("This application requires administrative privileges to run.", "Notes&Tasks",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
@@ -45,7 +45,7 @@ namespace NotesTasks
                 // Try to get mutex ownership
                 if (!mutex.WaitOne(TimeSpan.Zero, true))
                 {
-                    MessageBox.Show("Another instance of Mouse Macro is already running.", "Mouse Macro", 
+                    MessageBox.Show("Another instance of Notes&Tasks is already running.", "Notes&Tasks", 
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -91,7 +91,7 @@ namespace NotesTasks
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred: {ex.Message}", "Mouse Macro Error",
+                MessageBox.Show($"An error occurred: {ex.Message}", "Notes&Tasks Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally

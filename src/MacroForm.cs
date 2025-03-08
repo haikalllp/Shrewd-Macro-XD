@@ -4,7 +4,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
-using Macro;
+using NotesTasks;
 
 namespace NotesTasks
 {
