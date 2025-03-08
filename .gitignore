@@ -1,9 +1,6 @@
 # Build output directories
 bin/*
 obj/*
-obj/Debug/net6.0-windows/
-obj/**/MouseMacro.assets.cache
-obj/**/MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
 
 # Visual Studio files
 .vs/
