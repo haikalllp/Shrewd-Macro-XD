@@ -1,6 +1,6 @@
 using System;
 
-namespace NotesTasks
+namespace NotesAndTasks
 {
     public class Settings
     {

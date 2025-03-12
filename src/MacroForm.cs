@@ -4,9 +4,9 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
-using NotesTasks;
+using NotesAndTasks;
 
-namespace NotesTasks
+namespace NotesAndTasks
 {
     public partial class MacroForm : Form
     {

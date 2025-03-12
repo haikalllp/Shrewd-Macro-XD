@@ -45,8 +45,8 @@ if errorlevel 1 goto error
 echo.
 echo === Build Complete! ===
 echo.
-echo Debug build: %~dp0bin\Debug\net6.0-windows\NotesTasks.exe
-echo Release build: %~dp0bin\Release\net6.0-windows\NotesTasks.exe
+echo Debug build: %~dp0bin\Debug\net6.0-windows\NotesAndTasks.exe
+echo Release build: %~dp0bin\Release\net6.0-windows\NotesAndTasks.exe
 echo.
 goto end
 

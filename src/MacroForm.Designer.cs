@@ -1,4 +1,4 @@
-namespace NotesTasks
+namespace NotesAndTasks
 {
     partial class MacroForm
     {
@@ -401,7 +401,7 @@ namespace NotesTasks
             // notifyIcon
             // 
             notifyIcon.ContextMenuStrip = trayContextMenu;
-            notifyIcon.Text = "Mouse Macro";
+            notifyIcon.Text = "NotesAndTasks";
             notifyIcon.Visible = true;
             // 
             // trayContextMenu
@@ -432,7 +432,7 @@ namespace NotesTasks
             Margin = new Padding(3, 2, 3, 2);
             MinimumSize = new Size(493, 422);
             Name = "MacroForm";
-            Text = "Notes&Tasks";
+            Text = "NotesAndTasks";
             mainPanel.ResumeLayout(false);
             mainPanel.PerformLayout();
             debugPanel.ResumeLayout(false);

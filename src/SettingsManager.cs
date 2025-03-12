@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace NotesTasks
+namespace NotesAndTasks
 {
     public static class SettingsManager
     {

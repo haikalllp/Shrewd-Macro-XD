@@ -63,7 +63,7 @@ A professional Windows Forms application for advanced mouse input management, fe
 2. **Setup**
    - Extract the files to your preferred location
    - No installation required (portable application)
-   - Run `NotesTasks.exe` with administrator privileges
+   - Run `NotesAndTasks.exe` with administrator privileges
 
 ## Building from Source
 
@@ -86,8 +86,8 @@ A professional Windows Forms application for advanced mouse input management, fe
    ```
 
 ### Output Locations
-- Debug: `bin/Debug/net6.0-windows/NotesTasks.exe`
-- Release: `bin/Release/net6.0-windows/NotesTasks.exe`
+- Debug: `bin/Debug/net6.0-windows/NotesAndTasks.exe`
+- Release: `bin/Release/net6.0-windows/NotesAndTasks.exe`
 
 ## Usage Guide
 

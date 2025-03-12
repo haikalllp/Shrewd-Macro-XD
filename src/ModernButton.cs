@@ -1,7 +1,7 @@
 using System.Drawing.Drawing2D;
 using System.ComponentModel;
 
-namespace NotesTasks
+namespace NotesAndTasks
 {
     public class ModernButton : Button
     {

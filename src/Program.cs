@@ -4,7 +4,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Security.Principal;
 
-namespace NotesTasks
+namespace NotesAndTasks
 {
     internal static class Program
     {
