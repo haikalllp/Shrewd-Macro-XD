@@ -5,35 +5,44 @@ A professional Windows Forms application for advanced mouse input management, fe
 ## Features
 
 - **Recoil Reduction System**
-  - Vertical movement compensation
-  - Adjustable strength (1-20)
+  - Advanced vertical compensation with three-tier scaling:
+    - Tier 1 (1-6): Linear scaling with logarithmic base
+    - Tier 2 (7-14): Enhanced scaling with 1.2x multiplier
+    - Tier 3 (15-20): Exponential scaling with dynamic boost
+  - Real-time strength adjustment (1-20)
   - Default strength: 1
-  - Real-time adjustments
+  - Optimized movement patterns
 
 - **Jitter System**
-  - Complex movement patterns
-  - Strength control (1-20)
+  - Complex 24-point movement pattern
+  - Dynamic strength scaling (1-20)
   - Default strength: 3
-  - Pattern cycling
+  - Pattern cycling with smooth transitions
+  - Optimized for performance
 
 - **Mode Switching**
-  - Toggle between modes (Default: Q)
-  - Support for mouse buttons 3-5 for key bindings
-  - Always mode options
-  - Active state indicators
-  - Independent mode states
+  - Intelligent mode toggling
+  - Support for keyboard and mouse buttons (Mouse3-5)
+  - Always mode options with validation
+  - Real-time mode state tracking
+  - Visual state indicators
 
 - **Professional Integration**
   - Clean system tray integration
   - Modern dark theme UI
-  - Minimal resource usage
+  - DPI-aware scaling
   - Single instance enforcement
+  - Professional window management
 
 - **Configuration Management System**
   - Thread-safe configuration handling
   - JSON-based settings storage
   - Automatic configuration backup
-  - Real-time validation
+  - Comprehensive validation system:
+    - Pre-save validation
+    - Type validation
+    - Range validation
+    - Cross-property validation
   - Event-driven updates
   - Configuration sections:
     - Jitter settings
@@ -44,11 +53,24 @@ A professional Windows Forms application for advanced mouse input management, fe
 
 - **Event Handler System**
   - Centralized event management
-  - Automatic event cleanup
+  - Automatic resource cleanup
   - Type-safe event registration
   - Fluent API for control events
-  - Configuration change tracking
-  - Error handling and recovery
+  - Comprehensive error handling:
+    - Exception tracking
+    - State recovery
+    - Debug logging
+  - Event categories:
+    - Configuration events
+    - Control events
+    - System events
+
+- **Debug System**
+  - Real-time state monitoring
+  - Performance tracking
+  - Event logging
+  - Error tracking
+  - Thread-safe logging
 
 - **Settings Saved with JSON**
   - Settings saved automatically into a JSON file
@@ -193,53 +215,39 @@ A professional Windows Forms application for advanced mouse input management, fe
 
 ### Settings Configuration
 - **Configuration Manager**
-  - Thread-safe operations
-  - Automatic backups
-  - Real-time validation
-  - Event notifications
+  - Thread-safe operations with ReaderWriterLockSlim
+  - Automatic backups with versioning
+  - Real-time validation with error recovery
+  - Event notifications with detailed state
   
-- **Configuration Components**
-  - Jitter settings
-  - Recoil reduction settings
-  - Hotkey bindings
-  - UI preferences
-  - Backup settings
-
-- **Event System**
-  - Configuration change events
-  - Validation events
-  - Backup completion events
-  - Control-specific events
-
-- **Validation Features**
-  - Pre-save validation
-  - Type checking
+- **Validation System**
+  - Comprehensive input validation
+  - Type safety checks
   - Range validation
   - Cross-property validation
-  - Error reporting
+  - Error reporting with context
+  - Recovery mechanisms
 
-### Event Handler System
-- **Centralized Management**
-  - Automatic event registration
-  - Type-safe event handling
+- **Event System**
+  - Configuration change tracking
+  - Validation event handling
+  - Backup completion notifications
+  - Error event propagation
+  - State change notifications
+
+### Error Handling
+- **Validation Errors**
+  - Automatic recovery
+  - Default value fallback
+  - User notification
+  - State preservation
+
+- **Runtime Errors**
+  - Exception handling
   - Resource cleanup
-  - Error recovery
-
-- **Control Events**
-  - TrackBar value changes
-  - CheckBox state changes
-  - Button interactions
-  - TextBox input handling
-
-- **Configuration Events**
-  - Settings changes
-  - Validation results
-  - Backup notifications
-
-- **System Events**
-  - Window state changes
-  - Application lifecycle
-  - Error handling
+  - State recovery
+  - Debug logging
+  - User feedback
 
 ## Troubleshooting
 
@@ -285,12 +293,16 @@ MouseMacro/
 │   │   ├── AppConfiguration.cs
 │   │   ├── ConfigurationEvents.cs
 │   │   ├── EventHandlerManager.cs
-│   │   └── EventHandlerExtensions.cs
+│   │   ├── EventHandlerExtensions.cs
+│   │   ├── SettingsValidation.cs
+│   │   └── Validation.cs
 │   ├── Controls/         # UI Controls
 │   │   ├── ModernButton.cs
 │   │   └── ModernTrackBar.cs
 │   ├── MacroForm.cs      # Main form implementation
 │   ├── MacroForm.Designer.cs
+│   ├── NativeMethods.cs  # Windows API interop
+│   ├── WinMessages.cs    # Windows message constants
 │   └── Program.cs        # Application entry point
 ├── MouseMacro.csproj     # Project configuration
 ├── README.md             # Project documentation
