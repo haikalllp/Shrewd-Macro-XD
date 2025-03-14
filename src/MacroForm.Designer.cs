@@ -13,9 +13,41 @@ namespace NotesAndTasks
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+
+                if (jitterTimer != null)
+                {
+                    jitterTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                    jitterTimer.Dispose();
+                }
+
+                if (keyboardHookID != IntPtr.Zero)
+                {
+                    NativeMethods.UnhookWindowsHookEx(keyboardHookID);
+                    keyboardHookID = IntPtr.Zero;
+                }
+
+                if (mouseHookID != IntPtr.Zero)
+                {
+                    NativeMethods.UnhookWindowsHookEx(mouseHookID);
+                    mouseHookID = IntPtr.Zero;
+                }
+
+                if (notifyIcon != null)
+                {
+                    notifyIcon.Visible = false;
+                    notifyIcon.Dispose();
+                }
+
+                if (toolTip != null)
+                {
+                    toolTip.Dispose();
+                }
             }
             base.Dispose(disposing);
         }

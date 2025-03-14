@@ -28,7 +28,6 @@ namespace NotesAndTasks
         private IntPtr mouseHookID = IntPtr.Zero;
         private readonly NativeMethods.LowLevelHookProc keyboardProc;
         private readonly NativeMethods.LowLevelHookProc mouseProc;
-        private readonly IContainer components;
         private System.Threading.Timer jitterTimer;
         private readonly ToolTip toolTip;
 
@@ -95,8 +94,7 @@ namespace NotesAndTasks
         /// </summary>
         public MacroForm()
         {
-            components = new Container();
-            toolTip = new ToolTip(components);
+            toolTip = new ToolTip();
             keyboardProc = KeyboardHookCallback;
             mouseProc = MouseHookCallback;
 
@@ -180,53 +178,6 @@ namespace NotesAndTasks
             {
                 UpdateDebugInfo($"Error initializing hooks: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Releases all resources used by the form.
-        /// </summary>
-        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                // Dispose managed resources
-                if (components != null)
-                {
-                    components.Dispose();
-                }
-
-                if (jitterTimer != null)
-                {
-                    jitterTimer.Change(Timeout.Infinite, Timeout.Infinite);
-                    jitterTimer.Dispose();
-                }
-
-                if (keyboardHookID != IntPtr.Zero)
-                {
-                    NativeMethods.UnhookWindowsHookEx(keyboardHookID);
-                    keyboardHookID = IntPtr.Zero;
-                }
-
-                if (mouseHookID != IntPtr.Zero)
-                {
-                    NativeMethods.UnhookWindowsHookEx(mouseHookID);
-                    mouseHookID = IntPtr.Zero;
-                }
-
-                if (notifyIcon != null)
-                {
-                    notifyIcon.Visible = false;
-                    notifyIcon.Dispose();
-                }
-
-                if (toolTip != null)
-                {
-                    toolTip.Dispose();
-                }
-            }
-
-            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -1273,21 +1224,7 @@ namespace NotesAndTasks
 
         private void chkMinimizeToTray_CheckedChanged(object sender, EventArgs e)
         {
-
-        }
-
-        private void ResetToDefaultSettings()
-        {
-            trackBarJitter.Value = 3;
-            trackBarRecoilReduction.Value = 1;
-            chkAlwaysJitter.Checked = false;
-            chkAlwaysRecoilReduction.Checked = false;
-            chkMinimizeToTray.Checked = false;
-            currentMacroKey = Keys.Capital;
-            currentSwitchKey = Keys.Q;
-            UpdateTitle();
-            UpdateModeLabels();
-            UpdateDebugInfo("Settings reset to defaults due to loading error");
+            SaveCurrentSettings();
         }
     }
 }
