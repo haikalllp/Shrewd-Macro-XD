@@ -9,6 +9,18 @@ using NotesAndTasks;
 
 namespace NotesAndTasks
 {
+    /// <summary>
+    /// Main form for the Notes&Tasks application that provides mouse input management functionality.
+    /// This form handles both jitter and recoil reduction features with configurable hotkeys and settings.
+    /// </summary>
+    /// <remarks>
+    /// The form implements two main features:
+    /// 1. Jitter - Applies a complex movement pattern to the mouse cursor
+    /// 2. Recoil Reduction - Provides vertical compensation with configurable strength
+    /// 
+    /// Both features are activated when left and right mouse buttons are held simultaneously.
+    /// The application can be minimized to the system tray and supports various hotkeys for control.
+    /// </remarks>
     public partial class MacroForm : Form
     {
         #region Fields
@@ -21,11 +33,18 @@ namespace NotesAndTasks
         private readonly ToolTip toolTip;
 
         private bool isMacroOn = false;
+        /// <summary>
+        /// Defines the types of input that can be used to toggle the macro functionality.
+        /// </summary>
         private enum ToggleType
         {
+            /// <summary>Keyboard key input</summary>
             Keyboard,
+            /// <summary>Middle mouse button input</summary>
             MouseMiddle,
+            /// <summary>Mouse button 4 (XButton1) input</summary>
             MouseX1,
+            /// <summary>Mouse button 5 (XButton2) input</summary>
             MouseX2
         }
 
@@ -70,6 +89,10 @@ namespace NotesAndTasks
 
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the MacroForm class.
+        /// Sets up all necessary components, hooks, and event handlers.
+        /// </summary>
         public MacroForm()
         {
             components = new Container();
@@ -106,6 +129,12 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Handles the form closing event. If minimize to tray is enabled,
+        /// the form will be hidden instead of closed when the user clicks the close button.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event data containing the close reason and cancellation option.</param>
         private void OnFormClosingHandler(object sender, FormClosingEventArgs e)
         {
             if (!isExiting && chkMinimizeToTray.Checked && e.CloseReason == CloseReason.UserClosing)
@@ -122,6 +151,11 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Handles form resize events by ensuring proper layout of controls.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event data.</param>
         private void OnResizeHandler(object sender, EventArgs e)
         {
             // Let the anchor properties handle control resizing
@@ -129,6 +163,11 @@ namespace NotesAndTasks
             this.PerformLayout();
         }
 
+        /// <summary>
+        /// Handles the form load event by initializing hooks and timers.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event data.</param>
         private void OnLoadHandler(object sender, EventArgs e)
         {
             try
@@ -143,6 +182,10 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Releases all resources used by the form.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -186,6 +229,9 @@ namespace NotesAndTasks
             base.Dispose(disposing);
         }
 
+        /// <summary>
+        /// Initializes custom components including icons, hotkeys, tooltips, and loads saved settings.
+        /// </summary>
         private void InitializeCustomComponents()
         {
             InitializeIcon();
@@ -203,6 +249,10 @@ namespace NotesAndTasks
             InitializeEventHandlers();
         }
 
+        /// <summary>
+        /// Initializes all event handlers for form controls.
+        /// Sets up click events, value change events, and checkbox state change events.
+        /// </summary>
         private void InitializeEventHandlers()
         {
             btnToggleDebug.Click += (sender, e) =>
@@ -297,6 +347,10 @@ namespace NotesAndTasks
             };
         }
 
+        /// <summary>
+        /// Loads saved settings from the settings manager and applies them to the form.
+        /// This includes hotkeys, strength values, and UI preferences.
+        /// </summary>
         private void LoadSettings()
         {
             var settings = SettingsManager.CurrentSettings;
@@ -333,6 +387,9 @@ namespace NotesAndTasks
             UpdateModeLabels();
         }
 
+        /// <summary>
+        /// Saves current settings to persistent storage through the settings manager.
+        /// </summary>
         private void SaveCurrentSettings()
         {
             var settings = SettingsManager.CurrentSettings;
@@ -350,6 +407,10 @@ namespace NotesAndTasks
             SettingsManager.SaveSettings();
         }
 
+        /// <summary>
+        /// Initializes low-level keyboard and mouse hooks for input monitoring.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when hook initialization fails.</exception>
         private void InitializeHooks()
         {
             try
@@ -374,6 +435,14 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Callback function for the low-level mouse hook.
+        /// Handles mouse button events and manages macro activation states.
+        /// </summary>
+        /// <param name="nCode">Hook code; if less than zero, the hook procedure must pass the message to CallNextHookEx.</param>
+        /// <param name="wParam">Message identifier.</param>
+        /// <param name="lParam">Pointer to a MSLLHOOKSTRUCT structure.</param>
+        /// <returns>If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.</returns>
         private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
@@ -477,6 +546,14 @@ namespace NotesAndTasks
             return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
         }
 
+        /// <summary>
+        /// Callback function for the low-level keyboard hook.
+        /// Handles keyboard events for macro toggling and mode switching.
+        /// </summary>
+        /// <param name="nCode">Hook code; if less than zero, the hook procedure must pass the message to CallNextHookEx.</param>
+        /// <param name="wParam">Message identifier.</param>
+        /// <param name="lParam">Pointer to a KBDLLHOOKSTRUCT structure.</param>
+        /// <returns>If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.</returns>
         private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
@@ -520,6 +597,10 @@ namespace NotesAndTasks
             return NativeMethods.CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
         }
 
+        /// <summary>
+        /// Checks and updates the jitter/recoil reduction state based on mouse button states.
+        /// Activates or deactivates the jitter timer based on current conditions.
+        /// </summary>
         private void CheckJitterState()
         {
             // Always require both mouse buttons
@@ -561,6 +642,10 @@ namespace NotesAndTasks
             UpdateModeLabels();
         }
 
+        /// <summary>
+        /// Timer callback that handles mouse movement for both jitter and recoil reduction modes.
+        /// </summary>
+        /// <param name="state">State object (not used).</param>
         private void OnJitterTimer(object state)
         {
             if (!isJittering) return;
@@ -637,6 +722,9 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Updates the form title to reflect current macro state and mode.
+        /// </summary>
         private void UpdateTitle()
         {
             string jitterMode;
@@ -655,6 +743,10 @@ namespace NotesAndTasks
             UpdateModeLabels();
         }
 
+        /// <summary>
+        /// Updates the displayed current key binding for macro toggle.
+        /// </summary>
+        /// <param name="key">The key name to display.</param>
         private void UpdateCurrentKey(string key)
         {
             if (lblCurrentKeyValue != null)
@@ -663,6 +755,10 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Updates the displayed key binding for mode switching.
+        /// </summary>
+        /// <param name="key">The key name to display.</param>
         private void UpdateSwitchKey(string key)
         {
             if (lblMacroSwitchKeyValue != null)
@@ -671,6 +767,11 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Updates the displayed jitter strength value.
+        /// Thread-safe method that can be called from any thread.
+        /// </summary>
+        /// <param name="strength">The strength value to display (1-20).</param>
         private void UpdateJitterStrength(int strength)
         {
             if (InvokeRequired)
@@ -682,6 +783,11 @@ namespace NotesAndTasks
             UpdateDebugInfo($"Jitter strength updated to: {strength}");
         }
 
+        /// <summary>
+        /// Updates the displayed recoil reduction strength value.
+        /// Thread-safe method that can be called from any thread.
+        /// </summary>
+        /// <param name="strength">The strength value to display (1-20).</param>
         private void UpdateRecoilReductionStrength(int strength)
         {
             if (InvokeRequired)
@@ -693,6 +799,11 @@ namespace NotesAndTasks
             UpdateDebugInfo($"Recoil reduction strength updated to: {strength}");
         }
 
+        /// <summary>
+        /// Updates the displayed macro switch key value.
+        /// Thread-safe method that can be called from any thread.
+        /// </summary>
+        /// <param name="key">The key name to display.</param>
         private void UpdateMacroSwitchKey(string key)
         {
             if (InvokeRequired)
@@ -704,6 +815,11 @@ namespace NotesAndTasks
             UpdateDebugInfo($"Macro switch key updated to: {key}");
         }
 
+        /// <summary>
+        /// Adds a debug message to the debug panel with timestamp.
+        /// Thread-safe method that can be called from any thread.
+        /// </summary>
+        /// <param name="message">The debug message to display.</param>
         private void UpdateDebugInfo(string message)
         {
             if (debugLabel.InvokeRequired)
@@ -729,6 +845,9 @@ namespace NotesAndTasks
             debugLabel.ScrollToCaret();
         }
 
+        /// <summary>
+        /// Shows and activates the main window when restored from system tray.
+        /// </summary>
         private void ShowWindow()
         {
             this.Show();
@@ -738,6 +857,10 @@ namespace NotesAndTasks
             UpdateDebugInfo("Application restored from system tray");
         }
 
+        /// <summary>
+        /// Performs cleanup and exits the application.
+        /// Ensures all resources are properly disposed and hooks are unregistered.
+        /// </summary>
         private void CleanupAndExit()
         {
             if (isExiting) return;
@@ -767,6 +890,9 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Toggles the macro on/off state and updates the UI accordingly.
+        /// </summary>
         private void ToggleMacro()
         {
             isMacroOn = !isMacroOn;
@@ -777,6 +903,10 @@ namespace NotesAndTasks
             UpdateModeLabels();
         }
 
+        /// <summary>
+        /// Handles switching between jitter and recoil reduction modes.
+        /// Only works when neither "Always" mode is enabled.
+        /// </summary>
         private void HandleModeSwitch()
         {
             // Don't switch if either "Always" mode is enabled
@@ -797,6 +927,10 @@ namespace NotesAndTasks
             UpdateDebugInfo($"Switched to {(jitterEnabled ? "Jitter" : "Recoil Reduction")} mode");
         }
 
+        /// <summary>
+        /// Updates the active mode labels in the UI.
+        /// Thread-safe method that can be called from any thread.
+        /// </summary>
         private void UpdateModeLabels()
         {
             if (InvokeRequired)
@@ -830,6 +964,9 @@ namespace NotesAndTasks
             base.OnFormClosing(e);
         }
 
+        /// <summary>
+        /// Initializes the application icon for both the main window and system tray.
+        /// </summary>
         private void InitializeIcon()
         {
             try
@@ -847,6 +984,9 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Initializes default hotkey bindings and updates the UI to reflect them.
+        /// </summary>
         private void InitializeHotkeys()
         {
             // Initialize default hotkeys
@@ -854,6 +994,9 @@ namespace NotesAndTasks
             UpdateSwitchKey(currentSwitchKey.ToString());
         }
 
+        /// <summary>
+        /// Initializes tooltips for various UI controls to provide user guidance.
+        /// </summary>
         private void InitializeTooltips()
         {
             // Initialize tooltips for controls using the managed ToolTip instance
