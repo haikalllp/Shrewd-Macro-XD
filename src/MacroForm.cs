@@ -4,16 +4,21 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
+using System.ComponentModel;
 using NotesAndTasks;
 
 namespace NotesAndTasks
 {
     public partial class MacroForm : Form
     {
+        #region Fields
         private IntPtr keyboardHookID = IntPtr.Zero;
         private IntPtr mouseHookID = IntPtr.Zero;
         private readonly NativeMethods.LowLevelHookProc keyboardProc;
         private readonly NativeMethods.LowLevelHookProc mouseProc;
+        private readonly IContainer components;
+        private System.Threading.Timer jitterTimer;
+        private readonly ToolTip toolTip;
 
         private bool isMacroOn = false;
         private enum ToggleType
@@ -35,7 +40,6 @@ namespace NotesAndTasks
         private int recoilReductionStrength = 1;  // Default to 1
         private bool isSettingKey = false;
         private bool isSettingMacroSwitchKey = false;
-        private System.Threading.Timer jitterTimer;
         private bool isJittering = false;
         private int currentStep = 0;
         private readonly object lockObject = new object();
@@ -64,8 +68,12 @@ namespace NotesAndTasks
         private const double LOW_LEVEL_2_SPEED = 0.5;
         private const double LOW_LEVEL_3_SPEED = 0.75;
 
+        #endregion
+
         public MacroForm()
         {
+            components = new Container();
+            toolTip = new ToolTip(components);
             keyboardProc = KeyboardHookCallback;
             mouseProc = MouseHookCallback;
 
@@ -77,48 +85,11 @@ namespace NotesAndTasks
                 // Initialize tray icon behavior
                 notifyIcon.DoubleClick += (s, e) => ShowWindow();
                 showWindowMenuItem.Click += (s, e) => ShowWindow();
-                exitMenuItem.Click += (s, e) =>
-                {
-                    CleanupAndExit();
-                };
+                exitMenuItem.Click += (s, e) => CleanupAndExit();
 
-                this.FormClosing += (s, e) =>
-                {
-                    if (!isExiting && chkMinimizeToTray.Checked && e.CloseReason == CloseReason.UserClosing)
-                    {
-                        e.Cancel = true;
-                        this.Hide();
-                        notifyIcon.Visible = true;
-                        UpdateDebugInfo("Application minimized to system tray");
-                    }
-                    else if (isExiting || !chkMinimizeToTray.Checked)
-                    {
-                        // Cleanup when actually closing
-                        CleanupAndExit();
-                    }
-                };
-
-                this.Resize += (s, e) =>
-                {
-                    // Let the anchor properties handle control resizing
-                    // Controls will maintain their relative positions and sizes
-                    mainPanel.PerformLayout();
-                    this.PerformLayout();
-                };
-
-                this.Load += (sender, e) =>
-                {
-                    try
-                    {
-                        InitializeHooks();
-                        jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
-                        UpdateTitle();
-                    }
-                    catch (Exception ex)
-                    {
-                        UpdateDebugInfo($"Error initializing hooks: {ex.Message}");
-                    }
-                };
+                this.FormClosing += OnFormClosingHandler;
+                this.Resize += OnResizeHandler;
+                this.Load += OnLoadHandler;
 
                 // Handle application exit
                 Application.ApplicationExit += (s, e) =>
@@ -133,6 +104,86 @@ namespace NotesAndTasks
             {
                 MessageBox.Show($"Error initializing form: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void OnFormClosingHandler(object sender, FormClosingEventArgs e)
+        {
+            if (!isExiting && chkMinimizeToTray.Checked && e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                this.Hide();
+                notifyIcon.Visible = true;
+                UpdateDebugInfo("Application minimized to system tray");
+            }
+            else if (isExiting || !chkMinimizeToTray.Checked)
+            {
+                // Cleanup when actually closing
+                CleanupAndExit();
+            }
+        }
+
+        private void OnResizeHandler(object sender, EventArgs e)
+        {
+            // Let the anchor properties handle control resizing
+            mainPanel.PerformLayout();
+            this.PerformLayout();
+        }
+
+        private void OnLoadHandler(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeHooks();
+                jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
+                UpdateTitle();
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error initializing hooks: {ex.Message}");
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // Dispose managed resources
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+
+                if (jitterTimer != null)
+                {
+                    jitterTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                    jitterTimer.Dispose();
+                }
+
+                if (keyboardHookID != IntPtr.Zero)
+                {
+                    NativeMethods.UnhookWindowsHookEx(keyboardHookID);
+                    keyboardHookID = IntPtr.Zero;
+                }
+
+                if (mouseHookID != IntPtr.Zero)
+                {
+                    NativeMethods.UnhookWindowsHookEx(mouseHookID);
+                    mouseHookID = IntPtr.Zero;
+                }
+
+                if (notifyIcon != null)
+                {
+                    notifyIcon.Visible = false;
+                    notifyIcon.Dispose();
+                }
+
+                if (toolTip != null)
+                {
+                    toolTip.Dispose();
+                }
+            }
+
+            base.Dispose(disposing);
         }
 
         private void InitializeCustomComponents()
@@ -689,44 +740,26 @@ namespace NotesAndTasks
 
         private void CleanupAndExit()
         {
+            if (isExiting) return;
             isExiting = true;
 
             try
             {
-                if (jitterTimer != null)
-                {
-                    jitterTimer.Change(Timeout.Infinite, Timeout.Infinite);
-                    jitterTimer.Dispose();
-                }
-
-                if (keyboardHookID != IntPtr.Zero)
-                {
-                    NativeMethods.UnhookWindowsHookEx(keyboardHookID);
-                    keyboardHookID = IntPtr.Zero;
-                }
-
-                if (mouseHookID != IntPtr.Zero)
-                {
-                    NativeMethods.UnhookWindowsHookEx(mouseHookID);
-                    mouseHookID = IntPtr.Zero;
-                }
+                // Use Dispose pattern for cleanup
+                this.Dispose();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error during cleanup: {ex.Message}");
             }
 
-            // Cleanup tray icon
-            if (notifyIcon != null)
-            {
-                notifyIcon.Visible = false;
-                notifyIcon.Dispose();
-            }
-
             // Force process to exit
             try
             {
-                Process.GetCurrentProcess().Kill();
+                using (var process = Process.GetCurrentProcess())
+                {
+                    process.Kill();
+                }
             }
             catch
             {
@@ -801,9 +834,12 @@ namespace NotesAndTasks
         {
             try
             {
-                var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-                this.Icon = icon;
-                notifyIcon.Icon = icon;
+                using var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                if (icon != null)
+                {
+                    this.Icon = (Icon)icon.Clone();
+                    notifyIcon.Icon = (Icon)icon.Clone();
+                }
             }
             catch (Exception ex)
             {
@@ -820,8 +856,7 @@ namespace NotesAndTasks
 
         private void InitializeTooltips()
         {
-            // Initialize tooltips for controls
-            var toolTip = new ToolTip();
+            // Initialize tooltips for controls using the managed ToolTip instance
             toolTip.SetToolTip(chkAlwaysJitter, "Always keep Jitter enabled");
             toolTip.SetToolTip(trackBarJitter, "Adjust Jitter strength");
             toolTip.SetToolTip(chkAlwaysRecoilReduction, "Always keep Recoil Reduction enabled");
