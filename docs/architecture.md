@@ -1,7 +1,7 @@
 # Mouse Macro Application Architecture
 
 ## Introduction
-This document provides an overview of the Mouse Macro Application architecture. The application is designed to create and manage mouse macros, featuring a modern dark-themed UI for keybind configuration and settings management. For professional system integration, the application presents itself as "Notes&Tasks" or "NotesAndTasks" 😊.
+This document provides an overview of the Mouse Macro Application architecture. The application is designed to create and manage mouse macros, featuring a modern dark-themed UI for keybind configuration and settings management.IMPORTANT For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
 
 ## System Overview
 
