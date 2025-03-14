@@ -10,68 +10,10 @@ namespace NotesAndTasks
 {
     public partial class MacroForm : Form
     {
-        private delegate IntPtr LowLevelHookProc(int nCode, IntPtr wParam, IntPtr lParam);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MSLLHOOKSTRUCT
-        {
-            public POINT pt;
-            public uint mouseData;
-            public uint flags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct INPUT
-        {
-            public uint type;
-            public MOUSEINPUT mi;
-        };
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct MOUSEINPUT
-        {
-            public int dx;
-            public int dy;
-            public uint mouseData;
-            public uint dwFlags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        };
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelHookProc lpfn, IntPtr hMod, uint dwThreadId);
-
-        [DllImport("user32.dll")]
-        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetModuleHandle(string lpModuleName);
-
-        [DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out POINT lpPoint);
-
-        [DllImport("user32.dll")]
-        private static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
-
         private IntPtr keyboardHookID = IntPtr.Zero;
         private IntPtr mouseHookID = IntPtr.Zero;
-        private readonly LowLevelHookProc keyboardProc;
-        private readonly LowLevelHookProc mouseProc;
+        private readonly NativeMethods.LowLevelHookProc keyboardProc;
+        private readonly NativeMethods.LowLevelHookProc mouseProc;
 
         private bool isMacroOn = false;
         private enum ToggleType
@@ -364,10 +306,10 @@ namespace NotesAndTasks
                 using var curProcess = Process.GetCurrentProcess();
                 using var curModule = curProcess.MainModule;
 
-                keyboardHookID = SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, keyboardProc,
-                    GetModuleHandle(curModule.ModuleName), 0);
-                mouseHookID = SetWindowsHookEx(WinMessages.WH_MOUSE_LL, mouseProc,
-                    GetModuleHandle(curModule.ModuleName), 0);
+                keyboardHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, keyboardProc,
+                    NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
+                mouseHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_MOUSE_LL, mouseProc,
+                    NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
 
                 if (keyboardHookID == IntPtr.Zero || mouseHookID == IntPtr.Zero)
                 {
@@ -385,7 +327,7 @@ namespace NotesAndTasks
         {
             if (nCode >= 0)
             {
-                var hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
+                var hookStruct = (NativeMethods.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT));
 
                 switch ((int)wParam)
                 {
@@ -481,7 +423,7 @@ namespace NotesAndTasks
                 CheckJitterState();
             }
 
-            return CallNextHookEx(mouseHookID, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
         }
 
         private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
@@ -524,7 +466,7 @@ namespace NotesAndTasks
                 }
             }
 
-            return CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
+            return NativeMethods.CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
         }
 
         private void CheckJitterState()
@@ -576,14 +518,21 @@ namespace NotesAndTasks
             {
                 lock (lockObject)
                 {
-                    INPUT input = new INPUT();
-                    input.type = WinMessages.INPUT_MOUSE;
+                    var input = new NativeMethods.INPUT
+                    {
+                        type = WinMessages.INPUT_MOUSE,
+                        mi = new NativeMethods.MOUSEINPUT
+                        {
+                            mouseData = 0,
+                            time = 0,
+                            dwExtraInfo = IntPtr.Zero
+                        }
+                    };
 
                     bool useJitter = alwaysJitterMode || (!alwaysRecoilReductionMode && jitterEnabled);
 
                     if (useJitter)
                     {
-                        // Jitter mode
                         var pattern = jitterPattern[currentStep];
                         input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
                         input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
@@ -628,11 +577,7 @@ namespace NotesAndTasks
                     }
 
                     input.mi.dwFlags = WinMessages.MOUSEEVENTF_MOVE;
-                    input.mi.mouseData = 0;
-                    input.mi.time = 0;
-                    input.mi.dwExtraInfo = IntPtr.Zero;
-
-                    SendInput(1, ref input, Marshal.SizeOf(input));
+                    NativeMethods.SendInput(1, ref input, Marshal.SizeOf(input));
                 }
             }
             catch (Exception ex)
@@ -746,7 +691,6 @@ namespace NotesAndTasks
         {
             isExiting = true;
 
-            // Stop timers and hooks
             try
             {
                 if (jitterTimer != null)
@@ -757,13 +701,13 @@ namespace NotesAndTasks
 
                 if (keyboardHookID != IntPtr.Zero)
                 {
-                    UnhookWindowsHookEx(keyboardHookID);
+                    NativeMethods.UnhookWindowsHookEx(keyboardHookID);
                     keyboardHookID = IntPtr.Zero;
                 }
 
                 if (mouseHookID != IntPtr.Zero)
                 {
-                    UnhookWindowsHookEx(mouseHookID);
+                    NativeMethods.UnhookWindowsHookEx(mouseHookID);
                     mouseHookID = IntPtr.Zero;
                 }
             }
