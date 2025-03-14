@@ -7,8 +7,8 @@ A professional Windows Forms application for advanced mouse input management, fe
 - **Recoil Reduction System**
   - Advanced vertical compensation with three-tier scaling:
     - Tier 1 (1-6): Linear scaling with logarithmic base
-    - Tier 2 (7-14): Enhanced scaling with 1.2x multiplier
-    - Tier 3 (15-20): Exponential scaling with dynamic boost
+    - Tier 2 (7-16): Enhanced scaling with 1.2x multiplier
+    - Tier 3 (17-20): Exponential scaling with dynamic boost
   - Real-time strength adjustment (1-20)
   - Default strength: 1
   - Optimized movement patterns

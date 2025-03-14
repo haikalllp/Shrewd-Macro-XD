@@ -81,8 +81,8 @@ MouseMacro/
   - Vertical compensation
   - Three-tier strength distribution:
     - Tier 1 (1-6): Linear scaling
-    - Tier 2 (7-13): Enhanced scaling
-    - Tier 3 (14-20): Maximum impact
+    - Tier 2 (7-16): Enhanced scaling
+    - Tier 3 (17-20): Maximum impact
   - Dynamic strength adjustment
   - Default strength: 1
   

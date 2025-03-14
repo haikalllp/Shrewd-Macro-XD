@@ -831,7 +831,7 @@ namespace NotesAndTasks
                                     input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
                                 }
                             }
-                            else if (recoilReductionStrength <= 14)
+                            else if (recoilReductionStrength <= 16)
                             {
                                 input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength * 1.2));
                             }
