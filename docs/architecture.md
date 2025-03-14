@@ -1,7 +1,7 @@
 # Mouse Macro Application Architecture
 
 ## Introduction
-This document provides an overview of the Mouse Macro Application architecture. The application is designed to create and manage mouse macros, featuring a modern dark-themed UI for keybind configuration and settings management. For professional system integration, the application presents itself as "Notes&Tasks" 😊.
+This document provides an overview of the Mouse Macro Application architecture. The application is designed to create and manage mouse macros, featuring a modern dark-themed UI for keybind configuration and settings management. For professional system integration, the application presents itself as "Notes&Tasks" or "NotesAndTasks" 😊.
 
 ## System Overview
 
@@ -147,49 +147,134 @@ MouseMacro/
   - Secure API access
 
 ### 5. Settings Configuration System
-- **Settings Management**
-  - JSON-based configuration
-  - Persistent storage
-  - Automatic saving
-  - Default value handling
+- **Configuration Manager (`ConfigurationManager.cs`)**
+  - Singleton pattern implementation
+  - Thread-safe operations using `ReaderWriterLockSlim`
+  - JSON-based configuration storage
+  - Automatic configuration backup
+  - Event-driven configuration changes
+  - Validation system
 
-#### 5.1 Settings Storage
-- **Location**: Executable directory
-- **Format**: JSON configuration file
-- **Auto-creation**: Generated with defaults if missing
-
-#### 5.2 Managed Settings
+#### 5.1 Configuration Components
 ```csharp
-// Jitter settings
-- JitterStrength (Default: 3)
-- JitterEnabled
-- AlwaysJitterMode
+// Root configuration
+public class AppConfiguration : ICloneable
+{
+    public JitterConfiguration JitterSettings { get; set; }
+    public RecoilConfiguration RecoilSettings { get; set; }
+    public HotkeyConfiguration HotkeySettings { get; set; }
+    public UIConfiguration UISettings { get; set; }
+    public BackupConfiguration BackupSettings { get; set; }
+}
 
-// Recoil reduction settings
-- RecoilReductionStrength (Default: 1)
-- RecoilReductionEnabled
-- AlwaysRecoilReductionMode
-
-// Key bindings
-- MacroToggleKey (Default: "Capital")
-- ModeSwitchKey (Default: "Q")
-
-// UI preferences
-- MinimizeToTray (Default: false)
-- StartMinimized (Default: false)
+// Feature-specific configurations
+public class JitterConfiguration : ICloneable
+public class RecoilConfiguration : ICloneable
+public class HotkeyConfiguration : ICloneable
+public class UIConfiguration : ICloneable
+public class BackupConfiguration : ICloneable
 ```
 
-#### 5.3 Settings Implementation
-- **Automatic Saving**: Settings are saved immediately after any change
-- **Loading**: Settings loaded on application startup
-- **Error Handling**: Fallback to defaults if file is corrupted
-- **Thread Safety**: Safe concurrent access to settings
+#### 5.2 Configuration Events
+```csharp
+// Event Arguments
+public class ConfigurationChangedEventArgs : EventArgs
+public class ConfigurationValidationEventArgs : EventArgs
+public class ConfigurationBackupEventArgs : EventArgs
 
-#### 5.4 UI Integration
-- Settings reflected in real-time in the UI
-- Visual feedback for saved settings
-- Mode indicators update automatically
-- Key binding display updates
+// Event Handlers
+public delegate void ConfigurationChangedEventHandler(object sender, ConfigurationChangedEventArgs e);
+public delegate void ConfigurationValidationEventHandler(object sender, ConfigurationValidationEventArgs e);
+public delegate void ConfigurationBackupEventHandler(object sender, ConfigurationBackupEventArgs e);
+```
+
+#### 5.3 Configuration Validation
+- Pre-save validation
+- Configuration consistency checks
+- Type validation
+- Range validation
+- Cross-property validation
+- Error reporting
+
+### 6. Event Handler System
+
+#### 6.1 Event Handler Manager
+```csharp
+public class EventHandlerManager : IDisposable
+{
+    private readonly Dictionary<string, List<Delegate>> eventHandlers;
+    private readonly ConfigurationManager configManager;
+    
+    // Event registration methods
+    public void RegisterControlEvents(Control control)
+    public void UnregisterControlEvents(Control control)
+    private void RegisterEventHandler(string eventName, Delegate handler)
+    
+    // Configuration event handlers
+    private void OnConfigurationChanged(object sender, ConfigurationChangedEventArgs e)
+    private void OnConfigurationValidating(object sender, ConfigurationValidationEventArgs e)
+    private void OnConfigurationBackupCompleted(object sender, ConfigurationBackupEventArgs e)
+}
+```
+
+#### 6.2 Event Handler Extensions
+```csharp
+public static class EventHandlerExtensions
+{
+    // Generic registration
+    public static T RegisterEvents<T>(this T control, EventHandlerManager manager)
+    public static T UnregisterEvents<T>(this T control, EventHandlerManager manager)
+    
+    // Control-specific registration
+    public static TrackBar RegisterTrackBarEvents(...)
+    public static CheckBox RegisterCheckBoxEvents(...)
+    public static Button RegisterButtonEvents(...)
+    public static TextBox RegisterTextBoxEvents(...)
+}
+```
+
+#### 6.3 Event Categories
+1. **Configuration Events**
+   - Configuration changes
+   - Validation events
+   - Backup events
+
+2. **Control Events**
+   - TrackBar events (ValueChanged, Scroll)
+   - CheckBox events (CheckedChanged)
+   - Button events (Click, MouseDown, MouseUp)
+   - TextBox events (TextChanged, KeyDown)
+
+3. **System Events**
+   - Window events
+   - Application lifecycle events
+   - Error events
+
+#### 6.4 Event Handler Features
+- Centralized event management
+- Automatic cleanup on disposal
+- Type-safe event registration
+- Fluent API support
+- Event tracking and logging
+- Error handling and recovery
+
+### 7. Project Structure Update
+```
+MouseMacro/
+├── src/
+│   ├── Configuration/           # Configuration system
+│   │   ├── ConfigurationManager.cs
+│   │   ├── AppConfiguration.cs
+│   │   ├── ConfigurationEvents.cs
+│   │   ├── EventHandlerManager.cs
+│   │   └── EventHandlerExtensions.cs
+│   ├── Controls/               # UI Controls
+│   │   ├── ModernButton.cs
+│   │   └── ModernTrackBar.cs
+│   ├── MacroForm.cs           # Main form
+│   ├── MacroForm.Designer.cs  # Form designer
+│   └── Program.cs             # Entry point
+```
 
 ## Macro Implementation Details
 

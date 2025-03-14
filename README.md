@@ -29,6 +29,27 @@ A professional Windows Forms application for advanced mouse input management, fe
   - Minimal resource usage
   - Single instance enforcement
 
+- **Configuration Management System**
+  - Thread-safe configuration handling
+  - JSON-based settings storage
+  - Automatic configuration backup
+  - Real-time validation
+  - Event-driven updates
+  - Configuration sections:
+    - Jitter settings
+    - Recoil reduction settings
+    - Hotkey bindings
+    - UI preferences
+    - Backup settings
+
+- **Event Handler System**
+  - Centralized event management
+  - Automatic event cleanup
+  - Type-safe event registration
+  - Fluent API for control events
+  - Configuration change tracking
+  - Error handling and recovery
+
 - **Settings Saved with JSON**
   - Settings saved automatically into a JSON file
   - JSON file located at the executable directory
@@ -171,14 +192,54 @@ A professional Windows Forms application for advanced mouse input management, fe
 - Window title reflects current state
 
 ### Settings Configuration
-- Settings stored in JSON format next to executable
-- All preferences automatically saved
-- Settings include:
-  - Key bindings
-  - Mode preferences
-  - UI configuration
-  - Strength values
-- Invalid settings automatically reset to defaults
+- **Configuration Manager**
+  - Thread-safe operations
+  - Automatic backups
+  - Real-time validation
+  - Event notifications
+  
+- **Configuration Components**
+  - Jitter settings
+  - Recoil reduction settings
+  - Hotkey bindings
+  - UI preferences
+  - Backup settings
+
+- **Event System**
+  - Configuration change events
+  - Validation events
+  - Backup completion events
+  - Control-specific events
+
+- **Validation Features**
+  - Pre-save validation
+  - Type checking
+  - Range validation
+  - Cross-property validation
+  - Error reporting
+
+### Event Handler System
+- **Centralized Management**
+  - Automatic event registration
+  - Type-safe event handling
+  - Resource cleanup
+  - Error recovery
+
+- **Control Events**
+  - TrackBar value changes
+  - CheckBox state changes
+  - Button interactions
+  - TextBox input handling
+
+- **Configuration Events**
+  - Settings changes
+  - Validation results
+  - Backup notifications
+
+- **System Events**
+  - Window state changes
+  - Application lifecycle
+  - Error handling
 
 ## Troubleshooting
 
@@ -217,22 +278,23 @@ MouseMacro/
 │   ├── Debug/             # Debug build output
 │   └── Release/           # Release build output
 ├── docs/                   # Documentation
-├── obj/                    # Intermediate build files
-│   ├── Debug/             # Debug build intermediates
-│   │   └── net6.0-windows/
-│   │       ├── ref/       # Assembly reference files
-│   │       ├── refint/    # Reference interface files
-│   │       └── *.cache    # Build cache files
-│   └── Release/           # Release build intermediates
-├── src/                    # Source code
-│   ├── MacroForm.cs       # Main form implementation
-│   ├── MacroForm.Designer.cs # Form designer code
-│   ├── ModernButton.cs    # Custom button control
-│   ├── ModernTrackBar.cs  # Custom trackbar control
-│   └── Program.cs         # Application entry point
-├── MouseMacro.csproj      # Project configuration
-├── README.md              # Project documentation and setup guide
-└── app.manifest           # Application manifest
+│   ├── architecture.md    # Detailed architecture documentation
+├── src/                   # Source code
+│   ├── Configuration/     # Configuration system
+│   │   ├── ConfigurationManager.cs
+│   │   ├── AppConfiguration.cs
+│   │   ├── ConfigurationEvents.cs
+│   │   ├── EventHandlerManager.cs
+│   │   └── EventHandlerExtensions.cs
+│   ├── Controls/         # UI Controls
+│   │   ├── ModernButton.cs
+│   │   └── ModernTrackBar.cs
+│   ├── MacroForm.cs      # Main form implementation
+│   ├── MacroForm.Designer.cs
+│   └── Program.cs        # Application entry point
+├── MouseMacro.csproj     # Project configuration
+├── README.md             # Project documentation
+└── app.manifest         # Application manifest
 ```
 
 ## Contributing
