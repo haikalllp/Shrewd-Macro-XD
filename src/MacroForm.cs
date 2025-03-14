@@ -272,20 +272,38 @@ namespace NotesAndTasks
 
             trackBarJitter.ValueChanged += (sender, e) =>
             {
-                jitterStrength = trackBarJitter.Value;
-                SettingsManager.CurrentSettings.JitterStrength = jitterStrength;
-                SettingsManager.SaveSettings();
-                UpdateJitterStrength(jitterStrength);
-                UpdateDebugInfo($"Jitter strength set to {jitterStrength}");
+                try
+                {
+                    Validation.ValidateStrength(trackBarJitter.Value, trackBarJitter.Minimum, trackBarJitter.Maximum, nameof(trackBarJitter.Value));
+                    jitterStrength = trackBarJitter.Value;
+                    SettingsManager.CurrentSettings.JitterStrength = jitterStrength;
+                    SettingsManager.SaveSettings();
+                    UpdateJitterStrength(jitterStrength);
+                    UpdateDebugInfo($"Jitter strength set to {jitterStrength}");
+                }
+                catch (ArgumentOutOfRangeException ex)
+                {
+                    UpdateDebugInfo($"Error setting jitter strength: {ex.Message}");
+                    trackBarJitter.Value = Math.Max(trackBarJitter.Minimum, Math.Min(trackBarJitter.Maximum, jitterStrength));
+                }
             };
 
             trackBarRecoilReduction.ValueChanged += (sender, e) =>
             {
-                recoilReductionStrength = trackBarRecoilReduction.Value;
-                SettingsManager.CurrentSettings.RecoilReductionStrength = recoilReductionStrength;
-                SettingsManager.SaveSettings();
-                UpdateRecoilReductionStrength(recoilReductionStrength);
-                UpdateDebugInfo($"Recoil reduction strength set to {recoilReductionStrength}");
+                try
+                {
+                    Validation.ValidateStrength(trackBarRecoilReduction.Value, trackBarRecoilReduction.Minimum, trackBarRecoilReduction.Maximum, nameof(trackBarRecoilReduction.Value));
+                    recoilReductionStrength = trackBarRecoilReduction.Value;
+                    SettingsManager.CurrentSettings.RecoilReductionStrength = recoilReductionStrength;
+                    SettingsManager.SaveSettings();
+                    UpdateRecoilReductionStrength(recoilReductionStrength);
+                    UpdateDebugInfo($"Recoil reduction strength set to {recoilReductionStrength}");
+                }
+                catch (ArgumentOutOfRangeException ex)
+                {
+                    UpdateDebugInfo($"Error setting recoil reduction strength: {ex.Message}");
+                    trackBarRecoilReduction.Value = Math.Max(trackBarRecoilReduction.Minimum, Math.Min(trackBarRecoilReduction.Maximum, recoilReductionStrength));
+                }
             };
 
             chkAlwaysJitter.CheckedChanged += (sender, e) =>
@@ -349,62 +367,165 @@ namespace NotesAndTasks
 
         /// <summary>
         /// Loads saved settings from the settings manager and applies them to the form.
-        /// This includes hotkeys, strength values, and UI preferences.
+        /// Validates all settings before applying them and falls back to defaults if validation fails.
         /// </summary>
         private void LoadSettings()
         {
-            var settings = SettingsManager.CurrentSettings;
+            try
+            {
+                var settings = SettingsManager.CurrentSettings;
+                Validation.ValidateNotNull(settings, nameof(settings));
 
-            // Load all saved settings
-            trackBarJitter.Value = settings.JitterStrength;
-            chkAlwaysJitter.Checked = settings.AlwaysJitterMode;
+                // Validate all settings before applying them
+                if (!SettingsValidation.ValidateSettings(settings, 
+                    Math.Min(trackBarJitter.Minimum, trackBarRecoilReduction.Minimum),
+                    Math.Max(trackBarJitter.Maximum, trackBarRecoilReduction.Maximum)))
+                {
+                    UpdateDebugInfo("Invalid settings detected, resetting to defaults");
+                    ResetToDefaultSettings();
+                    return;
+                }
 
-            trackBarRecoilReduction.Value = settings.RecoilReductionStrength;
-            chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
+                // Apply validated settings
+                trackBarJitter.Value = settings.JitterStrength;
+                jitterStrength = settings.JitterStrength;
+                jitterEnabled = settings.JitterEnabled;
+                alwaysJitterMode = settings.AlwaysJitterMode;
+                chkAlwaysJitter.Checked = settings.AlwaysJitterMode;
 
-            // Load UI preferences
-            chkMinimizeToTray.Checked = settings.MinimizeToTray;
+                trackBarRecoilReduction.Value = settings.RecoilReductionStrength;
+                recoilReductionStrength = settings.RecoilReductionStrength;
+                recoilReductionEnabled = settings.RecoilReductionEnabled;
+                alwaysRecoilReductionMode = settings.AlwaysRecoilReductionMode;
+                chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
 
-            // Update variables
-            jitterStrength = settings.JitterStrength;
-            jitterEnabled = settings.JitterEnabled;
-            alwaysJitterMode = settings.AlwaysJitterMode;
-            recoilReductionStrength = settings.RecoilReductionStrength;
-            recoilReductionEnabled = settings.RecoilReductionEnabled;
-            alwaysRecoilReductionMode = settings.AlwaysRecoilReductionMode;
+                chkMinimizeToTray.Checked = settings.MinimizeToTray;
 
-            // Load hotkeys
-            if (!string.IsNullOrEmpty(settings.MacroToggleKey))
-                currentMacroKey = (Keys)Enum.Parse(typeof(Keys), settings.MacroToggleKey);
-            if (!string.IsNullOrEmpty(settings.ModeSwitchKey))
-                currentSwitchKey = (Keys)Enum.Parse(typeof(Keys), settings.ModeSwitchKey);
+                // Load and validate hotkeys
+                if (!string.IsNullOrEmpty(settings.MacroToggleKey))
+                {
+                    currentMacroKey = (Keys)Enum.Parse(typeof(Keys), settings.MacroToggleKey);
+                    if (!SettingsValidation.IsValidHotkey(currentMacroKey))
+                    {
+                        UpdateDebugInfo("Invalid macro toggle key detected, resetting to default");
+                        currentMacroKey = Keys.Capital;
+                    }
+                }
 
-            // Update strength labels
-            UpdateJitterStrength(jitterStrength);
-            UpdateRecoilReductionStrength(recoilReductionStrength);
+                if (!string.IsNullOrEmpty(settings.ModeSwitchKey))
+                {
+                    currentSwitchKey = (Keys)Enum.Parse(typeof(Keys), settings.ModeSwitchKey);
+                    if (!SettingsValidation.IsValidHotkey(currentSwitchKey))
+                    {
+                        UpdateDebugInfo("Invalid mode switch key detected, resetting to default");
+                        currentSwitchKey = Keys.Q;
+                    }
+                }
 
-            UpdateTitle();
-            UpdateModeLabels();
+                // Update UI
+                UpdateJitterStrength(jitterStrength);
+                UpdateRecoilReductionStrength(recoilReductionStrength);
+                UpdateTitle();
+                UpdateModeLabels();
+                UpdateDebugInfo("Settings loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error loading settings: {ex.Message}");
+                ResetToDefaultSettings();
+            }
         }
 
         /// <summary>
         /// Saves current settings to persistent storage through the settings manager.
+        /// Validates settings before saving to ensure data integrity.
         /// </summary>
         private void SaveCurrentSettings()
         {
-            var settings = SettingsManager.CurrentSettings;
+            try
+            {
+                var settings = SettingsManager.CurrentSettings;
 
-            settings.JitterStrength = jitterStrength;
-            settings.JitterEnabled = jitterEnabled;
-            settings.AlwaysJitterMode = alwaysJitterMode;
-            settings.RecoilReductionStrength = recoilReductionStrength;
-            settings.RecoilReductionEnabled = recoilReductionEnabled;
-            settings.AlwaysRecoilReductionMode = alwaysRecoilReductionMode;
-            settings.MinimizeToTray = chkMinimizeToTray.Checked;
-            settings.MacroToggleKey = currentMacroKey.ToString();
-            settings.ModeSwitchKey = currentSwitchKey.ToString();
+                // Update settings object with current values
+                settings.JitterStrength = jitterStrength;
+                settings.JitterEnabled = jitterEnabled;
+                settings.AlwaysJitterMode = alwaysJitterMode;
+                settings.RecoilReductionStrength = recoilReductionStrength;
+                settings.RecoilReductionEnabled = recoilReductionEnabled;
+                settings.AlwaysRecoilReductionMode = alwaysRecoilReductionMode;
+                settings.MinimizeToTray = chkMinimizeToTray.Checked;
+                settings.MacroToggleKey = currentMacroKey.ToString();
+                settings.ModeSwitchKey = currentSwitchKey.ToString();
 
-            SettingsManager.SaveSettings();
+                // Validate settings before saving
+                if (!SettingsValidation.ValidateSettings(settings,
+                    Math.Min(trackBarJitter.Minimum, trackBarRecoilReduction.Minimum),
+                    Math.Max(trackBarJitter.Maximum, trackBarRecoilReduction.Maximum)))
+                {
+                    UpdateDebugInfo("Invalid settings detected, aborting save");
+                    throw new InvalidOperationException("Settings validation failed");
+                }
+
+                // Save validated settings
+                SettingsManager.SaveSettings();
+                UpdateDebugInfo("Settings saved successfully");
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error saving settings: {ex.Message}");
+                // Consider showing a message box to the user here
+                MessageBox.Show(
+                    "Failed to save settings. Your changes may not persist after closing the application.",
+                    "Settings Save Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
+            }
+        }
+
+        /// <summary>
+        /// Resets all settings to their default values.
+        /// Called when settings loading fails or when invalid settings are detected.
+        /// </summary>
+        private void ResetToDefaultSettings()
+        {
+            try
+            {
+                // Reset strength values
+                trackBarJitter.Value = 3;
+                jitterStrength = 3;
+                trackBarRecoilReduction.Value = 1;
+                recoilReductionStrength = 1;
+
+                // Reset mode states
+                chkAlwaysJitter.Checked = false;
+                alwaysJitterMode = false;
+                jitterEnabled = false;
+                chkAlwaysRecoilReduction.Checked = false;
+                alwaysRecoilReductionMode = false;
+                recoilReductionEnabled = true;
+
+                // Reset UI preferences
+                chkMinimizeToTray.Checked = false;
+
+                // Reset hotkeys
+                currentMacroKey = Keys.Capital;
+                currentSwitchKey = Keys.Q;
+
+                // Update UI
+                UpdateCurrentKey(currentMacroKey.ToString());
+                UpdateSwitchKey(currentSwitchKey.ToString());
+                UpdateTitle();
+                UpdateModeLabels();
+                UpdateDebugInfo("Settings reset to defaults");
+
+                // Save default settings
+                SaveCurrentSettings();
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error resetting settings to defaults: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -418,15 +539,20 @@ namespace NotesAndTasks
                 using var curProcess = Process.GetCurrentProcess();
                 using var curModule = curProcess.MainModule;
 
-                keyboardHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, keyboardProc,
-                    NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
-                mouseHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_MOUSE_LL, mouseProc,
-                    NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
+                Validation.ValidateNotNull(curModule, nameof(curModule));
+                string moduleName = curModule.ModuleName;
+                Validation.ValidateStringNotNullOrEmpty(moduleName, nameof(moduleName));
 
-                if (keyboardHookID == IntPtr.Zero || mouseHookID == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException("Failed to set windows hook");
-                }
+                IntPtr moduleHandle = NativeMethods.GetModuleHandle(moduleName);
+                Validation.ValidateHandle(moduleHandle, nameof(moduleHandle));
+
+                keyboardHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, keyboardProc,
+                    moduleHandle, 0);
+                Validation.ValidateHandle(keyboardHookID, "keyboardHookID");
+
+                mouseHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_MOUSE_LL, mouseProc,
+                    moduleHandle, 0);
+                Validation.ValidateHandle(mouseHookID, "mouseHookID");
             }
             catch (Exception ex)
             {
@@ -445,104 +571,111 @@ namespace NotesAndTasks
         /// <returns>If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.</returns>
         private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            if (nCode >= 0)
+            if (Validation.ValidateHookCode(nCode))
             {
-                var hookStruct = (NativeMethods.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT));
-
-                switch ((int)wParam)
+                try
                 {
-                    case WinMessages.WM_LBUTTONDOWN:
-                        leftButtonDown = true;
-                        break;
+                    var hookStruct = (NativeMethods.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT));
+                    Validation.ValidateNotNull(hookStruct, nameof(hookStruct));
 
-                    case WinMessages.WM_LBUTTONUP:
-                        leftButtonDown = false;
-                        break;
+                    switch ((int)wParam)
+                    {
+                        case WinMessages.WM_LBUTTONDOWN:
+                            leftButtonDown = true;
+                            break;
 
-                    case WinMessages.WM_RBUTTONDOWN:
-                        rightButtonDown = true;
-                        break;
+                        case WinMessages.WM_LBUTTONUP:
+                            leftButtonDown = false;
+                            break;
 
-                    case WinMessages.WM_RBUTTONUP:
-                        rightButtonDown = false;
-                        break;
+                        case WinMessages.WM_RBUTTONDOWN:
+                            rightButtonDown = true;
+                            break;
+
+                        case WinMessages.WM_RBUTTONUP:
+                            rightButtonDown = false;
+                            break;
+                    }
+
+                    if (wParam == (IntPtr)WinMessages.WM_XBUTTONDOWN)
+                    {
+                        bool isXButton1 = (hookStruct.mouseData >> 16) == WinMessages.XBUTTON1;
+                        bool isXButton2 = (hookStruct.mouseData >> 16) == WinMessages.XBUTTON2;
+
+                        if (isSettingKey)
+                        {
+                            isSettingKey = false;
+                            btnSetKey.Enabled = true;
+                            btnSetKey.Text = "Set Toggle Key";
+                            string buttonName = isXButton1 ? "XButton1" : "XButton2";
+                            currentMacroKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
+                            currentToggleType = isXButton1 ? ToggleType.MouseX1 : ToggleType.MouseX2;
+                            UpdateCurrentKey(buttonName);
+                            SaveCurrentSettings();
+                            UpdateDebugInfo($"Set toggle key to {buttonName}");
+                        }
+                        else if (isSettingMacroSwitchKey)
+                        {
+                            isSettingMacroSwitchKey = false;
+                            btnSetMacroSwitchKey.Enabled = true;
+                            btnSetMacroSwitchKey.Text = "Set Switch Key";
+                            string buttonName = isXButton1 ? "XButton1" : "XButton2";
+                            currentSwitchKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
+                            UpdateMacroSwitchKey(buttonName);
+                            SaveCurrentSettings();
+                            UpdateDebugInfo($"Set macro switch key to {buttonName}");
+                        }
+                        else if ((isXButton1 && currentMacroKey == Keys.XButton1) ||
+                                (isXButton2 && currentMacroKey == Keys.XButton2))
+                        {
+                            ToggleMacro();
+                        }
+                        else if ((isXButton1 && currentSwitchKey == Keys.XButton1) ||
+                                (isXButton2 && currentSwitchKey == Keys.XButton2))
+                        {
+                            HandleModeSwitch();
+                        }
+                    }
+                    else if (wParam == (IntPtr)WinMessages.WM_MBUTTONDOWN)
+                    {
+                        if (isSettingKey)
+                        {
+                            isSettingKey = false;
+                            btnSetKey.Enabled = true;
+                            btnSetKey.Text = "Set Toggle Key";
+                            currentMacroKey = Keys.MButton;
+                            currentToggleType = ToggleType.MouseMiddle;
+                            UpdateCurrentKey("MButton");
+                            SaveCurrentSettings();
+                            UpdateDebugInfo("Set toggle key to MButton");
+                        }
+                        else if (isSettingMacroSwitchKey)
+                        {
+                            isSettingMacroSwitchKey = false;
+                            btnSetMacroSwitchKey.Enabled = true;
+                            btnSetMacroSwitchKey.Text = "Set Switch Key";
+                            currentSwitchKey = Keys.MButton;
+                            UpdateMacroSwitchKey("MButton");
+                            SaveCurrentSettings();
+                            UpdateDebugInfo("Set macro switch key to MButton");
+                        }
+                        else if (currentMacroKey == Keys.MButton)
+                        {
+                            ToggleMacro();
+                        }
+                        else if (currentSwitchKey == Keys.MButton)
+                        {
+                            HandleModeSwitch();
+                        }
+                    }
+
+                    CheckJitterState();
                 }
-
-                if (wParam == (IntPtr)WinMessages.WM_XBUTTONDOWN)
+                catch (Exception ex)
                 {
-                    bool isXButton1 = (hookStruct.mouseData >> 16) == WinMessages.XBUTTON1;
-                    bool isXButton2 = (hookStruct.mouseData >> 16) == WinMessages.XBUTTON2;
-
-                    if (isSettingKey)
-                    {
-                        isSettingKey = false;
-                        btnSetKey.Enabled = true;
-                        btnSetKey.Text = "Set Toggle Key";
-                        string buttonName = isXButton1 ? "XButton1" : "XButton2";
-                        currentMacroKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
-                        currentToggleType = isXButton1 ? ToggleType.MouseX1 : ToggleType.MouseX2;
-                        UpdateCurrentKey(buttonName);
-                        SaveCurrentSettings();
-                        UpdateDebugInfo($"Set toggle key to {buttonName}");
-                    }
-                    else if (isSettingMacroSwitchKey)
-                    {
-                        isSettingMacroSwitchKey = false;
-                        btnSetMacroSwitchKey.Enabled = true;
-                        btnSetMacroSwitchKey.Text = "Set Switch Key";
-                        string buttonName = isXButton1 ? "XButton1" : "XButton2";
-                        currentSwitchKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
-                        UpdateMacroSwitchKey(buttonName);
-                        SaveCurrentSettings();
-                        UpdateDebugInfo($"Set macro switch key to {buttonName}");
-                    }
-                    else if ((isXButton1 && currentMacroKey == Keys.XButton1) ||
-                            (isXButton2 && currentMacroKey == Keys.XButton2))
-                    {
-                        ToggleMacro();
-                    }
-                    else if ((isXButton1 && currentSwitchKey == Keys.XButton1) ||
-                            (isXButton2 && currentSwitchKey == Keys.XButton2))
-                    {
-                        HandleModeSwitch();
-                    }
+                    UpdateDebugInfo($"Error in MouseHookCallback: {ex.Message}");
                 }
-                else if (wParam == (IntPtr)WinMessages.WM_MBUTTONDOWN)
-                {
-                    if (isSettingKey)
-                    {
-                        isSettingKey = false;
-                        btnSetKey.Enabled = true;
-                        btnSetKey.Text = "Set Toggle Key";
-                        currentMacroKey = Keys.MButton;
-                        currentToggleType = ToggleType.MouseMiddle;
-                        UpdateCurrentKey("MButton");
-                        SaveCurrentSettings();
-                        UpdateDebugInfo("Set toggle key to MButton");
-                    }
-                    else if (isSettingMacroSwitchKey)
-                    {
-                        isSettingMacroSwitchKey = false;
-                        btnSetMacroSwitchKey.Enabled = true;
-                        btnSetMacroSwitchKey.Text = "Set Switch Key";
-                        currentSwitchKey = Keys.MButton;
-                        UpdateMacroSwitchKey("MButton");
-                        SaveCurrentSettings();
-                        UpdateDebugInfo("Set macro switch key to MButton");
-                    }
-                    else if (currentMacroKey == Keys.MButton)
-                    {
-                        ToggleMacro();
-                    }
-                    else if (currentSwitchKey == Keys.MButton)
-                    {
-                        HandleModeSwitch();
-                    }
-                }
-
-                CheckJitterState();
             }
-
             return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
         }
 
@@ -556,44 +689,50 @@ namespace NotesAndTasks
         /// <returns>If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.</returns>
         private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            if (nCode >= 0)
+            if (Validation.ValidateHookCode(nCode))
             {
-                if (wParam == (IntPtr)WinMessages.WM_KEYDOWN)
+                try
                 {
-                    var vkCode = Marshal.ReadInt32(lParam);
+                    if (wParam == (IntPtr)WinMessages.WM_KEYDOWN)
+                    {
+                        var vkCode = Marshal.ReadInt32(lParam);
 
-                    if (isSettingKey)
-                    {
-                        isSettingKey = false;
-                        btnSetKey.Enabled = true;
-                        btnSetKey.Text = "Set Toggle Key";
-                        currentMacroKey = (Keys)vkCode;
-                        currentToggleType = ToggleType.Keyboard;
-                        UpdateCurrentKey(currentMacroKey.ToString());
-                        SaveCurrentSettings();
-                        UpdateDebugInfo($"Set toggle key to {currentMacroKey}");
-                    }
-                    else if (isSettingMacroSwitchKey)
-                    {
-                        isSettingMacroSwitchKey = false;
-                        btnSetMacroSwitchKey.Enabled = true;
-                        btnSetMacroSwitchKey.Text = "Set Switch Key";
-                        currentSwitchKey = (Keys)vkCode;
-                        UpdateMacroSwitchKey(currentSwitchKey.ToString());
-                        SaveCurrentSettings();
-                        UpdateDebugInfo($"Set macro switch key to {currentSwitchKey}");
-                    }
-                    else if ((Keys)vkCode == currentMacroKey && currentToggleType == ToggleType.Keyboard)
-                    {
-                        ToggleMacro();
-                    }
-                    else if ((Keys)vkCode == currentSwitchKey)
-                    {
-                        HandleModeSwitch();
+                        if (isSettingKey)
+                        {
+                            isSettingKey = false;
+                            btnSetKey.Enabled = true;
+                            btnSetKey.Text = "Set Toggle Key";
+                            currentMacroKey = (Keys)vkCode;
+                            currentToggleType = ToggleType.Keyboard;
+                            UpdateCurrentKey(currentMacroKey.ToString());
+                            SaveCurrentSettings();
+                            UpdateDebugInfo($"Set toggle key to {currentMacroKey}");
+                        }
+                        else if (isSettingMacroSwitchKey)
+                        {
+                            isSettingMacroSwitchKey = false;
+                            btnSetMacroSwitchKey.Enabled = true;
+                            btnSetMacroSwitchKey.Text = "Set Switch Key";
+                            currentSwitchKey = (Keys)vkCode;
+                            UpdateMacroSwitchKey(currentSwitchKey.ToString());
+                            SaveCurrentSettings();
+                            UpdateDebugInfo($"Set macro switch key to {currentSwitchKey}");
+                        }
+                        else if ((Keys)vkCode == currentMacroKey && currentToggleType == ToggleType.Keyboard)
+                        {
+                            ToggleMacro();
+                        }
+                        else if ((Keys)vkCode == currentSwitchKey)
+                        {
+                            HandleModeSwitch();
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    UpdateDebugInfo($"Error in KeyboardHookCallback: {ex.Message}");
+                }
             }
-
             return NativeMethods.CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
         }
 
@@ -644,6 +783,7 @@ namespace NotesAndTasks
 
         /// <summary>
         /// Timer callback that handles mouse movement for both jitter and recoil reduction modes.
+        /// Includes comprehensive validation of movement parameters and state.
         /// </summary>
         /// <param name="state">State object (not used).</param>
         private void OnJitterTimer(object state)
@@ -654,6 +794,24 @@ namespace NotesAndTasks
             {
                 lock (lockObject)
                 {
+                    // Validate current state
+                    if (!isMacroOn)
+                    {
+                        jitterTimer.Change(Timeout.Infinite, 10);
+                        isJittering = false;
+                        UpdateDebugInfo("Timer stopped: Macro is off");
+                        return;
+                    }
+
+                    // Validate mouse button state
+                    if (!(leftButtonDown && rightButtonDown))
+                    {
+                        jitterTimer.Change(Timeout.Infinite, 10);
+                        isJittering = false;
+                        UpdateDebugInfo("Timer stopped: Mouse buttons released");
+                        return;
+                    }
+
                     var input = new NativeMethods.INPUT
                     {
                         type = WinMessages.INPUT_MOUSE,
@@ -669,47 +827,84 @@ namespace NotesAndTasks
 
                     if (useJitter)
                     {
+                        // Validate jitter pattern index
+                        if (currentStep < 0 || currentStep >= jitterPattern.Length)
+                        {
+                            currentStep = 0;
+                            UpdateDebugInfo("Reset jitter pattern index due to invalid value");
+                        }
+
                         var pattern = jitterPattern[currentStep];
-                        input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
-                        input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
+                        
+                        // Validate and apply jitter strength
+                        try
+                        {
+                            Validation.ValidateStrength(jitterStrength, 1, 20, nameof(jitterStrength));
+                            input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
+                            input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            // Use default strength if current value is invalid
+                            jitterStrength = 3;
+                            input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
+                            input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
+                            UpdateDebugInfo("Reset to default jitter strength due to invalid value");
+                        }
+
                         currentStep = (currentStep + 1) % jitterPattern.Length;
                     }
                     else
                     {
-                        // Recoil reduction mode - constant downward movement
-                        input.mi.dx = 0;
-                        // Low Range (1-6): Ultra-precise movements with logarithmic scaling
-                        if (recoilReductionStrength <= 6)
+                        // Validate recoil reduction strength
+                        try
                         {
-                            if (recoilReductionStrength == 1)
+                            Validation.ValidateStrength(recoilReductionStrength, 1, 20, nameof(recoilReductionStrength));
+                            
+                            input.mi.dx = 0;
+                            if (recoilReductionStrength <= 6)
                             {
-                                // Special case for strength 1 - minimal movement
-                                input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
+                                if (recoilReductionStrength == 1)
+                                {
+                                    input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
+                                }
+                                else
+                                {
+                                    double logBase = 1.5;
+                                    input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
+                                }
+                            }
+                            else if (recoilReductionStrength <= 14)
+                            {
+                                input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength * 1.2));
                             }
                             else
                             {
-                                double logBase = 1.5;
-                                input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
+                                double baseValue = BASE_RECOIL_STRENGTH * 20.0;
+                                double scalingFactor = 1.3;
+                                double exponentialBoost = 1.2;
+                                input.mi.dy = Math.Max(1, (int)Math.Round(
+                                    baseValue *
+                                    Math.Pow(scalingFactor, recoilReductionStrength - 13) *
+                                    Math.Pow(exponentialBoost, (recoilReductionStrength - 13) / 2)
+                                ));
                             }
                         }
-                        // Mid Range (7-13): Standard recoil control with linear scaling
-                        else if (recoilReductionStrength <= 14)
+                        catch (ArgumentOutOfRangeException)
                         {
-                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength * 1.2));
+                            // Use default strength if current value is invalid
+                            recoilReductionStrength = 1;
+                            input.mi.dx = 0;
+                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
+                            UpdateDebugInfo("Reset to default recoil reduction strength due to invalid value");
                         }
-                        // High Range (14-20): Aggressive compensation with enhanced exponential scaling
-                        else
-                        {
-                            // Using an even more aggressive scaling factor for maximum effect
-                            double baseValue = BASE_RECOIL_STRENGTH * 20.0; // Increased base value for stronger effect
-                            double scalingFactor = 1.3; // Higher scaling factor for more dramatic progression
-                            double exponentialBoost = 1.2; // Additional multiplier for enhanced scaling
-                            input.mi.dy = Math.Max(1, (int)Math.Round(
-                                baseValue *
-                                Math.Pow(scalingFactor, recoilReductionStrength - 13) *
-                                Math.Pow(exponentialBoost, (recoilReductionStrength - 13) / 2)
-                            ));
-                        }
+                    }
+
+                    // Validate final movement values
+                    if (Math.Abs(input.mi.dx) > 100 || Math.Abs(input.mi.dy) > 100)
+                    {
+                        UpdateDebugInfo("Movement values exceeded safe limits, skipping movement");
+                        return;
                     }
 
                     input.mi.dwFlags = WinMessages.MOUSEEVENTF_MOVE;
@@ -719,6 +914,13 @@ namespace NotesAndTasks
             catch (Exception ex)
             {
                 UpdateDebugInfo($"Movement error: {ex.Message}");
+                // Stop the timer on critical errors
+                try
+                {
+                    jitterTimer.Change(Timeout.Infinite, 10);
+                    isJittering = false;
+                }
+                catch { /* Ignore cleanup errors */ }
             }
         }
 
@@ -774,13 +976,23 @@ namespace NotesAndTasks
         /// <param name="strength">The strength value to display (1-20).</param>
         private void UpdateJitterStrength(int strength)
         {
-            if (InvokeRequired)
+            try
             {
-                Invoke(new Action<int>(UpdateJitterStrength), strength);
-                return;
+                Validation.ValidateStrength(strength, trackBarJitter.Minimum, trackBarJitter.Maximum, nameof(strength));
+
+                if (InvokeRequired)
+                {
+                    Invoke(new Action<int>(UpdateJitterStrength), strength);
+                    return;
+                }
+
+                lblJitterStrengthValue.Text = strength.ToString();
+                UpdateDebugInfo($"Jitter strength updated to: {strength}");
             }
-            lblJitterStrengthValue.Text = strength.ToString();
-            UpdateDebugInfo($"Jitter strength updated to: {strength}");
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error updating jitter strength: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -790,13 +1002,23 @@ namespace NotesAndTasks
         /// <param name="strength">The strength value to display (1-20).</param>
         private void UpdateRecoilReductionStrength(int strength)
         {
-            if (InvokeRequired)
+            try
             {
-                Invoke(new Action<int>(UpdateRecoilReductionStrength), strength);
-                return;
+                Validation.ValidateStrength(strength, trackBarRecoilReduction.Minimum, trackBarRecoilReduction.Maximum, nameof(strength));
+
+                if (InvokeRequired)
+                {
+                    Invoke(new Action<int>(UpdateRecoilReductionStrength), strength);
+                    return;
+                }
+
+                lblRecoilReductionStrengthValue.Text = strength.ToString();
+                UpdateDebugInfo($"Recoil reduction strength updated to: {strength}");
             }
-            lblRecoilReductionStrengthValue.Text = strength.ToString();
-            UpdateDebugInfo($"Recoil reduction strength updated to: {strength}");
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error updating recoil reduction strength: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -906,25 +1128,67 @@ namespace NotesAndTasks
         /// <summary>
         /// Handles switching between jitter and recoil reduction modes.
         /// Only works when neither "Always" mode is enabled.
+        /// Validates mode state before switching.
         /// </summary>
         private void HandleModeSwitch()
         {
-            // Don't switch if either "Always" mode is enabled
-            if (alwaysJitterMode || alwaysRecoilReductionMode)
-                return;
+            try
+            {
+                // Validate current state
+                if (isSettingKey || isSettingMacroSwitchKey)
+                {
+                    UpdateDebugInfo("Cannot switch modes while setting keys");
+                    return;
+                }
 
-            // Toggle between jitter and recoil reduction
-            jitterEnabled = !jitterEnabled;
-            recoilReductionEnabled = !jitterEnabled;
+                // Don't switch if either "Always" mode is enabled
+                if (alwaysJitterMode || alwaysRecoilReductionMode)
+                {
+                    UpdateDebugInfo("Cannot switch modes when 'Always' mode is enabled");
+                    return;
+                }
 
-            // Save the new state
-            SettingsManager.CurrentSettings.JitterEnabled = jitterEnabled;
-            SettingsManager.CurrentSettings.RecoilReductionEnabled = recoilReductionEnabled;
-            SettingsManager.SaveSettings();
+                // Toggle between jitter and recoil reduction with validation
+                bool previousJitterState = jitterEnabled;
+                bool previousRecoilState = recoilReductionEnabled;
 
-            UpdateTitle();
-            UpdateModeLabels();
-            UpdateDebugInfo($"Switched to {(jitterEnabled ? "Jitter" : "Recoil Reduction")} mode");
+                jitterEnabled = !jitterEnabled;
+                recoilReductionEnabled = !jitterEnabled;
+
+                // Validate the new state
+                if (jitterEnabled == recoilReductionEnabled)
+                {
+                    // Invalid state detected, revert changes
+                    jitterEnabled = previousJitterState;
+                    recoilReductionEnabled = previousRecoilState;
+                    UpdateDebugInfo("Error: Invalid mode state detected");
+                    return;
+                }
+
+                // Save the new state
+                try
+                {
+                    SettingsManager.CurrentSettings.JitterEnabled = jitterEnabled;
+                    SettingsManager.CurrentSettings.RecoilReductionEnabled = recoilReductionEnabled;
+                    SettingsManager.SaveSettings();
+                }
+                catch (Exception ex)
+                {
+                    // Revert changes if settings save fails
+                    jitterEnabled = previousJitterState;
+                    recoilReductionEnabled = previousRecoilState;
+                    UpdateDebugInfo($"Error saving mode settings: {ex.Message}");
+                    return;
+                }
+
+                UpdateTitle();
+                UpdateModeLabels();
+                UpdateDebugInfo($"Switched to {(jitterEnabled ? "Jitter" : "Recoil Reduction")} mode");
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error in HandleModeSwitch: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -1010,6 +1274,20 @@ namespace NotesAndTasks
         private void chkMinimizeToTray_CheckedChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void ResetToDefaultSettings()
+        {
+            trackBarJitter.Value = 3;
+            trackBarRecoilReduction.Value = 1;
+            chkAlwaysJitter.Checked = false;
+            chkAlwaysRecoilReduction.Checked = false;
+            chkMinimizeToTray.Checked = false;
+            currentMacroKey = Keys.Capital;
+            currentSwitchKey = Keys.Q;
+            UpdateTitle();
+            UpdateModeLabels();
+            UpdateDebugInfo("Settings reset to defaults due to loading error");
         }
     }
 }
