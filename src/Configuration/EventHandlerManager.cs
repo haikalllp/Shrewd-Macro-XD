@@ -50,72 +50,55 @@ namespace NotesAndTasks.Configuration
         /// Registers a control's event handlers.
         /// </summary>
         /// <param name="control">The control to register events for.</param>
-        public void RegisterControlEvents(Control control)
+        public void RegisterControlEvents<T>(T control) where T : Control
         {
-            if (control == null) throw new ArgumentNullException(nameof(control));
+            if (control == null) return;
 
-            // Register common control events
-            RegisterEventHandler($"{control.Name}_Click",
-                new EventHandler(control.Click));
+            // Store event handlers
+            var handlers = new List<Delegate>();
+            eventHandlers[control.Name] = handlers;
 
-            // Register specific control type events
-            switch (control)
+            // Common events
+            EventHandler clickHandler = (s, e) => OnControlClick(control, e);
+            control.Click += clickHandler;
+            handlers.Add(clickHandler);
+
+            // Mouse events
+            MouseEventHandler mouseDownHandler = (s, e) => OnControlMouseDown(control, e);
+            control.MouseDown += mouseDownHandler;
+            handlers.Add(mouseDownHandler);
+
+            MouseEventHandler mouseUpHandler = (s, e) => OnControlMouseUp(control, e);
+            control.MouseUp += mouseUpHandler;
+            handlers.Add(mouseUpHandler);
+
+            // Type-specific events
+            if (control is TrackBar trackBar)
             {
-                case TrackBar trackBar:
-                    RegisterTrackBarEvents(trackBar);
-                    break;
-                case CheckBox checkBox:
-                    RegisterCheckBoxEvents(checkBox);
-                    break;
-                case Button button:
-                    RegisterButtonEvents(button);
-                    break;
-                case TextBox textBox:
-                    RegisterTextBoxEvents(textBox);
-                    break;
+                EventHandler valueChangedHandler = (s, e) => OnTrackBarValueChanged(trackBar, e);
+                trackBar.ValueChanged += valueChangedHandler;
+                handlers.Add(valueChangedHandler);
+
+                EventHandler scrollHandler = (s, e) => OnTrackBarScroll(trackBar, e);
+                trackBar.Scroll += scrollHandler;
+                handlers.Add(scrollHandler);
             }
-        }
+            else if (control is CheckBox checkBox)
+            {
+                EventHandler checkedChangedHandler = (s, e) => OnCheckBoxCheckedChanged(checkBox, e);
+                checkBox.CheckedChanged += checkedChangedHandler;
+                handlers.Add(checkedChangedHandler);
+            }
+            else if (control is TextBox textBox)
+            {
+                EventHandler textChangedHandler = (s, e) => OnTextBoxTextChanged(textBox, e);
+                textBox.TextChanged += textChangedHandler;
+                handlers.Add(textChangedHandler);
 
-        /// <summary>
-        /// Registers events specific to TrackBar controls.
-        /// </summary>
-        private void RegisterTrackBarEvents(TrackBar trackBar)
-        {
-            RegisterEventHandler($"{trackBar.Name}_ValueChanged",
-                new EventHandler(trackBar.ValueChanged));
-            RegisterEventHandler($"{trackBar.Name}_Scroll",
-                new EventHandler(trackBar.Scroll));
-        }
-
-        /// <summary>
-        /// Registers events specific to CheckBox controls.
-        /// </summary>
-        private void RegisterCheckBoxEvents(CheckBox checkBox)
-        {
-            RegisterEventHandler($"{checkBox.Name}_CheckedChanged",
-                new EventHandler(checkBox.CheckedChanged));
-        }
-
-        /// <summary>
-        /// Registers events specific to Button controls.
-        /// </summary>
-        private void RegisterButtonEvents(Button button)
-        {
-            RegisterEventHandler($"{button.Name}_MouseDown",
-                new MouseEventHandler(button.MouseDown));
-            RegisterEventHandler($"{button.Name}_MouseUp",
-                new MouseEventHandler(button.MouseUp));
-        }
-
-        /// <summary>
-        /// Registers events specific to TextBox controls.
-        /// </summary>
-        private void RegisterTextBoxEvents(TextBox textBox)
-        {
-            RegisterEventHandler($"{textBox.Name}_TextChanged",
-                new EventHandler(textBox.TextChanged));
-            RegisterEventHandler($"{textBox.Name}_KeyDown",
-                new KeyEventHandler(textBox.KeyDown));
+                KeyEventHandler keyDownHandler = (s, e) => OnTextBoxKeyDown(textBox, e);
+                textBox.KeyDown += keyDownHandler;
+                handlers.Add(keyDownHandler);
+            }
         }
 
         /// <summary>
@@ -324,6 +307,47 @@ namespace NotesAndTasks.Configuration
             {
                 System.Diagnostics.Debug.WriteLine($"Debug panel visibility changed from {previousConfig?.UISettings.ShowDebugPanel} to {newConfig.UISettings.ShowDebugPanel}");
             }
+        }
+
+        // Event handler methods
+        private void OnControlClick(Control control, EventArgs e)
+        {
+            // Handle click event
+        }
+
+        private void OnControlMouseDown(Control control, MouseEventArgs e)
+        {
+            // Handle mouse down
+        }
+
+        private void OnControlMouseUp(Control control, MouseEventArgs e)
+        {
+            // Handle mouse up
+        }
+
+        private void OnTrackBarValueChanged(TrackBar trackBar, EventArgs e)
+        {
+            // Handle value changed
+        }
+
+        private void OnTrackBarScroll(TrackBar trackBar, EventArgs e)
+        {
+            // Handle scroll
+        }
+
+        private void OnCheckBoxCheckedChanged(CheckBox checkBox, EventArgs e)
+        {
+            // Handle checked changed
+        }
+
+        private void OnTextBoxTextChanged(TextBox textBox, EventArgs e)
+        {
+            // Handle text changed
+        }
+
+        private void OnTextBoxKeyDown(TextBox textBox, KeyEventArgs e)
+        {
+            // Handle key down
         }
 
         /// <summary>

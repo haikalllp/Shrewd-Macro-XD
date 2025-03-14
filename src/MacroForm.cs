@@ -527,7 +527,11 @@ namespace NotesAndTasks
                 try
                 {
                     var hookStruct = (NativeMethods.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT));
-                    Validation.ValidateNotNull(hookStruct, nameof(hookStruct));
+                    if (hookStruct == null)
+                    {
+                        UpdateDebugInfo("Error: Invalid mouse hook structure");
+                        return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
+                    }
 
                     switch ((int)wParam)
                     {
@@ -568,8 +572,8 @@ namespace NotesAndTasks
                         else if (isSettingMacroSwitchKey)
                         {
                             isSettingMacroSwitchKey = false;
-                            btnSetMacroSwitchKey.Enabled = true;
-                            btnSetMacroSwitchKey.Text = "Set Switch Key";
+                            btnSetMacroSwitch.Enabled = true;
+                            btnSetMacroSwitch.Text = "Set Switch Key";
                             string buttonName = isXButton1 ? "XButton1" : "XButton2";
                             currentSwitchKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
                             UpdateMacroSwitchKey(buttonName);
@@ -603,8 +607,8 @@ namespace NotesAndTasks
                         else if (isSettingMacroSwitchKey)
                         {
                             isSettingMacroSwitchKey = false;
-                            btnSetMacroSwitchKey.Enabled = true;
-                            btnSetMacroSwitchKey.Text = "Set Switch Key";
+                            btnSetMacroSwitch.Enabled = true;
+                            btnSetMacroSwitch.Text = "Set Switch Key";
                             currentSwitchKey = Keys.MButton;
                             UpdateMacroSwitchKey("MButton");
                             SaveCurrentSettings();
@@ -662,8 +666,8 @@ namespace NotesAndTasks
                         else if (isSettingMacroSwitchKey)
                         {
                             isSettingMacroSwitchKey = false;
-                            btnSetMacroSwitchKey.Enabled = true;
-                            btnSetMacroSwitchKey.Text = "Set Switch Key";
+                            btnSetMacroSwitch.Enabled = true;
+                            btnSetMacroSwitch.Text = "Set Switch Key";
                             currentSwitchKey = (Keys)vkCode;
                             UpdateMacroSwitchKey(currentSwitchKey.ToString());
                             SaveCurrentSettings();
