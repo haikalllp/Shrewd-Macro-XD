@@ -41,7 +41,7 @@ namespace NotesAndTasks.Configuration
                 configLock.EnterReadLock();
                 try
                 {
-                    return currentConfig.Clone();
+                    return (AppConfiguration)currentConfig.Clone();
                 }
                 finally
                 {

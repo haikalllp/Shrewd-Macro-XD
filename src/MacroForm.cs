@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.ComponentModel;
+using NotesAndTasks.Configuration;
 using NotesAndTasks;
 
 namespace NotesAndTasks
@@ -526,12 +527,13 @@ namespace NotesAndTasks
             {
                 try
                 {
-                    var hookStruct = (NativeMethods.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT));
-                    if (hookStruct == null)
+                    if (lParam == IntPtr.Zero)
                     {
-                        UpdateDebugInfo("Error: Invalid mouse hook structure");
+                        UpdateDebugInfo("Error: Invalid mouse hook parameter");
                         return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
                     }
+
+                    var hookStruct = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
 
                     switch ((int)wParam)
                     {
