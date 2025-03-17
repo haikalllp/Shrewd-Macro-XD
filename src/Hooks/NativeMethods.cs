@@ -64,6 +64,24 @@ namespace NotesAndTasks
         }
 
         /// <summary>
+        /// Contains information about a low-level keyboard input event.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct KBDLLHOOKSTRUCT
+        {
+            /// <summary>The virtual-key code of the key.</summary>
+            public uint vkCode;
+            /// <summary>The hardware scan code of the key.</summary>
+            public uint scanCode;
+            /// <summary>The extended-key flag, event-injected flag, context code, and transition-state flag.</summary>
+            public uint flags;
+            /// <summary>The time stamp for this message.</summary>
+            public uint time;
+            /// <summary>Additional information associated with the message.</summary>
+            public IntPtr dwExtraInfo;
+        }
+
+        /// <summary>
         /// Contains information about simulated mouse or keyboard input events.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]

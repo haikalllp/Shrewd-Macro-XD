@@ -7,8 +7,8 @@ This plan details the specific steps to transform the MouseMacro project into a 
 
 | Phase | Status |
 |-------|--------|
-| Phase 1: Preparation and Structure | Not Started |
-| Phase 2: Code Modularization | Not Started |
+| Phase 1: Preparation and Structure | ✅ Complete |
+| Phase 2: Code Modularization | 🔄 In Progress (20%) |
 | Phase 3: Architecture Improvements | Not Started |
 | Phase 4: Documentation and Testing | Not Started |
 | Phase 5: Validation and Finalization | Not Started |
@@ -106,11 +106,11 @@ foreach ($file in $fileMoves.Keys) {
 ### Phase 2: Code Modularization
 
 #### Step 3: Extract Hook Logic
-- [ ] Create KeyboardHook.cs in src/Hooks/
-- [ ] Create MouseHook.cs in src/Hooks/
-- [ ] Move hook-related code from MacroForm.cs to these classes
-- [ ] Implement IDisposable pattern for proper resource cleanup
-- [ ] Add public methods for controlling hooks (Start, Stop)
+- [x] Create KeyboardHook.cs in src/Hooks/
+- [x] Create MouseHook.cs in src/Hooks/
+- [x] Move hook-related code from MacroForm.cs to these classes
+- [x] Implement IDisposable pattern for proper resource cleanup
+- [x] Add public methods for controlling hooks (Start, Stop)
 - [ ] Update MacroForm.cs to use the new hook classes
 
 #### Step 4: Create Manager Classes
@@ -194,27 +194,27 @@ foreach ($file in $fileMoves.Keys) {
 ### 1. Create backup of the current project
 - **Description**: Create a full backup of the project directory to preserve the original code. This can be done by copying the entire project folder to a safe location or by setting up a Git repository and making an initial commit.
 - **Complexity**: 1/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 2. Create new directory structure
 - **Description**: Create the new directory structure as outlined in the improvement plan. This includes creating src/, tests/, and docs/ directories, with src/ further divided into UI/, Configuration/, Hooks/, Utilities/, and Models/ subdirectories.
 - **Complexity**: 2/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 3. Move existing files to new directory structure
 - **Description**: Move existing files to their appropriate locations in the new directory structure. Update namespace declarations in all files to reflect the new structure. Update the project file (MouseMacro.csproj) to reflect the new file paths.
 - **Complexity**: 3/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 4. Create KeyboardHook class
 - **Description**: Create a KeyboardHook class in src/Hooks/ directory. Extract keyboard hook-related functionality from MacroForm.cs, including hook initialization, callback methods, and disposal logic. Implement IDisposable pattern for proper resource cleanup.
 - **Complexity**: 5/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 5. Create MouseHook class
 - **Description**: Create a MouseHook class in src/Hooks/ directory. Extract mouse hook-related functionality from MacroForm.cs, including hook initialization, callback methods, and disposal logic. Implement IDisposable pattern for proper resource cleanup.
 - **Complexity**: 5/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 6. Create InputSimulator class
 - **Description**: Create an InputSimulator class in src/Utilities/ directory to handle mouse movement simulation. Extract SendInput implementation from MacroForm.cs and add methods for mouse movement simulation.

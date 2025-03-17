@@ -37,6 +37,21 @@ namespace NotesAndTasks
         public const int WM_KEYDOWN = 0x0100;
 
         /// <summary>
+        /// Posted when a nonsystem key is released.
+        /// </summary>
+        public const int WM_KEYUP = 0x0101;
+
+        /// <summary>
+        /// Posted when a system key is pressed (such as ALT).
+        /// </summary>
+        public const int WM_SYSKEYDOWN = 0x0104;
+
+        /// <summary>
+        /// Posted when a system key is released.
+        /// </summary>
+        public const int WM_SYSKEYUP = 0x0105;
+
+        /// <summary>
         /// Posted when the left mouse button is pressed.
         /// </summary>
         public const int WM_LBUTTONDOWN = 0x0201;
@@ -62,10 +77,21 @@ namespace NotesAndTasks
         public const int WM_MBUTTONDOWN = 0x0207;
 
         /// <summary>
+        /// Posted when the middle mouse button is released.
+        /// </summary>
+        public const int WM_MBUTTONUP = 0x0208;
+
+        /// <summary>
         /// Posted when an X button is pressed.
         /// The specific button (XBUTTON1 or XBUTTON2) is indicated in the high-order word of the mouseData field.
         /// </summary>
         public const int WM_XBUTTONDOWN = 0x020B;
+
+        /// <summary>
+        /// Posted when an X button is released.
+        /// The specific button (XBUTTON1 or XBUTTON2) is indicated in the high-order word of the mouseData field.
+        /// </summary>
+        public const int WM_XBUTTONUP = 0x020C;
 
         /// <summary>
         /// First X button identifier (typically the fourth mouse button).
