@@ -24,3 +24,6 @@ src/
 ├── Models/
 ├── Utilities/
 └── Program.cs
+|
+├── tests/
+├── docs/
