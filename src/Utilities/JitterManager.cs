@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+using System.Windows.Forms;
 
 namespace NotesAndTasks.Utilities
 {
@@ -10,41 +10,13 @@ namespace NotesAndTasks.Utilities
     public class JitterManager : IDisposable
     {
         private readonly InputSimulator inputSimulator;
-        private readonly System.Threading.Timer jitterTimer;
-        private readonly object lockObject = new object();
         private bool disposed = false;
+        private int strength = 3;
         private bool isActive = false;
+        private System.Threading.Timer timer;
         private int currentStep = 0;
-        private int currentStrength = 3; // Default strength
 
-        /// <summary>
-        /// Gets or sets the current jitter strength (1-20).
-        /// </summary>
-        public int Strength
-        {
-            get => currentStrength;
-            set
-            {
-                if (value < 1 || value > 20)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Strength must be between 1 and 20.");
-                currentStrength = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets whether the jitter effect is currently active.
-        /// </summary>
-        public bool IsActive => isActive;
-
-        /// <summary>
-        /// Event raised when the jitter state changes.
-        /// </summary>
-        public event EventHandler<bool> StateChanged;
-
-        /// <summary>
-        /// The predefined jitter pattern for mouse movement.
-        /// </summary>
-        private static readonly (int dx, int dy)[] JitterPattern = new[]
+        private readonly (int dx, int dy)[] jitterPattern = new[]
         {
             (7, 7), (-7, -7), (0, 7), (7, 7), (-7, -7),
             (0, 6), (7, 7), (-7, -7), (0, 7), (7, 7),
@@ -54,14 +26,49 @@ namespace NotesAndTasks.Utilities
         };
 
         /// <summary>
+        /// Event raised when the jitter state changes.
+        /// </summary>
+        public event EventHandler<bool> StateChanged;
+
+        /// <summary>
         /// Initializes a new instance of the JitterManager class.
         /// </summary>
-        /// <param name="simulator">The input simulator to use for mouse movement.</param>
-        public JitterManager(InputSimulator simulator)
+        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
+        public JitterManager(InputSimulator inputSimulator)
         {
-            inputSimulator = simulator ?? throw new ArgumentNullException(nameof(simulator));
-            jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
+            this.inputSimulator = inputSimulator ?? throw new ArgumentNullException(nameof(inputSimulator));
+            timer = new System.Threading.Timer(OnTimer, null, System.Threading.Timeout.Infinite, 10);
         }
+
+        /// <summary>
+        /// Gets or sets the current jitter strength (1-20).
+        /// </summary>
+        public int Strength
+        {
+            get => strength;
+            private set
+            {
+                if (value < 1 || value > 20)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Strength must be between 1 and 20.");
+                strength = value;
+            }
+        }
+
+        /// <summary>
+        /// Sets the jitter strength value (1-20).
+        /// </summary>
+        /// <param name="value">The strength value to set.</param>
+        public void SetStrength(int value)
+        {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(JitterManager));
+            Strength = value;
+        }
+
+        /// <summary>
+        /// Gets whether the jitter effect is currently active.
+        /// </summary>
+        public bool IsActive => isActive;
 
         /// <summary>
         /// Starts the jitter effect.
@@ -71,15 +78,11 @@ namespace NotesAndTasks.Utilities
             if (disposed)
                 throw new ObjectDisposedException(nameof(JitterManager));
 
-            lock (lockObject)
+            if (!isActive)
             {
-                if (!isActive)
-                {
-                    isActive = true;
-                    currentStep = 0;
-                    jitterTimer.Change(0, 10);
-                    StateChanged?.Invoke(this, true);
-                }
+                isActive = true;
+                timer.Change(0, 10);
+                StateChanged?.Invoke(this, true);
             }
         }
 
@@ -91,46 +94,32 @@ namespace NotesAndTasks.Utilities
             if (disposed)
                 throw new ObjectDisposedException(nameof(JitterManager));
 
-            lock (lockObject)
+            if (isActive)
             {
-                if (isActive)
-                {
-                    isActive = false;
-                    jitterTimer.Change(Timeout.Infinite, 10);
-                    StateChanged?.Invoke(this, false);
-                }
+                isActive = false;
+                timer.Change(System.Threading.Timeout.Infinite, 10);
+                StateChanged?.Invoke(this, false);
             }
         }
 
         /// <summary>
         /// Timer callback that applies the jitter pattern.
         /// </summary>
-        private void OnJitterTimer(object state)
+        private void OnTimer(object state)
         {
-            if (!isActive || disposed)
-                return;
+            if (!isActive) return;
 
             try
             {
-                lock (lockObject)
-                {
-                    if (currentStep >= JitterPattern.Length)
-                        currentStep = 0;
+                var pattern = jitterPattern[currentStep];
+                int dx = (int)(pattern.dx * strength / 7);
+                int dy = (int)(pattern.dy * strength / 7);
 
-                    var pattern = JitterPattern[currentStep];
-                    if (!inputSimulator.SimulateJitterMovement(pattern, currentStrength))
-                    {
-                        // If movement fails, stop the jitter
-                        Stop();
-                        return;
-                    }
-
-                    currentStep = (currentStep + 1) % JitterPattern.Length;
-                }
+                inputSimulator.MoveMouse(dx, dy);
+                currentStep = (currentStep + 1) % jitterPattern.Length;
             }
-            catch
+            catch (Exception)
             {
-                // If any error occurs, stop the jitter
                 Stop();
             }
         }
@@ -143,7 +132,7 @@ namespace NotesAndTasks.Utilities
             if (!disposed)
             {
                 Stop();
-                jitterTimer.Dispose();
+                timer.Dispose();
                 disposed = true;
                 GC.SuppressFinalize(this);
             }

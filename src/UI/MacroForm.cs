@@ -29,10 +29,8 @@ namespace NotesAndTasks
         private readonly KeyboardHook keyboardHook;
         private readonly MouseHook mouseHook;
         private readonly MacroManager macroManager;
-        private System.Threading.Timer jitterTimer;
         private readonly ToolTip toolTip;
 
-        private bool isMacroOn = false;
         /// <summary>
         /// Defines the types of input that can be used to toggle the macro functionality.
         /// </summary>
@@ -48,29 +46,24 @@ namespace NotesAndTasks
             MouseX2
         }
 
-        // Surpress warnings as first time build might not know about these
-#pragma warning disable CS0414
         private ToggleType currentToggleType = ToggleType.Keyboard;
-        private Keys toggleKey = Keys.Capital;  // Default to Capital
-        private Keys macroSwitchKey = Keys.Q;  // Default to Q
-#pragma warning restore CS0414
-
-        private int jitterStrength = 3;  // Default to 3
-        private int recoilReductionStrength = 1;  // Default to 1
+        private Keys currentMacroKey = Keys.Capital;  // Default to Caps Lock
+        private Keys currentSwitchKey = Keys.Q;      // Default to Q
         private bool isSettingKey = false;
         private bool isSettingMacroSwitchKey = false;
+        private bool isExiting = false;
+        private System.Threading.Timer jitterTimer;
+        private int jitterStrength = 3;  // Default to 3
+        private int recoilReductionStrength = 1;  // Default to 1
         private bool isJittering = false;
         private int currentStep = 0;
         private readonly object lockObject = new object();
         private bool leftButtonDown = false;
         private bool rightButtonDown = false;
-        private bool isExiting = false;
         private bool jitterEnabled = false;
         private bool alwaysJitterMode = false;
         private bool alwaysRecoilReductionMode = false;
         private bool recoilReductionEnabled = false;
-        private Keys currentMacroKey = Keys.Capital;  // Default to Caps Lock
-        private Keys currentSwitchKey = Keys.Q;      // Default to Q
 
         private readonly (int dx, int dy)[] jitterPattern = new[]
         {
@@ -123,6 +116,10 @@ namespace NotesAndTasks
                 // Set up macro manager event handlers
                 macroManager.MacroStateChanged += OnMacroStateChanged;
                 macroManager.ModeChanged += OnModeChanged;
+                macroManager.JitterStarted += (s, e) => UpdateDebugInfo("Jitter started");
+                macroManager.JitterStopped += (s, e) => UpdateDebugInfo("Jitter stopped");
+                macroManager.RecoilReductionStarted += (s, e) => UpdateDebugInfo("Recoil reduction started");
+                macroManager.RecoilReductionStopped += (s, e) => UpdateDebugInfo("Recoil reduction stopped");
 
                 // Handle application exit
                 Application.ApplicationExit += (s, e) =>
@@ -257,8 +254,6 @@ namespace NotesAndTasks
                         }
                         break;
                 }
-
-                CheckJitterState();
             }
             catch (Exception ex)
             {
@@ -270,17 +265,10 @@ namespace NotesAndTasks
         {
             try
             {
-                switch (e.Button)
+                if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right)
                 {
-                    case MouseButtons.Left:
-                        leftButtonDown = false;
-                        break;
-                    case MouseButtons.Right:
-                        rightButtonDown = false;
-                        break;
+                    macroManager.HandleMouseButton(e.Button, false);
                 }
-
-                CheckJitterState();
             }
             catch (Exception ex)
             {
@@ -334,9 +322,8 @@ namespace NotesAndTasks
                 // Start the hooks
                 keyboardHook.Start();
                 mouseHook.Start();
-
-                // Initialize jitter timer
-                jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
+                
+                // Update UI
                 UpdateTitle();
             }
             catch (Exception ex)
@@ -518,6 +505,19 @@ namespace NotesAndTasks
                 chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
                 chkMinimizeToTray.Checked = settings.MinimizeToTray;
 
+                // Parse and set hotkeys
+                if (Enum.TryParse(settings.MacroToggleKey, out Keys macroKey))
+                {
+                    currentMacroKey = macroKey;
+                    UpdateCurrentKey(currentMacroKey.ToString());
+                }
+
+                if (Enum.TryParse(settings.ModeSwitchKey, out Keys switchKey))
+                {
+                    currentSwitchKey = switchKey;
+                    UpdateMacroSwitchKey(currentSwitchKey.ToString());
+                }
+
                 // Apply settings to MacroManager
                 macroManager.SetJitterStrength(settings.JitterStrength);
                 macroManager.SetRecoilReductionStrength(settings.RecoilReductionStrength);
@@ -602,211 +602,17 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Checks and updates the jitter/recoil reduction state based on mouse button states.
-        /// Activates or deactivates the jitter timer based on current conditions.
-        /// </summary>
-        private void CheckJitterState()
-        {
-            // Always require both mouse buttons
-            bool shouldActivate = isMacroOn && leftButtonDown && rightButtonDown;
-
-            if (shouldActivate && !isJittering)
-            {
-                isJittering = true;
-                jitterTimer.Change(0, 10);
-
-                // Use alwaysJitterMode/alwaysRecoilReductionMode to determine which macro to run
-                bool useJitter = alwaysJitterMode || (!alwaysRecoilReductionMode && jitterEnabled);
-
-                if (useJitter)
-                {
-                    UpdateDebugInfo($"Jitter started - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}, Always Jitter={alwaysJitterMode}");
-                }
-                else
-                {
-                    UpdateDebugInfo($"Recoil reduction started - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}, Always Recoil Reduction={alwaysRecoilReductionMode}");
-                }
-            }
-            else if (!shouldActivate && isJittering)
-            {
-                isJittering = false;
-                jitterTimer.Change(Timeout.Infinite, 10);
-
-                bool useJitter = alwaysJitterMode || (!alwaysRecoilReductionMode && jitterEnabled);
-
-                if (useJitter)
-                {
-                    UpdateDebugInfo($"Jitter stopped - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}, Always Jitter={alwaysJitterMode}");
-                }
-                else
-                {
-                    UpdateDebugInfo($"Recoil reduction stopped - Mouse Buttons: LMB={leftButtonDown}, RMB={rightButtonDown}, Always Recoil Reduction={alwaysRecoilReductionMode}");
-                }
-            }
-            UpdateModeLabels();
-        }
-
-        /// <summary>
-        /// Timer callback that handles mouse movement for both jitter and recoil reduction modes.
-        /// Includes comprehensive validation of movement parameters and state.
-        /// </summary>
-        /// <param name="state">State object (not used).</param>
-        private void OnJitterTimer(object state)
-        {
-            if (!isJittering) return;
-
-            try
-            {
-                lock (lockObject)
-                {
-                    // Validate current state
-                    if (!isMacroOn)
-                    {
-                        jitterTimer.Change(Timeout.Infinite, 10);
-                        isJittering = false;
-                        UpdateDebugInfo("Timer stopped: Macro is off");
-                        return;
-                    }
-
-                    // Validate mouse button state
-                    if (!(leftButtonDown && rightButtonDown))
-                    {
-                        jitterTimer.Change(Timeout.Infinite, 10);
-                        isJittering = false;
-                        UpdateDebugInfo("Timer stopped: Mouse buttons released");
-                        return;
-                    }
-
-                    var input = new NativeMethods.INPUT
-                    {
-                        type = WinMessages.INPUT_MOUSE,
-                        mi = new NativeMethods.MOUSEINPUT
-                        {
-                            mouseData = 0,
-                            time = 0,
-                            dwExtraInfo = IntPtr.Zero
-                        }
-                    };
-
-                    bool useJitter = alwaysJitterMode || (!alwaysRecoilReductionMode && jitterEnabled);
-
-                    if (useJitter)
-                    {
-                        // Validate jitter pattern index
-                        if (currentStep < 0 || currentStep >= jitterPattern.Length)
-                        {
-                            currentStep = 0;
-                            UpdateDebugInfo("Reset jitter pattern index due to invalid value");
-                        }
-
-                        var pattern = jitterPattern[currentStep];
-                        
-                        // Validate and apply jitter strength
-                        try
-                        {
-                            Validation.ValidateStrength(jitterStrength, 1, 20, nameof(jitterStrength));
-                            input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
-                            input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            // Use default strength if current value is invalid
-                            jitterStrength = 3;
-                            input.mi.dx = (int)(pattern.dx * jitterStrength / 7);
-                            input.mi.dy = (int)(pattern.dy * jitterStrength / 7);
-                            UpdateDebugInfo("Reset to default jitter strength due to invalid value");
-                        }
-
-                        currentStep = (currentStep + 1) % jitterPattern.Length;
-                    }
-                    else
-                    {
-                        // Validate recoil reduction strength
-                        try
-                        {
-                            Validation.ValidateStrength(recoilReductionStrength, 1, 20, nameof(recoilReductionStrength));
-                            
-                            input.mi.dx = 0;
-                            if (recoilReductionStrength <= 6)
-                            {
-                                if (recoilReductionStrength == 1)
-                                {
-                                    input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
-                                }
-                                else
-                                {
-                                    double logBase = 1.5;
-                                    input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(recoilReductionStrength + 1, logBase)));
-                                }
-                            }
-                            else if (recoilReductionStrength <= 16)
-                            {
-                                input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * recoilReductionStrength * 1.2));
-                            }
-                            else
-                            {
-                                double baseValue = BASE_RECOIL_STRENGTH * 20.0;
-                                double scalingFactor = 1.3;
-                                double exponentialBoost = 1.2;
-                                input.mi.dy = Math.Max(1, (int)Math.Round(
-                                    baseValue *
-                                    Math.Pow(scalingFactor, recoilReductionStrength - 13) *
-                                    Math.Pow(exponentialBoost, (recoilReductionStrength - 13) / 2)
-                                ));
-                            }
-                        }
-                        catch (ArgumentOutOfRangeException)
-                        {
-                            // Use default strength if current value is invalid
-                            recoilReductionStrength = 1;
-                            input.mi.dx = 0;
-                            input.mi.dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
-                            UpdateDebugInfo("Reset to default recoil reduction strength due to invalid value");
-                        }
-                    }
-
-                    // Validate final movement values
-                    if (Math.Abs(input.mi.dx) > 100 || Math.Abs(input.mi.dy) > 100)
-                    {
-                        UpdateDebugInfo("Movement values exceeded safe limits, skipping movement");
-                        return;
-                    }
-
-                    input.mi.dwFlags = WinMessages.MOUSEEVENTF_MOVE;
-                    NativeMethods.SendInput(1, ref input, Marshal.SizeOf(input));
-                }
-            }
-            catch (Exception ex)
-            {
-                UpdateDebugInfo($"Movement error: {ex.Message}");
-                // Stop the timer on critical errors
-                try
-                {
-                    jitterTimer.Change(Timeout.Infinite, 10);
-                    isJittering = false;
-                }
-                catch { /* Ignore cleanup errors */ }
-            }
-        }
-
-        /// <summary>
         /// Updates the form title to reflect current macro state and mode.
         /// </summary>
         private void UpdateTitle()
         {
-            string jitterMode;
-            string recoilMode;
-            if (alwaysJitterMode)
-                jitterMode = "Always Jitter";
-            else
-                jitterMode = jitterEnabled ? "Jitter" : "Jitter (OFF)";
+            string jitterMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" :
+                (macroManager.IsJitterEnabled ? "Jitter" : "Jitter (OFF)");
 
-            if (alwaysRecoilReductionMode)
-                recoilMode = "Always Recoil Reduction";
-            else
-                recoilMode = jitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction";
+            string recoilMode = macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" :
+                (macroManager.IsJitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction");
 
-            this.Text = $"Notes&Tasks [{(isMacroOn ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
+            this.Text = $"Notes&Tasks [{(macroManager.IsEnabled ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
             UpdateModeLabels();
         }
 
@@ -949,11 +755,11 @@ namespace NotesAndTasks
         /// </summary>
         private void ToggleMacro()
         {
-            isMacroOn = !isMacroOn;
-            UpdateTitle();
-            string mode = jitterEnabled ? "Jitter" : "Recoil Reduction";
-            string alwaysMode = alwaysJitterMode ? "Always Jitter" : (alwaysRecoilReductionMode ? "Always Recoil Reduction" : "Normal");
-            UpdateDebugInfo($"Macro {(isMacroOn ? "Enabled" : "Disabled")} - Mode: {mode}, Always Mode: {alwaysMode}, Key: **{toggleKey}**");
+            macroManager.ToggleMacro();
+            string mode = macroManager.IsJitterEnabled ? "Jitter" : "Recoil Reduction";
+            string alwaysMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" : 
+                (macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" : "Normal");
+            UpdateDebugInfo($"Macro {(macroManager.IsEnabled ? "Enabled" : "Disabled")} - Mode: {mode}, Always Mode: {alwaysMode}, Key: **{currentMacroKey}**");
             UpdateModeLabels();
         }
 
@@ -1035,8 +841,8 @@ namespace NotesAndTasks
                 return;
             }
 
-            lblRecoilReductionActive.Text = (!jitterEnabled && isMacroOn) ? "[Active]" : "";
-            lblJitterActive.Text = (jitterEnabled && isMacroOn) ? "[Active]" : "";
+            lblRecoilReductionActive.Text = (!macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
+            lblJitterActive.Text = (macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
         }
 
         private void lblJitterActive_Click(object sender, EventArgs e)

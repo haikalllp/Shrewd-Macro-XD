@@ -13,6 +13,30 @@ namespace NotesAndTasks.Utilities
         private bool disposed = false;
         private readonly object lockObject = new object();
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct INPUT
+        {
+            public uint type;
+            public MOUSEINPUT mi;
+        }
+
+        private const int INPUT_MOUSE = 0;
+        private const int MOUSEEVENTF_MOVE = 0x0001;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+
         /// <summary>
         /// Simulates mouse movement by the specified delta values.
         /// </summary>
@@ -36,21 +60,21 @@ namespace NotesAndTasks.Utilities
                         return false;
                     }
 
-                    var input = new NativeMethods.INPUT
+                    var input = new INPUT
                     {
-                        type = WinMessages.INPUT_MOUSE,
-                        mi = new NativeMethods.MOUSEINPUT
+                        type = INPUT_MOUSE,
+                        mi = new MOUSEINPUT
                         {
                             dx = deltaX,
                             dy = deltaY,
                             mouseData = 0,
                             time = 0,
                             dwExtraInfo = IntPtr.Zero,
-                            dwFlags = WinMessages.MOUSEEVENTF_MOVE
+                            dwFlags = MOUSEEVENTF_MOVE
                         }
                     };
 
-                    return NativeMethods.SendInput(1, ref input, Marshal.SizeOf(input)) == 1;
+                    return SendInput(1, ref input, Marshal.SizeOf(input)) == 1;
                 }
             }
             catch
@@ -130,6 +154,38 @@ namespace NotesAndTasks.Utilities
             }
 
             return SimulateMouseMovement(0, verticalMovement);
+        }
+
+        /// <summary>
+        /// Moves the mouse to the specified coordinates.
+        /// </summary>
+        /// <param name="dx">The change in X coordinate.</param>
+        /// <param name="dy">The change in Y coordinate.</param>
+        public void MoveMouse(int dx, int dy)
+        {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(InputSimulator));
+
+            if (Math.Abs(dx) > 100 || Math.Abs(dy) > 100)
+            {
+                throw new ArgumentOutOfRangeException("Movement values exceeded safe limits");
+            }
+
+            var input = new INPUT
+            {
+                type = INPUT_MOUSE,
+                mi = new MOUSEINPUT
+                {
+                    dx = dx,
+                    dy = dy,
+                    mouseData = 0,
+                    dwFlags = MOUSEEVENTF_MOVE,
+                    time = 0,
+                    dwExtraInfo = IntPtr.Zero
+                }
+            };
+
+            SendInput(1, ref input, Marshal.SizeOf(input));
         }
 
         /// <summary>

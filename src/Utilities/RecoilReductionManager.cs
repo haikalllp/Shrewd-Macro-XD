@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+using System.Windows.Forms;
 
 namespace NotesAndTasks.Utilities
 {
@@ -10,24 +10,40 @@ namespace NotesAndTasks.Utilities
     public class RecoilReductionManager : IDisposable
     {
         private readonly InputSimulator inputSimulator;
-        private readonly System.Threading.Timer recoilTimer;
-        private readonly object lockObject = new object();
         private bool disposed = false;
+        private int strength = 1;
         private bool isActive = false;
-        private int currentStrength = 1; // Default strength
+        private System.Threading.Timer timer;
+
+        private const double BASE_RECOIL_STRENGTH = 0.75;
+        private const double BASE_RECOIL_STRENGTH_2 = 2.0;
+        private const double LOW_LEVEL_1_SPEED = 0.25;
+        private const double LOW_LEVEL_2_SPEED = 0.5;
+        private const double LOW_LEVEL_3_SPEED = 0.75;
 
         /// <summary>
         /// Gets or sets the current recoil reduction strength (1-20).
         /// </summary>
         public int Strength
         {
-            get => currentStrength;
-            set
+            get => strength;
+            private set
             {
                 if (value < 1 || value > 20)
                     throw new ArgumentOutOfRangeException(nameof(value), "Strength must be between 1 and 20.");
-                currentStrength = value;
+                strength = value;
             }
+        }
+
+        /// <summary>
+        /// Sets the recoil reduction strength value (1-20).
+        /// </summary>
+        /// <param name="value">The strength value to set.</param>
+        public void SetStrength(int value)
+        {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(RecoilReductionManager));
+            Strength = value;
         }
 
         /// <summary>
@@ -43,11 +59,11 @@ namespace NotesAndTasks.Utilities
         /// <summary>
         /// Initializes a new instance of the RecoilReductionManager class.
         /// </summary>
-        /// <param name="simulator">The input simulator to use for mouse movement.</param>
-        public RecoilReductionManager(InputSimulator simulator)
+        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
+        public RecoilReductionManager(InputSimulator inputSimulator)
         {
-            inputSimulator = simulator ?? throw new ArgumentNullException(nameof(simulator));
-            recoilTimer = new System.Threading.Timer(OnRecoilTimer, null, Timeout.Infinite, 10);
+            this.inputSimulator = inputSimulator ?? throw new ArgumentNullException(nameof(inputSimulator));
+            timer = new System.Threading.Timer(OnTimer, null, System.Threading.Timeout.Infinite, 10);
         }
 
         /// <summary>
@@ -58,14 +74,11 @@ namespace NotesAndTasks.Utilities
             if (disposed)
                 throw new ObjectDisposedException(nameof(RecoilReductionManager));
 
-            lock (lockObject)
+            if (!isActive)
             {
-                if (!isActive)
-                {
-                    isActive = true;
-                    recoilTimer.Change(0, 10);
-                    StateChanged?.Invoke(this, true);
-                }
+                isActive = true;
+                timer.Change(0, 10);
+                StateChanged?.Invoke(this, true);
             }
         }
 
@@ -77,39 +90,56 @@ namespace NotesAndTasks.Utilities
             if (disposed)
                 throw new ObjectDisposedException(nameof(RecoilReductionManager));
 
-            lock (lockObject)
+            if (isActive)
             {
-                if (isActive)
-                {
-                    isActive = false;
-                    recoilTimer.Change(Timeout.Infinite, 10);
-                    StateChanged?.Invoke(this, false);
-                }
+                isActive = false;
+                timer.Change(System.Threading.Timeout.Infinite, 10);
+                StateChanged?.Invoke(this, false);
             }
         }
 
         /// <summary>
         /// Timer callback that applies the recoil reduction movement.
         /// </summary>
-        private void OnRecoilTimer(object state)
+        private void OnTimer(object state)
         {
-            if (!isActive || disposed)
-                return;
+            if (!isActive) return;
 
             try
             {
-                lock (lockObject)
+                int dy;
+                if (strength <= 6)
                 {
-                    if (!inputSimulator.SimulateRecoilReduction(currentStrength))
+                    if (strength == 1)
                     {
-                        // If movement fails, stop the recoil reduction
-                        Stop();
+                        dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
+                    }
+                    else
+                    {
+                        double logBase = 1.5;
+                        dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(strength + 1, logBase)));
                     }
                 }
+                else if (strength <= 16)
+                {
+                    dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * strength * 1.2));
+                }
+                else
+                {
+                    double baseValue = BASE_RECOIL_STRENGTH * 20.0;
+                    double scalingFactor = 1.3;
+                    double exponentialBoost = 1.2;
+                    dy = Math.Max(1, (int)Math.Round(
+                        baseValue *
+                        Math.Pow(scalingFactor, strength - 13) *
+                        Math.Pow(exponentialBoost, (strength - 13) / 2)
+                    ));
+                }
+
+                inputSimulator.MoveMouse(0, dy);
             }
-            catch
+            catch (Exception)
             {
-                // If any error occurs, stop the recoil reduction
                 Stop();
             }
         }
@@ -122,10 +152,10 @@ namespace NotesAndTasks.Utilities
             if (!disposed)
             {
                 Stop();
-                recoilTimer.Dispose();
+                timer.Dispose();
                 disposed = true;
                 GC.SuppressFinalize(this);
             }
         }
     }
-} 
+}

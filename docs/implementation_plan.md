@@ -86,14 +86,14 @@ $fileMoves = @{
 foreach ($file in $fileMoves.Keys) {
     $sourcePath = Join-Path -Path $projectDir -ChildPath $file
     $destPath = Join-Path -Path $projectDir -ChildPath $fileMoves[$file]
-    
+
     if (Test-Path $sourcePath) {
         # Create destination directory if it doesn't exist
         $destDir = Split-Path -Path $destPath -Parent
         if (-not (Test-Path $destDir)) {
             New-Item -Path $destDir -ItemType Directory
         }
-        
+
         # Move the file
         Move-Item -Path $sourcePath -Destination $destPath -Force
         Write-Host "Moved: $file -> $($fileMoves[$file])"
@@ -122,7 +122,7 @@ foreach ($file in $fileMoves.Keys) {
 - [x] Update MacroForm.cs to use the new manager classes
 
 #### Step 5: Refactor MacroForm.cs
-- [ ] Inject manager classes into MacroForm
+- [x] Inject manager classes into MacroForm
 - [ ] Remove business logic from form class
 - [ ] Update event handlers to call methods on manager classes
 - [ ] Keep UI-specific code in MacroForm.cs
