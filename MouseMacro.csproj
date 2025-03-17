@@ -29,7 +29,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="src\**\*.cs" />
+    <Compile Include="src\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

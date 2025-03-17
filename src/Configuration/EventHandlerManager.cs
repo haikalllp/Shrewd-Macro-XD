@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using NotesAndTasks.Models;
 
 namespace NotesAndTasks.Configuration
 {
@@ -216,7 +217,7 @@ namespace NotesAndTasks.Configuration
             var config = e.Configuration;
 
             // Validate mode consistency
-            if (config.JitterSettings.AlwaysEnabled && config.RecoilSettings.AlwaysEnabled)
+            if (config.MacroSettings.AlwaysJitterMode && config.MacroSettings.AlwaysRecoilReductionMode)
             {
                 e.IsValid = false;
                 e.Message = "Both jitter and recoil reduction cannot be in always-enabled mode";
@@ -224,88 +225,103 @@ namespace NotesAndTasks.Configuration
             }
 
             // Validate hotkey conflicts
-            if (config.HotkeySettings.MacroToggleKey == config.HotkeySettings.ModeSwitchKey)
+            if (config.HotkeySettings.MacroKey == config.HotkeySettings.SwitchKey)
             {
                 e.IsValid = false;
                 e.Message = "Macro toggle key and mode switch key cannot be the same";
                 return;
             }
 
-            // Validate backup settings
-            if (config.BackupSettings.AutoBackupEnabled)
+            // Validate UI settings
+            if (config.UISettings.WindowSize.Width <= 0 || config.UISettings.WindowSize.Height <= 0)
             {
-                if (config.BackupSettings.BackupIntervalHours < 1)
-                {
-                    e.IsValid = false;
-                    e.Message = "Backup interval must be at least 1 hour";
-                    return;
-                }
-                if (config.BackupSettings.MaxBackupCount < 1)
-                {
-                    e.IsValid = false;
-                    e.Message = "Maximum backup count must be at least 1";
-                    return;
-                }
+                e.IsValid = false;
+                e.Message = "Window size must be positive";
+                return;
             }
         }
 
         /// <summary>
         /// Handles changes to jitter settings.
         /// </summary>
-        private void HandleJitterSettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
+        private void HandleJitterSettingsChanged(AppSettings previousConfig, AppSettings newConfig)
         {
-            if (previousConfig?.JitterSettings.Strength != newConfig.JitterSettings.Strength)
+            if (previousConfig?.MacroSettings.JitterStrength != newConfig.MacroSettings.JitterStrength)
             {
-                System.Diagnostics.Debug.WriteLine($"Jitter strength changed from {previousConfig?.JitterSettings.Strength} to {newConfig.JitterSettings.Strength}");
+                System.Diagnostics.Debug.WriteLine($"Jitter strength changed from {previousConfig?.MacroSettings.JitterStrength} to {newConfig.MacroSettings.JitterStrength}");
             }
-            if (previousConfig?.JitterSettings.IsEnabled != newConfig.JitterSettings.IsEnabled)
+
+            if (previousConfig?.MacroSettings.JitterEnabled != newConfig.MacroSettings.JitterEnabled)
             {
-                System.Diagnostics.Debug.WriteLine($"Jitter enabled state changed from {previousConfig?.JitterSettings.IsEnabled} to {newConfig.JitterSettings.IsEnabled}");
+                System.Diagnostics.Debug.WriteLine($"Jitter enabled changed from {previousConfig?.MacroSettings.JitterEnabled} to {newConfig.MacroSettings.JitterEnabled}");
+            }
+
+            if (previousConfig?.MacroSettings.AlwaysJitterMode != newConfig.MacroSettings.AlwaysJitterMode)
+            {
+                System.Diagnostics.Debug.WriteLine($"Always jitter mode changed from {previousConfig?.MacroSettings.AlwaysJitterMode} to {newConfig.MacroSettings.AlwaysJitterMode}");
             }
         }
 
         /// <summary>
-        /// Handles changes to recoil reduction settings.
+        /// Handles changes to recoil settings.
         /// </summary>
-        private void HandleRecoilSettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
+        private void HandleRecoilSettingsChanged(AppSettings previousConfig, AppSettings newConfig)
         {
-            if (previousConfig?.RecoilSettings.Strength != newConfig.RecoilSettings.Strength)
+            if (previousConfig?.MacroSettings.RecoilReductionStrength != newConfig.MacroSettings.RecoilReductionStrength)
             {
-                System.Diagnostics.Debug.WriteLine($"Recoil reduction strength changed from {previousConfig?.RecoilSettings.Strength} to {newConfig.RecoilSettings.Strength}");
+                System.Diagnostics.Debug.WriteLine($"Recoil reduction strength changed from {previousConfig?.MacroSettings.RecoilReductionStrength} to {newConfig.MacroSettings.RecoilReductionStrength}");
             }
-            if (previousConfig?.RecoilSettings.IsEnabled != newConfig.RecoilSettings.IsEnabled)
+
+            if (previousConfig?.MacroSettings.RecoilReductionEnabled != newConfig.MacroSettings.RecoilReductionEnabled)
             {
-                System.Diagnostics.Debug.WriteLine($"Recoil reduction enabled state changed from {previousConfig?.RecoilSettings.IsEnabled} to {newConfig.RecoilSettings.IsEnabled}");
+                System.Diagnostics.Debug.WriteLine($"Recoil reduction enabled changed from {previousConfig?.MacroSettings.RecoilReductionEnabled} to {newConfig.MacroSettings.RecoilReductionEnabled}");
+            }
+
+            if (previousConfig?.MacroSettings.AlwaysRecoilReductionMode != newConfig.MacroSettings.AlwaysRecoilReductionMode)
+            {
+                System.Diagnostics.Debug.WriteLine($"Always recoil reduction mode changed from {previousConfig?.MacroSettings.AlwaysRecoilReductionMode} to {newConfig.MacroSettings.AlwaysRecoilReductionMode}");
             }
         }
 
         /// <summary>
         /// Handles changes to hotkey settings.
         /// </summary>
-        private void HandleHotkeySettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
+        private void HandleHotkeySettingsChanged(AppSettings previousConfig, AppSettings newConfig)
         {
-            if (previousConfig?.HotkeySettings.MacroToggleKey != newConfig.HotkeySettings.MacroToggleKey)
+            if (previousConfig?.HotkeySettings.MacroKey != newConfig.HotkeySettings.MacroKey)
             {
-                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousConfig?.HotkeySettings.MacroToggleKey} to {newConfig.HotkeySettings.MacroToggleKey}");
+                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousConfig?.HotkeySettings.MacroKey} to {newConfig.HotkeySettings.MacroKey}");
             }
-            if (previousConfig?.HotkeySettings.ModeSwitchKey != newConfig.HotkeySettings.ModeSwitchKey)
+
+            if (previousConfig?.HotkeySettings.SwitchKey != newConfig.HotkeySettings.SwitchKey)
             {
-                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousConfig?.HotkeySettings.ModeSwitchKey} to {newConfig.HotkeySettings.ModeSwitchKey}");
+                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousConfig?.HotkeySettings.SwitchKey} to {newConfig.HotkeySettings.SwitchKey}");
             }
         }
 
         /// <summary>
         /// Handles changes to UI settings.
         /// </summary>
-        private void HandleUISettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
+        private void HandleUISettingsChanged(AppSettings previousConfig, AppSettings newConfig)
         {
             if (previousConfig?.UISettings.MinimizeToTray != newConfig.UISettings.MinimizeToTray)
             {
-                System.Diagnostics.Debug.WriteLine($"Minimize to tray setting changed from {previousConfig?.UISettings.MinimizeToTray} to {newConfig.UISettings.MinimizeToTray}");
+                System.Diagnostics.Debug.WriteLine($"Minimize to tray changed from {previousConfig?.UISettings.MinimizeToTray} to {newConfig.UISettings.MinimizeToTray}");
             }
+
             if (previousConfig?.UISettings.ShowDebugPanel != newConfig.UISettings.ShowDebugPanel)
             {
-                System.Diagnostics.Debug.WriteLine($"Debug panel visibility changed from {previousConfig?.UISettings.ShowDebugPanel} to {newConfig.UISettings.ShowDebugPanel}");
+                System.Diagnostics.Debug.WriteLine($"Show debug panel changed from {previousConfig?.UISettings.ShowDebugPanel} to {newConfig.UISettings.ShowDebugPanel}");
+            }
+
+            if (previousConfig?.UISettings.ShowStatusInTitle != newConfig.UISettings.ShowStatusInTitle)
+            {
+                System.Diagnostics.Debug.WriteLine($"Show status in title changed from {previousConfig?.UISettings.ShowStatusInTitle} to {newConfig.UISettings.ShowStatusInTitle}");
+            }
+
+            if (previousConfig?.UISettings.ShowTrayNotifications != newConfig.UISettings.ShowTrayNotifications)
+            {
+                System.Diagnostics.Debug.WriteLine($"Show tray notifications changed from {previousConfig?.UISettings.ShowTrayNotifications} to {newConfig.UISettings.ShowTrayNotifications}");
             }
         }
 

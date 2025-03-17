@@ -1,4 +1,5 @@
 using System;
+using NotesAndTasks.Models;
 
 namespace NotesAndTasks.Configuration
 {
@@ -15,14 +16,14 @@ namespace NotesAndTasks.Configuration
         /// <summary>
         /// Gets the previous configuration state.
         /// </summary>
-        public AppConfiguration PreviousConfig { get; }
+        public AppSettings PreviousConfig { get; }
 
         /// <summary>
         /// Gets the new configuration state.
         /// </summary>
-        public AppConfiguration NewConfig { get; }
+        public AppSettings NewConfig { get; }
 
-        public ConfigurationChangedEventArgs(string section, AppConfiguration previousConfig, AppConfiguration newConfig)
+        public ConfigurationChangedEventArgs(string section, AppSettings previousConfig, AppSettings newConfig)
         {
             Section = section;
             PreviousConfig = previousConfig;
@@ -48,9 +49,9 @@ namespace NotesAndTasks.Configuration
         /// <summary>
         /// Gets the configuration being validated.
         /// </summary>
-        public AppConfiguration Configuration { get; }
+        public AppSettings Configuration { get; }
 
-        public ConfigurationValidationEventArgs(AppConfiguration configuration)
+        public ConfigurationValidationEventArgs(AppSettings configuration)
         {
             Configuration = configuration;
             IsValid = true;
