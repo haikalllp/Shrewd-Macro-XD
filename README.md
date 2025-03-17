@@ -1,6 +1,6 @@
 # Notes & Tasks (Mouse Macro)
 
-A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. IMPORTANT For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
+A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. IMPORTANT For professional system integration the application presents itself as "Notes&Tasks" or "NotesAndTasks" 😊.
 
 ## Features
 

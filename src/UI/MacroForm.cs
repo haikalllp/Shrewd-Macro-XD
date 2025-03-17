@@ -6,7 +6,6 @@ using System.Threading;
 using System.IO;
 using System.ComponentModel;
 using NotesAndTasks.Configuration;
-using NotesAndTasks;
 
 namespace NotesAndTasks
 {

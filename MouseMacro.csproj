@@ -7,7 +7,7 @@
     <UacUIApproved>true</UacUIApproved>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Notes&amp;Tasks</AssemblyName>
-    <RootNamespace>Notes&amp;Tasks</RootNamespace>
+    <RootNamespace>NotesAndTasks</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ApplicationIcon>assets\logo.ico</ApplicationIcon>
     <Title>Notes &amp; Tasks</Title>
@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Properties\Resources.Designer.cs">
+    <Compile Include="src\UI\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
@@ -45,7 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
+    <EmbeddedResource Update="src\UI\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
