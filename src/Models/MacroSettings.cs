@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace NotesAndTasks.Models
 {
     /// <summary>
-    /// Configuration settings for macro functionality
+    /// Configuration settings for macro functionality including jitter and recoil reduction
     /// </summary>
     public class MacroSettings : INotifyPropertyChanged
     {
@@ -17,7 +17,7 @@ namespace NotesAndTasks.Models
         private bool _alwaysRecoilReductionMode;
 
         /// <summary>
-        /// Gets or sets the jitter strength (1-20)
+        /// Gets or sets the jitter strength value (1-20)
         /// </summary>
         [Range(1, 20, ErrorMessage = "Jitter strength must be between 1 and 20")]
         public int JitterStrength
@@ -34,7 +34,7 @@ namespace NotesAndTasks.Models
         }
 
         /// <summary>
-        /// Gets or sets the recoil reduction strength (1-20)
+        /// Gets or sets the recoil reduction strength value (1-20)
         /// </summary>
         [Range(1, 20, ErrorMessage = "Recoil reduction strength must be between 1 and 20")]
         public int RecoilReductionStrength
@@ -83,7 +83,7 @@ namespace NotesAndTasks.Models
         }
 
         /// <summary>
-        /// Gets or sets whether jitter mode is always active
+        /// Gets or sets whether jitter mode is always enabled
         /// </summary>
         public bool AlwaysJitterMode
         {
@@ -99,7 +99,7 @@ namespace NotesAndTasks.Models
         }
 
         /// <summary>
-        /// Gets or sets whether recoil reduction mode is always active
+        /// Gets or sets whether recoil reduction mode is always enabled
         /// </summary>
         public bool AlwaysRecoilReductionMode
         {

@@ -8,57 +8,34 @@ namespace NotesAndTasks.Models
     /// </summary>
     public class AppSettings : INotifyPropertyChanged
     {
-        private MacroSettings _macroSettings = new();
-        private UISettings _uiSettings = new();
-        private HotkeySettings _hotkeySettings = new();
+        private readonly MacroSettings _macroSettings;
+        private readonly UISettings _uiSettings;
+        private readonly HotkeySettings _hotkeySettings;
 
         /// <summary>
-        /// Gets or sets the macro-specific settings
+        /// Initializes a new instance of the AppSettings class with default settings
         /// </summary>
-        public MacroSettings MacroSettings
+        public AppSettings()
         {
-            get => _macroSettings;
-            set
-            {
-                if (_macroSettings != value)
-                {
-                    _macroSettings = value;
-                    OnPropertyChanged();
-                }
-            }
+            _macroSettings = new MacroSettings();
+            _uiSettings = new UISettings();
+            _hotkeySettings = new HotkeySettings();
         }
 
         /// <summary>
-        /// Gets or sets the UI-related settings
+        /// Gets the macro-related settings including jitter and recoil reduction
         /// </summary>
-        public UISettings UISettings
-        {
-            get => _uiSettings;
-            set
-            {
-                if (_uiSettings != value)
-                {
-                    _uiSettings = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+        public MacroSettings MacroSettings => _macroSettings;
 
         /// <summary>
-        /// Gets or sets the hotkey configuration settings
+        /// Gets the UI-related settings
         /// </summary>
-        public HotkeySettings HotkeySettings
-        {
-            get => _hotkeySettings;
-            set
-            {
-                if (_hotkeySettings != value)
-                {
-                    _hotkeySettings = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+        public UISettings UISettings => _uiSettings;
+
+        /// <summary>
+        /// Gets the hotkey configuration settings
+        /// </summary>
+        public HotkeySettings HotkeySettings => _hotkeySettings;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
