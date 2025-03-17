@@ -26,6 +26,12 @@ namespace NotesAndTasks
                     components.Dispose();
                 }
 
+                // Dispose managers
+                if (macroManager != null)
+                {
+                    macroManager.Dispose();
+                }
+
                 // Dispose hooks
                 if (keyboardHook != null)
                 {
@@ -39,12 +45,7 @@ namespace NotesAndTasks
                     mouseHook.Dispose();
                 }
 
-                // Dispose timer
-                if (jitterTimer != null)
-                {
-                    jitterTimer.Dispose();
-                }
-
+                // Dispose UI resources
                 if (notifyIcon != null)
                 {
                     notifyIcon.Visible = false;
@@ -54,6 +55,11 @@ namespace NotesAndTasks
                 if (toolTip != null)
                 {
                     toolTip.Dispose();
+                }
+
+                if (uiManager != null)
+                {
+                    uiManager.Dispose();
                 }
             }
             base.Dispose(disposing);
@@ -299,7 +305,6 @@ namespace NotesAndTasks
             lblJitterActive.Size = new Size(0, 20);
             lblJitterActive.TabIndex = 0;
             lblJitterActive.TextAlign = ContentAlignment.MiddleRight;
-            lblJitterActive.Click += lblJitterActive_Click;
             // 
             // settingsPanel
             // 
@@ -340,7 +345,6 @@ namespace NotesAndTasks
             lblCurrentKeyPrefix.Size = new Size(144, 18);
             lblCurrentKeyPrefix.TabIndex = 0;
             lblCurrentKeyPrefix.Text = "Macro Toggle Key:";
-            lblCurrentKeyPrefix.Click += lblCurrentKeyPrefix_Click;
             // 
             // btnSetKey
             // 

@@ -8,8 +8,8 @@ This plan details the specific steps to transform the MouseMacro project into a 
 | Phase | Status |
 |-------|--------|
 | Phase 1: Preparation and Structure | ✅ Complete |
-| Phase 2: Code Modularization | 🔄 In Progress (80%) |
-| Phase 3: Architecture Improvements | Not Started |
+| Phase 2: Code Modularization | ✅ Complete |
+| Phase 3: Architecture Improvements | 🔄 In Progress (0%) |
 | Phase 4: Documentation and Testing | Not Started |
 | Phase 5: Validation and Finalization | Not Started |
 
@@ -30,7 +30,7 @@ Copy-Item -Path $sourceDir -Destination $backupDir -Recurse
 ```
 
 #### Step 2: Organize Directory Structure
-- [ ] Create the following directory structure:
+- [x] Create the following directory structure:
   ```
   MouseMacro/
   ├── src/
@@ -45,63 +45,6 @@ Copy-Item -Path $sourceDir -Destination $backupDir -Recurse
 - [x] Move existing files to their appropriate locations
 - [x] Update namespace declarations in all files
 - [x] Update project file (MouseMacro.csproj) to reflect new structure
-
-```powershell
-# PowerShell script to create directory structure
-$projectDir = "E:\CODING\Projects\CODE\Macro"
-$directories = @(
-    "src\UI\Controls",
-    "src\Configuration",
-    "src\Hooks",
-    "src\Utilities",
-    "src\Models",
-    "tests",
-    "docs"
-)
-
-foreach ($dir in $directories) {
-    $path = Join-Path -Path $projectDir -ChildPath $dir
-    if (-not (Test-Path $path)) {
-        New-Item -Path $path -ItemType Directory
-        Write-Host "Created directory: $path"
-    }
-}
-```
-
-```powershell
-# PowerShell script to move files
-$projectDir = "E:\CODING\Projects\CODE\Macro"
-
-# Define file moves (source -> destination)
-$fileMoves = @{
-    "MacroForm.cs" = "src\UI\MacroForm.cs"
-    "MacroForm.Designer.cs" = "src\UI\MacroForm.Designer.cs"
-    "ModernButton.cs" = "src\UI\Controls\ModernButton.cs"
-    "ModernTrackBar.cs" = "src\UI\Controls\ModernTrackBar.cs"
-    "NativeMethods.cs" = "src\Hooks\NativeMethods.cs"
-    "Program.cs" = "src\Program.cs"
-    # Add other files as needed
-}
-
-foreach ($file in $fileMoves.Keys) {
-    $sourcePath = Join-Path -Path $projectDir -ChildPath $file
-    $destPath = Join-Path -Path $projectDir -ChildPath $fileMoves[$file]
-
-    if (Test-Path $sourcePath) {
-        # Create destination directory if it doesn't exist
-        $destDir = Split-Path -Path $destPath -Parent
-        if (-not (Test-Path $destDir)) {
-            New-Item -Path $destDir -ItemType Directory
-        }
-
-        # Move the file
-        Move-Item -Path $sourcePath -Destination $destPath -Force
-        Write-Host "Moved: $file -> $($fileMoves[$file])"
-    } else {
-        Write-Host "Source file not found: $sourcePath"
-    }
-}
-```
 
 ### Phase 2: Code Modularization
 
@@ -124,10 +67,10 @@ foreach ($file in $fileMoves.Keys) {
 #### Step 5: Refactor MacroForm.cs
 - [x] Inject manager classes into MacroForm
 - [x] Remove direct event handler assignments from designer file
-- [ ] Remove remaining business logic from form class
-- [ ] Update event handlers to call methods on manager classes
-- [ ] Keep UI-specific code in MacroForm.cs
-- [ ] Implement event handlers for manager events
+- [x] Remove remaining business logic from form class
+- [x] Update event handlers to call methods on manager classes
+- [x] Keep UI-specific code in MacroForm.cs
+- [x] Implement event handlers for manager events
 
 ### Phase 3: Architecture Improvements
 
@@ -192,50 +135,50 @@ foreach ($file in $fileMoves.Keys) {
 
 ## Detailed Todo Items
 
-### 1. Create backup of the current project
+### 1. Create backup of the current project ✅
 - **Description**: Create a full backup of the project directory to preserve the original code. This can be done by copying the entire project folder to a safe location or by setting up a Git repository and making an initial commit.
 - **Complexity**: 1/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 2. Create new directory structure
+### 2. Create new directory structure ✅
 - **Description**: Create the new directory structure as outlined in the improvement plan. This includes creating src/, tests/, and docs/ directories, with src/ further divided into UI/, Configuration/, Hooks/, Utilities/, and Models/ subdirectories.
 - **Complexity**: 2/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 3. Move existing files to new directory structure
+### 3. Move existing files to new directory structure ✅
 - **Description**: Move existing files to their appropriate locations in the new directory structure. Update namespace declarations in all files to reflect the new structure. Update the project file (MouseMacro.csproj) to reflect the new file paths.
 - **Complexity**: 3/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 4. Create KeyboardHook class
+### 4. Create KeyboardHook class ✅
 - **Description**: Create a KeyboardHook class in src/Hooks/ directory. Extract keyboard hook-related functionality from MacroForm.cs, including hook initialization, callback methods, and disposal logic. Implement IDisposable pattern for proper resource cleanup.
 - **Complexity**: 5/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 5. Create MouseHook class
+### 5. Create MouseHook class ✅
 - **Description**: Create a MouseHook class in src/Hooks/ directory. Extract mouse hook-related functionality from MacroForm.cs, including hook initialization, callback methods, and disposal logic. Implement IDisposable pattern for proper resource cleanup.
 - **Complexity**: 5/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 6. Create InputSimulator class
+### 6. Create InputSimulator class ✅
 - **Description**: Create an InputSimulator class in src/Utilities/ directory to handle mouse movement simulation. Extract SendInput implementation from MacroForm.cs and add methods for mouse movement simulation.
 - **Complexity**: 4/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 7. Create JitterManager class
+### 7. Create JitterManager class ✅
 - **Description**: Create a JitterManager class in src/Utilities/ directory to handle jitter pattern generation and application. Extract jitter-related functionality from MacroForm.cs, including pattern definition, timer handling, and strength scaling.
 - **Complexity**: 6/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 8. Create RecoilReductionManager class
+### 8. Create RecoilReductionManager class ✅
 - **Description**: Create a RecoilReductionManager class in src/Utilities/ directory to handle recoil reduction functionality. Extract recoil reduction-related code from MacroForm.cs, including timer handling, strength scaling, and movement calculation.
 - **Complexity**: 6/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
-### 9. Create MacroManager class
+### 9. Create MacroManager class ✅
 - **Description**: Create a MacroManager class in src/Utilities/ directory to coordinate between hook and feature managers. This class will handle macro state (enabled/disabled), mode switching, and delegate tasks to the appropriate managers.
 - **Complexity**: 7/10
-- **Status**: ✅ Complete
+- **Status**: Complete
 
 ### 10. Create configuration models
 - **Description**: Create configuration model classes in src/Models/ directory to represent the application's configuration. These models will be used by the ConfigurationManager to load and save settings.
@@ -257,35 +200,35 @@ foreach ($file in $fileMoves.Keys) {
 - **Complexity**: 7/10
 - **Status**: Not Started
 
-### 14. Update MacroForm to implement IMacroView
+### 14. Update MacroForm to implement IMacroView ✅
 - **Description**: Update the MacroForm class to implement the IMacroView interface. Remove business logic from the form and delegate tasks to the MacroPresenter. Update event handlers to call methods on the presenter. Remove direct event handler assignments from designer file and handle them programmatically.
 - **Complexity**: 8/10
-- **Status**: In Progress
+- **Status**: Complete
 
 ### 15. Create unit test project
 - **Description**: Create a unit test project in the tests/ directory using xUnit. Set up the project to test the core components of the application, including hook initialization, jitter and recoil reduction logic, configuration loading/saving, and macro state management.
 - **Complexity**: 6/10
 - **Status**: Not Started
 
-### 16. Update project file for new structure
+### 16. Update project file for new structure ✅
 - **Description**: Update the MouseMacro.csproj file to reflect the new directory structure and add any required package references. This includes references to Microsoft.Extensions.Configuration, Serilog, and any other packages needed for the implementation.
 - **Complexity**: 3/10
-- **Status**: Not Started
+- **Status**: Complete
 
 ### 17. Create test project file
 - **Description**: Create a project file for the unit test project in the tests/ directory. Add references to xUnit, Moq, and the main project.
 - **Complexity**: 2/10
 - **Status**: Not Started
 
-### 18. Update Program.cs for new structure
+### 18. Update Program.cs for new structure ✅
 - **Description**: Update the Program.cs file to work with the new structure. Initialize Serilog for logging and set up the application to use the new MacroForm with the MVP pattern.
 - **Complexity**: 3/10
-- **Status**: Not Started
+- **Status**: Complete
 
-### 19. Create validation classes
+### 19. Create validation classes ✅
 - **Description**: Create validation classes in src/Configuration/ directory to validate configuration values. Implement methods for validating strength values, hotkeys, and other settings.
 - **Complexity**: 4/10
-- **Status**: Not Started
+- **Status**: Complete
 
 ### 20. Update README.md with new structure
 - **Description**: Update the README.md file to reflect the new project structure and implementation details. Include information about the modular architecture, MVP pattern, and other improvements.

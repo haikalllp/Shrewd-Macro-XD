@@ -8,8 +8,8 @@ namespace NotesAndTasks.Configuration
         public static bool IsValidHotkey(Keys key)
         {
             // Validate that the key is a valid hotkey
-            return key != Keys.None && 
-                   key != Keys.LButton && 
+            return key != Keys.None &&
+                   key != Keys.LButton &&
                    key != Keys.RButton;
         }
 
@@ -23,24 +23,12 @@ namespace NotesAndTasks.Configuration
                 return false;
 
             // Validate hotkeys
-            if (string.IsNullOrEmpty(settings.MacroToggleKey) || string.IsNullOrEmpty(settings.ModeSwitchKey))
+            if (!IsValidHotkey(settings.MacroKey) || !IsValidHotkey(settings.SwitchKey))
                 return false;
 
-            try
-            {
-                var toggleKey = (Keys)Enum.Parse(typeof(Keys), settings.MacroToggleKey);
-                var switchKey = (Keys)Enum.Parse(typeof(Keys), settings.ModeSwitchKey);
-
-                if (!IsValidHotkey(toggleKey) || !IsValidHotkey(switchKey))
-                    return false;
-
-                if (toggleKey == switchKey)
-                    return false;
-            }
-            catch
-            {
+            // Check for hotkey conflicts
+            if (settings.MacroKey == settings.SwitchKey)
                 return false;
-            }
 
             return true;
         }

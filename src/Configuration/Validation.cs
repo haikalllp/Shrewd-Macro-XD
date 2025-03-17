@@ -1,6 +1,6 @@
 using System;
 
-namespace NotesAndTasks
+namespace NotesAndTasks.Configuration
 {
     /// <summary>
     /// Provides validation methods for input values throughout the application.

@@ -1,8 +1,9 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using NotesAndTasks.Configuration;
 
-namespace NotesAndTasks
+namespace NotesAndTasks.Configuration
 {
     public static class SettingsManager
     {
