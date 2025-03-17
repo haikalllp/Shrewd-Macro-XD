@@ -21,3 +21,13 @@ obj/*
 *.nupkg
 obj/Debug/net6.0-windows/MouseMacro.assets.cache
 obj/Debug/net6.0-windows/MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
+
+# RepoMix
+.cursor/*
+.git/*
+.idea/*
+.vs/*
+.vscode/*
+.repomix/*
+bin/*
+obj/*
