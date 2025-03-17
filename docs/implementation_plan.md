@@ -18,9 +18,9 @@ This plan details the specific steps to transform the MouseMacro project into a 
 ### Phase 1: Preparation and Structure
 
 #### Step 1: Backup the Current Project
-- [ ] Create a full backup of the project directory
-- [ ] Set up version control (Git) if not already in place
-- [ ] Create an initial commit with the current state
+- [x] Create a full backup of the project directory
+- [x] Set up version control (Git) if not already in place
+- [x] Create an initial commit with the current state
 
 ```powershell
 # PowerShell script to create backup
