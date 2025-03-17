@@ -148,16 +148,16 @@ namespace NotesAndTasks.Utilities
 
             // High level recoil reduction
             else
-            {
-                double baseValue = 0.75 * 20.0;
-                double scalingFactor = 1.3;
-                double exponentialBoost = 1.2;
-                verticalMovement = Math.Max(1, (int)Math.Round(
-                    baseValue *
-                    Math.Pow(scalingFactor, strength - 13) *
-                    Math.Pow(exponentialBoost, (strength - 13) / 2)
-                ));
-            }
+                {
+                    double baseValue = 0.75 * 20.0;
+                    double scalingFactor = 1.19; // Reduced from 1.2 to further slow growth
+                    double exponentialBoost = 1.1; // Reduced from 1.1 to further slow growth
+                    verticalMovement = Math.Max(1, (int)Math.Round(
+                        baseValue *
+                        Math.Pow(scalingFactor, strength - 13) *
+                        Math.Pow(exponentialBoost, strength - 13)
+                    ));
+                }
 
             return SimulateMouseMovement(0, verticalMovement);
         }
