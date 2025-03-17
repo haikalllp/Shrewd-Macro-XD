@@ -80,7 +80,7 @@ namespace NotesAndTasks.Configuration
             AlwaysRecoilReductionMode = false;
             JitterEnabled = false;
             RecoilReductionEnabled = false;
-            MinimizeToTray = true;
+            MinimizeToTray = false;
             MacroKey = Keys.Capital;
             SwitchKey = Keys.Q;
             ToggleType = ToggleType.Keyboard;

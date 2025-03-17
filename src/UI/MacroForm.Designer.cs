@@ -372,7 +372,6 @@ namespace NotesAndTasks
             chkMinimizeToTray.Size = new Size(155, 22);
             chkMinimizeToTray.TabIndex = 6;
             chkMinimizeToTray.Text = "Minimize to Tray";
-            chkMinimizeToTray.CheckedChanged += chkMinimizeToTray_CheckedChanged;
             // 
             // lblMacroSwitchKeyValue
             // 

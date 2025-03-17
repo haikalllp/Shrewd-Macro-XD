@@ -123,7 +123,8 @@ foreach ($file in $fileMoves.Keys) {
 
 #### Step 5: Refactor MacroForm.cs
 - [x] Inject manager classes into MacroForm
-- [ ] Remove business logic from form class
+- [x] Remove direct event handler assignments from designer file
+- [ ] Remove remaining business logic from form class
 - [ ] Update event handlers to call methods on manager classes
 - [ ] Keep UI-specific code in MacroForm.cs
 - [ ] Implement event handlers for manager events
@@ -257,9 +258,9 @@ foreach ($file in $fileMoves.Keys) {
 - **Status**: Not Started
 
 ### 14. Update MacroForm to implement IMacroView
-- **Description**: Update the MacroForm class to implement the IMacroView interface. Remove business logic from the form and delegate tasks to the MacroPresenter. Update event handlers to call methods on the presenter.
+- **Description**: Update the MacroForm class to implement the IMacroView interface. Remove business logic from the form and delegate tasks to the MacroPresenter. Update event handlers to call methods on the presenter. Remove direct event handler assignments from designer file and handle them programmatically.
 - **Complexity**: 8/10
-- **Status**: Not Started
+- **Status**: In Progress
 
 ### 15. Create unit test project
 - **Description**: Create a unit test project in the tests/ directory using xUnit. Set up the project to test the core components of the application, including hook initialization, jitter and recoil reduction logic, configuration loading/saving, and macro state management.
@@ -309,4 +310,4 @@ Total estimated time: 10 days
 - Code quality is improved
 - Documentation is comprehensive
 - Unit tests validate critical functionality
-- Application performs as expected 
+- Application performs as expected

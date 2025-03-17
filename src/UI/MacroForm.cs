@@ -8,6 +8,7 @@ using System.ComponentModel;
 using NotesAndTasks.Configuration;
 using NotesAndTasks.Hooks;
 using NotesAndTasks.Utilities;
+using NotesAndTasks.UI;
 
 namespace NotesAndTasks
 {
@@ -30,6 +31,7 @@ namespace NotesAndTasks
         private readonly MouseHook mouseHook;
         private readonly MacroManager macroManager;
         private readonly HotkeyManager hotkeyManager;
+        private readonly UIManager uiManager;
         private readonly ToolTip toolTip;
 
         private bool isSettingKey = false;
@@ -81,11 +83,29 @@ namespace NotesAndTasks
             try
             {
                 InitializeComponent();
+
+                // Initialize UI Manager after components are initialized
+                uiManager = new UIManager(
+                    this,
+                    macroManager,
+                    hotkeyManager,
+                    debugLabel,
+                    lblJitterActive,
+                    lblRecoilReductionActive,
+                    lblCurrentKeyValue,
+                    lblMacroSwitchKeyValue,
+                    lblJitterStrengthValue,
+                    lblRecoilReductionStrengthValue,
+                    notifyIcon,
+                    toolTip
+                );
+
+                // Initialize components and settings
                 InitializeCustomComponents();
 
                 // Initialize tray icon behavior
-                notifyIcon.DoubleClick += (s, e) => ShowWindow();
-                showWindowMenuItem.Click += (s, e) => ShowWindow();
+                notifyIcon.DoubleClick += (s, e) => uiManager.ShowWindow();
+                showWindowMenuItem.Click += (s, e) => uiManager.ShowWindow();
                 exitMenuItem.Click += (s, e) => CleanupAndExit();
 
                 this.FormClosing += OnFormClosingHandler;
@@ -100,14 +120,14 @@ namespace NotesAndTasks
                 // Set up macro manager event handlers
                 macroManager.MacroStateChanged += OnMacroStateChanged;
                 macroManager.ModeChanged += OnModeChanged;
-                macroManager.JitterStarted += (s, e) => UpdateDebugInfo("Jitter started");
-                macroManager.JitterStopped += (s, e) => UpdateDebugInfo("Jitter stopped");
-                macroManager.RecoilReductionStarted += (s, e) => UpdateDebugInfo("Recoil reduction started");
-                macroManager.RecoilReductionStopped += (s, e) => UpdateDebugInfo("Recoil reduction stopped");
+                macroManager.JitterStarted += (s, e) => uiManager.UpdateDebugInfo("Jitter started");
+                macroManager.JitterStopped += (s, e) => uiManager.UpdateDebugInfo("Jitter stopped");
+                macroManager.RecoilReductionStarted += (s, e) => uiManager.UpdateDebugInfo("Recoil reduction started");
+                macroManager.RecoilReductionStopped += (s, e) => uiManager.UpdateDebugInfo("Recoil reduction stopped");
 
                 // Set up hotkey manager event handlers
-                hotkeyManager.MacroKeyChanged += (s, key) => UpdateCurrentKey(key.ToString());
-                hotkeyManager.SwitchKeyChanged += (s, key) => UpdateMacroSwitchKey(key.ToString());
+                hotkeyManager.MacroKeyChanged += (s, key) => uiManager.UpdateCurrentKey(key.ToString());
+                hotkeyManager.SwitchKeyChanged += (s, key) => uiManager.UpdateMacroSwitchKey(key.ToString());
 
                 // Handle application exit
                 Application.ApplicationExit += (s, e) =>
@@ -134,7 +154,7 @@ namespace NotesAndTasks
                     btnSetKey.Enabled = true;
                     btnSetKey.Text = "Set Toggle Key";
                     hotkeyManager.SetMacroKey(e.VirtualKeyCode, ToggleType.Keyboard);
-                    UpdateDebugInfo($"Set toggle key to {e.VirtualKeyCode}");
+                    uiManager.UpdateDebugInfo($"Set toggle key to {e.VirtualKeyCode}");
                 }
                 else if (isSettingMacroSwitchKey)
                 {
@@ -142,7 +162,7 @@ namespace NotesAndTasks
                     btnSetMacroSwitch.Enabled = true;
                     btnSetMacroSwitch.Text = "Set Switch Key";
                     hotkeyManager.SetSwitchKey(e.VirtualKeyCode);
-                    UpdateDebugInfo($"Set macro switch key to {e.VirtualKeyCode}");
+                    uiManager.UpdateDebugInfo($"Set macro switch key to {e.VirtualKeyCode}");
                 }
                 else if (e.VirtualKeyCode == hotkeyManager.MacroKey && hotkeyManager.ToggleType == ToggleType.Keyboard)
                 {
@@ -155,7 +175,7 @@ namespace NotesAndTasks
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error in OnKeyDown: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error in OnKeyDown: {ex.Message}");
             }
         }
 
@@ -176,7 +196,7 @@ namespace NotesAndTasks
                             btnSetKey.Enabled = true;
                             btnSetKey.Text = "Set Toggle Key";
                             hotkeyManager.SetMacroKey(Keys.MButton, ToggleType.MouseMiddle);
-                            UpdateDebugInfo("Set toggle key to MButton");
+                            uiManager.UpdateDebugInfo("Set toggle key to MButton");
                         }
                         else if (isSettingMacroSwitchKey)
                         {
@@ -184,7 +204,7 @@ namespace NotesAndTasks
                             btnSetMacroSwitch.Enabled = true;
                             btnSetMacroSwitch.Text = "Set Switch Key";
                             hotkeyManager.SetSwitchKey(Keys.MButton);
-                            UpdateDebugInfo("Set macro switch key to MButton");
+                            uiManager.UpdateDebugInfo("Set macro switch key to MButton");
                         }
                         else if (hotkeyManager.MacroKey == Keys.MButton)
                         {
@@ -208,7 +228,7 @@ namespace NotesAndTasks
                                 ToggleType.MouseX1 : 
                                 ToggleType.MouseX2;
                             hotkeyManager.SetMacroKey(key, type);
-                            UpdateDebugInfo($"Set toggle key to {buttonName}");
+                            uiManager.UpdateDebugInfo($"Set toggle key to {buttonName}");
                         }
                         else if (isSettingMacroSwitchKey)
                         {
@@ -218,7 +238,7 @@ namespace NotesAndTasks
                             string buttonName = e.Button == MouseButtons.XButton1 ? "XButton1" : "XButton2";
                             Keys key = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
                             hotkeyManager.SetSwitchKey(key);
-                            UpdateDebugInfo($"Set macro switch key to {buttonName}");
+                            uiManager.UpdateDebugInfo($"Set macro switch key to {buttonName}");
                         }
                         else if ((e.Button == MouseButtons.XButton1 && hotkeyManager.MacroKey == Keys.XButton1) ||
                                 (e.Button == MouseButtons.XButton2 && hotkeyManager.MacroKey == Keys.XButton2))
@@ -235,7 +255,7 @@ namespace NotesAndTasks
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error in OnMouseDown: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error in OnMouseDown: {ex.Message}");
             }
         }
 
@@ -250,7 +270,7 @@ namespace NotesAndTasks
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error in OnMouseUp: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error in OnMouseUp: {ex.Message}");
             }
         }
 
@@ -267,7 +287,7 @@ namespace NotesAndTasks
                 e.Cancel = true;
                 this.Hide();
                 notifyIcon.Visible = true;
-                UpdateDebugInfo("Application minimized to system tray");
+                uiManager.UpdateDebugInfo("Application minimized to system tray");
             }
             else if (isExiting || !chkMinimizeToTray.Checked)
             {
@@ -302,11 +322,11 @@ namespace NotesAndTasks
                 mouseHook.Start();
                 
                 // Update UI
-                UpdateTitle();
+                uiManager.UpdateTitle();
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error initializing hooks: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error initializing hooks: {ex.Message}");
             }
         }
 
@@ -317,12 +337,12 @@ namespace NotesAndTasks
         {
             try
             {
-                UpdateTitle();
-                UpdateDebugInfo($"Macro {(isEnabled ? "enabled" : "disabled")}");
+                uiManager.UpdateTitle();
+                uiManager.UpdateDebugInfo($"Macro {(isEnabled ? "enabled" : "disabled")}");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error in OnMacroStateChanged: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error in OnMacroStateChanged: {ex.Message}");
             }
         }
 
@@ -333,13 +353,13 @@ namespace NotesAndTasks
         {
             try
             {
-                UpdateTitle();
-                UpdateModeLabels();
-                UpdateDebugInfo($"Mode switched to {(isJitterMode ? "jitter" : "recoil reduction")}");
+                uiManager.UpdateTitle();
+                uiManager.UpdateModeLabels();
+                uiManager.UpdateDebugInfo($"Mode switched to {(isJitterMode ? "jitter" : "recoil reduction")}");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error in OnModeChanged: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error in OnModeChanged: {ex.Message}");
             }
         }
 
@@ -348,32 +368,47 @@ namespace NotesAndTasks
         /// </summary>
         private void InitializeCustomComponents()
         {
-            InitializeIcon();
-            InitializeHotkeys();
-            InitializeTooltips();
-            LoadSettings();
+            try
+            {
+                using var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                if (icon != null)
+                {
+                    this.Icon = (Icon)icon.Clone();
+                    notifyIcon.Icon = (Icon)icon.Clone();
+                }
+            }
+            catch (Exception ex)
+            {
+                uiManager.UpdateDebugInfo($"Error loading icon: {ex.Message}");
+            }
 
             // Set initial text with bold formatting
             if (hotkeyManager.MacroKey != Keys.None)
-                UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
+                uiManager.UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
             if (hotkeyManager.SwitchKey != Keys.None)
-                UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
+                uiManager.UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
+
+            // Initialize tooltips
+            toolTip.SetToolTip(chkAlwaysJitter, "Always keep Jitter enabled");
+            toolTip.SetToolTip(trackBarJitter, "Adjust Jitter strength");
+            toolTip.SetToolTip(chkAlwaysRecoilReduction, "Always keep Recoil Reduction enabled");
+            toolTip.SetToolTip(trackBarRecoilReduction, "Adjust Recoil Reduction strength");
+            toolTip.SetToolTip(chkMinimizeToTray, "Minimize to system tray when closing");
 
             // Initialize event handlers
             InitializeEventHandlers();
+
+            // Load settings
+            LoadSettings();
         }
 
-        /// <summary>
-        /// Initializes all event handlers for form controls.
-        /// Sets up click events, value change events, and checkbox state change events.
-        /// </summary>
         private void InitializeEventHandlers()
         {
             btnToggleDebug.Click += (sender, e) =>
             {
                 debugPanel.Visible = !debugPanel.Visible;
                 btnToggleDebug.Text = debugPanel.Visible ? "Hide Debug Info" : "Show Debug Info";
-                UpdateDebugInfo("Debug panel visibility toggled");
+                uiManager.UpdateDebugInfo("Debug panel visibility toggled");
             };
 
             btnSetKey.Click += (sender, e) =>
@@ -381,7 +416,7 @@ namespace NotesAndTasks
                 isSettingKey = true;
                 btnSetKey.Text = "Press any key...";
                 btnSetKey.Enabled = false;
-                UpdateDebugInfo("Waiting for new toggle key...");
+                uiManager.UpdateDebugInfo("Waiting for new toggle key...");
             };
 
             trackBarJitter.ValueChanged += (sender, e) =>
@@ -392,12 +427,12 @@ namespace NotesAndTasks
                     macroManager.SetJitterStrength(trackBarJitter.Value);
                     SettingsManager.CurrentSettings.JitterStrength = trackBarJitter.Value;
                     SettingsManager.SaveSettings();
-                    UpdateJitterStrength(trackBarJitter.Value);
-                    UpdateDebugInfo($"Jitter strength set to {trackBarJitter.Value}");
+                    uiManager.UpdateJitterStrength(trackBarJitter.Value);
+                    uiManager.UpdateDebugInfo($"Jitter strength set to {trackBarJitter.Value}");
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    UpdateDebugInfo($"Error setting jitter strength: {ex.Message}");
+                    uiManager.UpdateDebugInfo($"Error setting jitter strength: {ex.Message}");
                     trackBarJitter.Value = Math.Max(trackBarJitter.Minimum, Math.Min(trackBarJitter.Maximum, trackBarJitter.Value));
                 }
             };
@@ -410,12 +445,12 @@ namespace NotesAndTasks
                     macroManager.SetRecoilReductionStrength(trackBarRecoilReduction.Value);
                     SettingsManager.CurrentSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
                     SettingsManager.SaveSettings();
-                    UpdateRecoilReductionStrength(trackBarRecoilReduction.Value);
-                    UpdateDebugInfo($"Recoil reduction strength set to {trackBarRecoilReduction.Value}");
+                    uiManager.UpdateRecoilReductionStrength(trackBarRecoilReduction.Value);
+                    uiManager.UpdateDebugInfo($"Recoil reduction strength set to {trackBarRecoilReduction.Value}");
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    UpdateDebugInfo($"Error setting recoil reduction strength: {ex.Message}");
+                    uiManager.UpdateDebugInfo($"Error setting recoil reduction strength: {ex.Message}");
                     trackBarRecoilReduction.Value = Math.Max(trackBarRecoilReduction.Minimum, Math.Min(trackBarRecoilReduction.Maximum, trackBarRecoilReduction.Value));
                 }
             };
@@ -426,8 +461,8 @@ namespace NotesAndTasks
                 btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
                 SettingsManager.CurrentSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
                 SettingsManager.SaveSettings();
-                UpdateTitle();
-                UpdateModeLabels();
+                uiManager.UpdateTitle();
+                uiManager.UpdateModeLabels();
             };
 
             chkAlwaysRecoilReduction.CheckedChanged += (sender, e) =>
@@ -436,8 +471,8 @@ namespace NotesAndTasks
                 btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
                 SettingsManager.CurrentSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 SettingsManager.SaveSettings();
-                UpdateTitle();
-                UpdateModeLabels();
+                uiManager.UpdateTitle();
+                uiManager.UpdateModeLabels();
             };
 
             chkMinimizeToTray.CheckedChanged += (sender, e) =>
@@ -451,7 +486,7 @@ namespace NotesAndTasks
                 isSettingMacroSwitchKey = true;
                 btnSetMacroSwitch.Text = "Press any key...";
                 btnSetMacroSwitch.Enabled = false;
-                UpdateDebugInfo("Waiting for new switch key...");
+                uiManager.UpdateDebugInfo("Waiting for new switch key...");
             };
         }
 
@@ -471,7 +506,7 @@ namespace NotesAndTasks
                     Math.Min(trackBarJitter.Minimum, trackBarRecoilReduction.Minimum),
                     Math.Max(trackBarJitter.Maximum, trackBarRecoilReduction.Maximum)))
                 {
-                    UpdateDebugInfo("Invalid settings detected, resetting to defaults");
+                    uiManager.UpdateDebugInfo("Invalid settings detected, resetting to defaults");
                     ResetToDefaultSettings();
                     return;
                 }
@@ -483,20 +518,14 @@ namespace NotesAndTasks
                 chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
                 chkMinimizeToTray.Checked = settings.MinimizeToTray;
 
-                // Apply settings to MacroManager
-                macroManager.SetJitterStrength(settings.JitterStrength);
-                macroManager.SetRecoilReductionStrength(settings.RecoilReductionStrength);
-                macroManager.SetAlwaysJitterMode(settings.AlwaysJitterMode);
-                macroManager.SetAlwaysRecoilReductionMode(settings.AlwaysRecoilReductionMode);
-
                 // Update UI elements
-                UpdateTitle();
-                UpdateModeLabels();
-                UpdateDebugInfo("Settings loaded successfully");
+                uiManager.UpdateTitle();
+                uiManager.UpdateModeLabels();
+                uiManager.UpdateDebugInfo("Settings loaded successfully");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error loading settings: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error loading settings: {ex.Message}");
                 ResetToDefaultSettings();
             }
         }
@@ -515,11 +544,11 @@ namespace NotesAndTasks
                 settings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 settings.MinimizeToTray = chkMinimizeToTray.Checked;
                 SettingsManager.SaveSettings();
-                UpdateDebugInfo("Settings saved successfully");
+                uiManager.UpdateDebugInfo("Settings saved successfully");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error saving settings: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error saving settings: {ex.Message}");
             }
         }
 
@@ -544,160 +573,22 @@ namespace NotesAndTasks
                 macroManager.SetAlwaysRecoilReductionMode(false);
 
                 // Reset hotkeys
-                hotkeyManager.SetMacroKey(Keys.Capital, ToggleType.Keyboard);
-                hotkeyManager.SetSwitchKey(Keys.Q);
+                hotkeyManager.ResetToDefaults();
 
                 // Update UI
-                UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
-                UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
-                UpdateTitle();
-                UpdateModeLabels();
+                uiManager.UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
+                uiManager.UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
+                uiManager.UpdateTitle();
+                uiManager.UpdateModeLabels();
 
                 // Save settings
                 SaveCurrentSettings();
-                UpdateDebugInfo("Settings reset to defaults");
+                uiManager.UpdateDebugInfo("Settings reset to defaults");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error resetting settings: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error resetting settings: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Updates the form title to reflect current macro state and mode.
-        /// </summary>
-        private void UpdateTitle()
-        {
-            string jitterMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" :
-                (macroManager.IsJitterEnabled ? "Jitter" : "Jitter (OFF)");
-
-            string recoilMode = macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" :
-                (macroManager.IsJitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction");
-
-            this.Text = $"Notes&Tasks [{(macroManager.IsEnabled ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
-            UpdateModeLabels();
-        }
-
-        /// <summary>
-        /// Updates the displayed current key binding for macro toggle.
-        /// </summary>
-        /// <param name="key">The key name to display.</param>
-        private void UpdateCurrentKey(string key)
-        {
-            if (lblCurrentKeyValue != null)
-            {
-                lblCurrentKeyValue.Text = key;
-            }
-        }
-
-        /// <summary>
-        /// Updates the displayed key binding for mode switching.
-        /// </summary>
-        /// <param name="key">The key name to display.</param>
-        private void UpdateSwitchKey(string key)
-        {
-            if (lblMacroSwitchKeyValue != null)
-            {
-                lblMacroSwitchKeyValue.Text = key;
-            }
-        }
-
-        /// <summary>
-        /// Updates the displayed jitter strength value.
-        /// Thread-safe method that can be called from any thread.
-        /// </summary>
-        /// <param name="strength">The strength value to display (1-20).</param>
-        private void UpdateJitterStrength(int strength)
-        {
-            try
-            {
-                Validation.ValidateStrength(strength, trackBarJitter.Minimum, trackBarJitter.Maximum, nameof(strength));
-
-                if (InvokeRequired)
-                {
-                    Invoke(new Action<int>(UpdateJitterStrength), strength);
-                    return;
-                }
-
-                lblJitterStrengthValue.Text = strength.ToString();
-                UpdateDebugInfo($"Jitter strength updated to: {strength}");
-            }
-            catch (Exception ex)
-            {
-                UpdateDebugInfo($"Error updating jitter strength: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Updates the displayed recoil reduction strength value.
-        /// Thread-safe method that can be called from any thread.
-        /// </summary>
-        /// <param name="strength">The strength value to display (1-20).</param>
-        private void UpdateRecoilReductionStrength(int strength)
-        {
-            try
-            {
-                Validation.ValidateStrength(strength, trackBarRecoilReduction.Minimum, trackBarRecoilReduction.Maximum, nameof(strength));
-
-                if (InvokeRequired)
-                {
-                    Invoke(new Action<int>(UpdateRecoilReductionStrength), strength);
-                    return;
-                }
-
-                lblRecoilReductionStrengthValue.Text = strength.ToString();
-                UpdateDebugInfo($"Recoil reduction strength updated to: {strength}");
-            }
-            catch (Exception ex)
-            {
-                UpdateDebugInfo($"Error updating recoil reduction strength: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Updates the displayed macro switch key value.
-        /// Thread-safe method that can be called from any thread.
-        /// </summary>
-        /// <param name="key">The key name to display.</param>
-        private void UpdateMacroSwitchKey(string key)
-        {
-            if (InvokeRequired)
-            {
-                Invoke(new Action<string>(UpdateMacroSwitchKey), key);
-                return;
-            }
-            lblMacroSwitchKeyValue.Text = key;
-            UpdateDebugInfo($"Macro switch key updated to: {key}");
-        }
-
-        /// <summary>
-        /// Adds a debug message to the debug panel with timestamp.
-        /// Thread-safe method that can be called from any thread.
-        /// </summary>
-        /// <param name="message">The debug message to display.</param>
-        private void UpdateDebugInfo(string message)
-        {
-            if (debugLabel.InvokeRequired)
-            {
-                debugLabel.Invoke(new Action(() => UpdateDebugInfo(message)));
-                return;
-            }
-
-            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-            string newLine = $"[{timestamp}] {message}";
-
-            // Keep last 100 lines of debug info
-            var lines = debugLabel.Lines.ToList();
-            lines.Add(newLine);
-            if (lines.Count > 100)
-            {
-                lines.RemoveAt(0);
-            }
-            debugLabel.Lines = lines.ToArray();
-
-            // Auto-scroll to bottom
-            debugLabel.SelectionStart = debugLabel.TextLength;
-            debugLabel.ScrollToCaret();
         }
 
         /// <summary>
@@ -709,7 +600,7 @@ namespace NotesAndTasks
             this.WindowState = FormWindowState.Normal;
             this.Activate();
             notifyIcon.Visible = false;
-            UpdateDebugInfo("Application restored from system tray");
+            uiManager.UpdateDebugInfo("Application restored from system tray");
         }
 
         /// <summary>
@@ -721,8 +612,8 @@ namespace NotesAndTasks
             string mode = macroManager.IsJitterEnabled ? "Jitter" : "Recoil Reduction";
             string alwaysMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" : 
                 (macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" : "Normal");
-            UpdateDebugInfo($"Macro {(macroManager.IsEnabled ? "Enabled" : "Disabled")} - Mode: {mode}, Always Mode: {alwaysMode}, Key: **{hotkeyManager.MacroKey}**");
-            UpdateModeLabels();
+            uiManager.UpdateDebugInfo($"Macro {(macroManager.IsEnabled ? "Enabled" : "Disabled")} - Mode: {mode}, Always Mode: {alwaysMode}, Key: **{hotkeyManager.MacroKey}**");
+            uiManager.UpdateModeLabels();
         }
 
         /// <summary>
@@ -737,14 +628,14 @@ namespace NotesAndTasks
                 // Validate current state
                 if (isSettingKey || isSettingMacroSwitchKey)
                 {
-                    UpdateDebugInfo("Cannot switch modes while setting keys");
+                    uiManager.UpdateDebugInfo("Cannot switch modes while setting keys");
                     return;
                 }
 
                 // Don't switch if either "Always" mode is enabled
                 if (alwaysJitterMode || alwaysRecoilReductionMode)
                 {
-                    UpdateDebugInfo("Cannot switch modes when 'Always' mode is enabled");
+                    uiManager.UpdateDebugInfo("Cannot switch modes when 'Always' mode is enabled");
                     return;
                 }
 
@@ -761,7 +652,7 @@ namespace NotesAndTasks
                     // Invalid state detected, revert changes
                     jitterEnabled = previousJitterState;
                     recoilReductionEnabled = previousRecoilState;
-                    UpdateDebugInfo("Error: Invalid mode state detected");
+                    uiManager.UpdateDebugInfo("Error: Invalid mode state detected");
                     return;
                 }
 
@@ -777,17 +668,17 @@ namespace NotesAndTasks
                     // Revert changes if settings save fails
                     jitterEnabled = previousJitterState;
                     recoilReductionEnabled = previousRecoilState;
-                    UpdateDebugInfo($"Error saving mode settings: {ex.Message}");
+                    uiManager.UpdateDebugInfo($"Error saving mode settings: {ex.Message}");
                     return;
                 }
 
-                UpdateTitle();
-                UpdateModeLabels();
-                UpdateDebugInfo($"Switched to {(jitterEnabled ? "Jitter" : "Recoil Reduction")} mode");
+                uiManager.UpdateTitle();
+                uiManager.UpdateModeLabels();
+                uiManager.UpdateDebugInfo($"Switched to {(jitterEnabled ? "Jitter" : "Recoil Reduction")} mode");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error in HandleModeSwitch: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error in HandleModeSwitch: {ex.Message}");
             }
         }
 
@@ -803,8 +694,7 @@ namespace NotesAndTasks
                 return;
             }
 
-            lblRecoilReductionActive.Text = (!macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
-            lblJitterActive.Text = (macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
+            uiManager.UpdateModeLabels();
         }
 
         private void lblJitterActive_Click(object sender, EventArgs e)
@@ -826,54 +716,6 @@ namespace NotesAndTasks
         {
             SaveCurrentSettings();
             base.OnFormClosing(e);
-        }
-
-        /// <summary>
-        /// Initializes the application icon for both the main window and system tray.
-        /// </summary>
-        private void InitializeIcon()
-        {
-            try
-            {
-                using var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-                if (icon != null)
-                {
-                    this.Icon = (Icon)icon.Clone();
-                    notifyIcon.Icon = (Icon)icon.Clone();
-                }
-            }
-            catch (Exception ex)
-            {
-                UpdateDebugInfo($"Error loading icon: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Initializes default hotkey bindings and updates the UI to reflect them.
-        /// </summary>
-        private void InitializeHotkeys()
-        {
-            // Initialize default hotkeys
-            UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
-            UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
-        }
-
-        /// <summary>
-        /// Initializes tooltips for various UI controls to provide user guidance.
-        /// </summary>
-        private void InitializeTooltips()
-        {
-            // Initialize tooltips for controls using the managed ToolTip instance
-            toolTip.SetToolTip(chkAlwaysJitter, "Always keep Jitter enabled");
-            toolTip.SetToolTip(trackBarJitter, "Adjust Jitter strength");
-            toolTip.SetToolTip(chkAlwaysRecoilReduction, "Always keep Recoil Reduction enabled");
-            toolTip.SetToolTip(trackBarRecoilReduction, "Adjust Recoil Reduction strength");
-            toolTip.SetToolTip(chkMinimizeToTray, "Minimize to system tray when closing");
-        }
-
-        private void chkMinimizeToTray_CheckedChanged(object sender, EventArgs e)
-        {
-            SaveCurrentSettings();
         }
 
         /// <summary>
@@ -902,7 +744,7 @@ namespace NotesAndTasks
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error during cleanup: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Error during cleanup: {ex.Message}");
             }
         }
     }
