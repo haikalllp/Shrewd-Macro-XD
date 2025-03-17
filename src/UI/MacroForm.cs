@@ -29,26 +29,9 @@ namespace NotesAndTasks
         private readonly KeyboardHook keyboardHook;
         private readonly MouseHook mouseHook;
         private readonly MacroManager macroManager;
+        private readonly HotkeyManager hotkeyManager;
         private readonly ToolTip toolTip;
 
-        /// <summary>
-        /// Defines the types of input that can be used to toggle the macro functionality.
-        /// </summary>
-        private enum ToggleType
-        {
-            /// <summary>Keyboard key input</summary>
-            Keyboard,
-            /// <summary>Middle mouse button input</summary>
-            MouseMiddle,
-            /// <summary>Mouse button 4 (XButton1) input</summary>
-            MouseX1,
-            /// <summary>Mouse button 5 (XButton2) input</summary>
-            MouseX2
-        }
-
-        private ToggleType currentToggleType = ToggleType.Keyboard;
-        private Keys currentMacroKey = Keys.Capital;  // Default to Caps Lock
-        private Keys currentSwitchKey = Keys.Q;      // Default to Q
         private bool isSettingKey = false;
         private bool isSettingMacroSwitchKey = false;
         private bool isExiting = false;
@@ -92,6 +75,7 @@ namespace NotesAndTasks
             keyboardHook = new KeyboardHook();
             mouseHook = new MouseHook();
             macroManager = new MacroManager();
+            hotkeyManager = new HotkeyManager();
             toolTip = new ToolTip();
 
             try
@@ -121,6 +105,10 @@ namespace NotesAndTasks
                 macroManager.RecoilReductionStarted += (s, e) => UpdateDebugInfo("Recoil reduction started");
                 macroManager.RecoilReductionStopped += (s, e) => UpdateDebugInfo("Recoil reduction stopped");
 
+                // Set up hotkey manager event handlers
+                hotkeyManager.MacroKeyChanged += (s, key) => UpdateCurrentKey(key.ToString());
+                hotkeyManager.SwitchKeyChanged += (s, key) => UpdateMacroSwitchKey(key.ToString());
+
                 // Handle application exit
                 Application.ApplicationExit += (s, e) =>
                 {
@@ -145,27 +133,22 @@ namespace NotesAndTasks
                     isSettingKey = false;
                     btnSetKey.Enabled = true;
                     btnSetKey.Text = "Set Toggle Key";
-                    currentMacroKey = e.VirtualKeyCode;
-                    currentToggleType = ToggleType.Keyboard;
-                    UpdateCurrentKey(currentMacroKey.ToString());
-                    SaveCurrentSettings();
-                    UpdateDebugInfo($"Set toggle key to {currentMacroKey}");
+                    hotkeyManager.SetMacroKey(e.VirtualKeyCode, ToggleType.Keyboard);
+                    UpdateDebugInfo($"Set toggle key to {e.VirtualKeyCode}");
                 }
                 else if (isSettingMacroSwitchKey)
                 {
                     isSettingMacroSwitchKey = false;
                     btnSetMacroSwitch.Enabled = true;
                     btnSetMacroSwitch.Text = "Set Switch Key";
-                    currentSwitchKey = e.VirtualKeyCode;
-                    UpdateMacroSwitchKey(currentSwitchKey.ToString());
-                    SaveCurrentSettings();
-                    UpdateDebugInfo($"Set macro switch key to {currentSwitchKey}");
+                    hotkeyManager.SetSwitchKey(e.VirtualKeyCode);
+                    UpdateDebugInfo($"Set macro switch key to {e.VirtualKeyCode}");
                 }
-                else if (e.VirtualKeyCode == currentMacroKey && currentToggleType == ToggleType.Keyboard)
+                else if (e.VirtualKeyCode == hotkeyManager.MacroKey && hotkeyManager.ToggleType == ToggleType.Keyboard)
                 {
                     macroManager.ToggleMacro();
                 }
-                else if (e.VirtualKeyCode == currentSwitchKey)
+                else if (e.VirtualKeyCode == hotkeyManager.SwitchKey)
                 {
                     macroManager.SwitchMode();
                 }
@@ -192,10 +175,7 @@ namespace NotesAndTasks
                             isSettingKey = false;
                             btnSetKey.Enabled = true;
                             btnSetKey.Text = "Set Toggle Key";
-                            currentMacroKey = Keys.MButton;
-                            currentToggleType = ToggleType.MouseMiddle;
-                            UpdateCurrentKey("MButton");
-                            SaveCurrentSettings();
+                            hotkeyManager.SetMacroKey(Keys.MButton, ToggleType.MouseMiddle);
                             UpdateDebugInfo("Set toggle key to MButton");
                         }
                         else if (isSettingMacroSwitchKey)
@@ -203,16 +183,14 @@ namespace NotesAndTasks
                             isSettingMacroSwitchKey = false;
                             btnSetMacroSwitch.Enabled = true;
                             btnSetMacroSwitch.Text = "Set Switch Key";
-                            currentSwitchKey = Keys.MButton;
-                            UpdateMacroSwitchKey("MButton");
-                            SaveCurrentSettings();
+                            hotkeyManager.SetSwitchKey(Keys.MButton);
                             UpdateDebugInfo("Set macro switch key to MButton");
                         }
-                        else if (currentMacroKey == Keys.MButton)
+                        else if (hotkeyManager.MacroKey == Keys.MButton)
                         {
                             macroManager.ToggleMacro();
                         }
-                        else if (currentSwitchKey == Keys.MButton)
+                        else if (hotkeyManager.SwitchKey == Keys.MButton)
                         {
                             macroManager.SwitchMode();
                         }
@@ -225,10 +203,11 @@ namespace NotesAndTasks
                             btnSetKey.Enabled = true;
                             btnSetKey.Text = "Set Toggle Key";
                             string buttonName = e.Button == MouseButtons.XButton1 ? "XButton1" : "XButton2";
-                            currentMacroKey = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
-                            currentToggleType = e.Button == MouseButtons.XButton1 ? ToggleType.MouseX1 : ToggleType.MouseX2;
-                            UpdateCurrentKey(buttonName);
-                            SaveCurrentSettings();
+                            Keys key = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
+                            var type = e.Button == MouseButtons.XButton1 ? 
+                                ToggleType.MouseX1 : 
+                                ToggleType.MouseX2;
+                            hotkeyManager.SetMacroKey(key, type);
                             UpdateDebugInfo($"Set toggle key to {buttonName}");
                         }
                         else if (isSettingMacroSwitchKey)
@@ -237,18 +216,17 @@ namespace NotesAndTasks
                             btnSetMacroSwitch.Enabled = true;
                             btnSetMacroSwitch.Text = "Set Switch Key";
                             string buttonName = e.Button == MouseButtons.XButton1 ? "XButton1" : "XButton2";
-                            currentSwitchKey = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
-                            UpdateMacroSwitchKey(buttonName);
-                            SaveCurrentSettings();
+                            Keys key = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
+                            hotkeyManager.SetSwitchKey(key);
                             UpdateDebugInfo($"Set macro switch key to {buttonName}");
                         }
-                        else if ((e.Button == MouseButtons.XButton1 && currentMacroKey == Keys.XButton1) ||
-                                (e.Button == MouseButtons.XButton2 && currentMacroKey == Keys.XButton2))
+                        else if ((e.Button == MouseButtons.XButton1 && hotkeyManager.MacroKey == Keys.XButton1) ||
+                                (e.Button == MouseButtons.XButton2 && hotkeyManager.MacroKey == Keys.XButton2))
                         {
                             macroManager.ToggleMacro();
                         }
-                        else if ((e.Button == MouseButtons.XButton1 && currentSwitchKey == Keys.XButton1) ||
-                                (e.Button == MouseButtons.XButton2 && currentSwitchKey == Keys.XButton2))
+                        else if ((e.Button == MouseButtons.XButton1 && hotkeyManager.SwitchKey == Keys.XButton1) ||
+                                (e.Button == MouseButtons.XButton2 && hotkeyManager.SwitchKey == Keys.XButton2))
                         {
                             macroManager.SwitchMode();
                         }
@@ -376,10 +354,10 @@ namespace NotesAndTasks
             LoadSettings();
 
             // Set initial text with bold formatting
-            if (currentMacroKey != Keys.None)
-                UpdateCurrentKey(currentMacroKey.ToString());
-            if (currentSwitchKey != Keys.None)
-                UpdateSwitchKey(currentSwitchKey.ToString());
+            if (hotkeyManager.MacroKey != Keys.None)
+                UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
+            if (hotkeyManager.SwitchKey != Keys.None)
+                UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
 
             // Initialize event handlers
             InitializeEventHandlers();
@@ -505,19 +483,6 @@ namespace NotesAndTasks
                 chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
                 chkMinimizeToTray.Checked = settings.MinimizeToTray;
 
-                // Parse and set hotkeys
-                if (Enum.TryParse(settings.MacroToggleKey, out Keys macroKey))
-                {
-                    currentMacroKey = macroKey;
-                    UpdateCurrentKey(currentMacroKey.ToString());
-                }
-
-                if (Enum.TryParse(settings.ModeSwitchKey, out Keys switchKey))
-                {
-                    currentSwitchKey = switchKey;
-                    UpdateMacroSwitchKey(currentSwitchKey.ToString());
-                }
-
                 // Apply settings to MacroManager
                 macroManager.SetJitterStrength(settings.JitterStrength);
                 macroManager.SetRecoilReductionStrength(settings.RecoilReductionStrength);
@@ -549,8 +514,6 @@ namespace NotesAndTasks
                 settings.AlwaysJitterMode = chkAlwaysJitter.Checked;
                 settings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 settings.MinimizeToTray = chkMinimizeToTray.Checked;
-                settings.MacroToggleKey = currentMacroKey.ToString();
-                settings.ModeSwitchKey = currentSwitchKey.ToString();
                 SettingsManager.SaveSettings();
                 UpdateDebugInfo("Settings saved successfully");
             }
@@ -581,17 +544,16 @@ namespace NotesAndTasks
                 macroManager.SetAlwaysRecoilReductionMode(false);
 
                 // Reset hotkeys
-                currentMacroKey = Keys.Capital;
-                currentSwitchKey = Keys.Q;
-                currentToggleType = ToggleType.Keyboard;
+                hotkeyManager.SetMacroKey(Keys.Capital, ToggleType.Keyboard);
+                hotkeyManager.SetSwitchKey(Keys.Q);
 
                 // Update UI
-                UpdateCurrentKey(currentMacroKey.ToString());
-                UpdateMacroSwitchKey(currentSwitchKey.ToString());
+                UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
+                UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
                 UpdateTitle();
                 UpdateModeLabels();
 
-                // Save default settings
+                // Save settings
                 SaveCurrentSettings();
                 UpdateDebugInfo("Settings reset to defaults");
             }
@@ -759,7 +721,7 @@ namespace NotesAndTasks
             string mode = macroManager.IsJitterEnabled ? "Jitter" : "Recoil Reduction";
             string alwaysMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" : 
                 (macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" : "Normal");
-            UpdateDebugInfo($"Macro {(macroManager.IsEnabled ? "Enabled" : "Disabled")} - Mode: {mode}, Always Mode: {alwaysMode}, Key: **{currentMacroKey}**");
+            UpdateDebugInfo($"Macro {(macroManager.IsEnabled ? "Enabled" : "Disabled")} - Mode: {mode}, Always Mode: {alwaysMode}, Key: **{hotkeyManager.MacroKey}**");
             UpdateModeLabels();
         }
 
@@ -892,8 +854,8 @@ namespace NotesAndTasks
         private void InitializeHotkeys()
         {
             // Initialize default hotkeys
-            UpdateCurrentKey(currentMacroKey.ToString());
-            UpdateSwitchKey(currentSwitchKey.ToString());
+            UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
+            UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
         }
 
         /// <summary>
