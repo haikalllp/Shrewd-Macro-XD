@@ -108,8 +108,10 @@ namespace NotesAndTasks.Utilities
             try
             {
                 int dy;
+                // Low level recoil reduction
                 if (strength <= 6)
                 {
+                    // Lowest level recoil reduction
                     if (strength == 1)
                     {
                         dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
@@ -120,10 +122,12 @@ namespace NotesAndTasks.Utilities
                         dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * Math.Log(strength + 1, logBase)));
                     }
                 }
+                // Medium level recoil reduction
                 else if (strength <= 16)
                 {
                     dy = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * strength * 1.2));
                 }
+                // High level recoil reduction
                 else
                 {
                     double baseValue = BASE_RECOIL_STRENGTH * 20.0;

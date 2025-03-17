@@ -125,6 +125,8 @@ namespace NotesAndTasks.Utilities
             }
 
             int verticalMovement;
+
+            // Low level recoil reduction
             if (strength <= 6)
             {
                 if (strength == 1)
@@ -137,10 +139,14 @@ namespace NotesAndTasks.Utilities
                     verticalMovement = Math.Max(1, (int)Math.Round(0.75 * Math.Log(strength + 1, logBase)));
                 }
             }
+
+            // Medium level recoil reduction
             else if (strength <= 16)
             {
                 verticalMovement = Math.Max(1, (int)Math.Round(0.75 * strength * 1.2));
             }
+
+            // High level recoil reduction
             else
             {
                 double baseValue = 0.75 * 20.0;
