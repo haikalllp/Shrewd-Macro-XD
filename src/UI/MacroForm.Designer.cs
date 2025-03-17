@@ -1,3 +1,9 @@
+using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.Windows.Forms;
+using NotesAndTasks.Hooks;
+
 namespace NotesAndTasks
 {
     partial class MacroForm
@@ -20,22 +26,23 @@ namespace NotesAndTasks
                     components.Dispose();
                 }
 
+                // Dispose hooks
+                if (keyboardHook != null)
+                {
+                    keyboardHook.Stop();
+                    keyboardHook.Dispose();
+                }
+
+                if (mouseHook != null)
+                {
+                    mouseHook.Stop();
+                    mouseHook.Dispose();
+                }
+
+                // Dispose timer
                 if (jitterTimer != null)
                 {
-                    jitterTimer.Change(Timeout.Infinite, Timeout.Infinite);
                     jitterTimer.Dispose();
-                }
-
-                if (keyboardHookID != IntPtr.Zero)
-                {
-                    NativeMethods.UnhookWindowsHookEx(keyboardHookID);
-                    keyboardHookID = IntPtr.Zero;
-                }
-
-                if (mouseHookID != IntPtr.Zero)
-                {
-                    NativeMethods.UnhookWindowsHookEx(mouseHookID);
-                    mouseHookID = IntPtr.Zero;
                 }
 
                 if (notifyIcon != null)
@@ -89,6 +96,7 @@ namespace NotesAndTasks
             trayContextMenu = new ContextMenuStrip(components);
             showWindowMenuItem = new ToolStripMenuItem();
             exitMenuItem = new ToolStripMenuItem();
+
             mainPanel.SuspendLayout();
             debugPanel.SuspendLayout();
             strengthPanel1.SuspendLayout();

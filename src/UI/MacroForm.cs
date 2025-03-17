@@ -93,9 +93,10 @@ namespace NotesAndTasks
         /// </summary>
         public MacroForm()
         {
-            toolTip = new ToolTip();
+            // Initialize hooks and tools before InitializeComponent
             keyboardHook = new KeyboardHook();
             mouseHook = new MouseHook();
+            toolTip = new ToolTip();
 
             try
             {
@@ -325,16 +326,11 @@ namespace NotesAndTasks
         {
             try
             {
-                using var curProcess = Process.GetCurrentProcess();
-                using var curModule = curProcess.MainModule;
+                // Start the hooks
+                keyboardHook.Start();
+                mouseHook.Start();
 
-                if (curModule != null)
-                {
-                    var moduleHandle = NativeMethods.GetModuleHandle(curModule.ModuleName);
-                    keyboardHook.SetHook(moduleHandle);
-                    mouseHook.SetHook(moduleHandle);
-                }
-
+                // Initialize jitter timer
                 jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
                 UpdateTitle();
             }
