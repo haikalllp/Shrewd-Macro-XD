@@ -41,22 +41,37 @@ A professional Windows Forms application for advanced mouse input management, fe
   - Visual state indicators
 
 #### Configuration System
-- Thread-safe settings management
-- JSON-based configuration storage
-- Automatic settings persistence
-- Comprehensive validation:
-  - Type validation
-  - Range validation
+- **Configuration Models**
+  - `AppSettings`: Root configuration class containing all settings
+  - `MacroSettings`: Jitter and recoil reduction settings
+  - `UISettings`: Window and interface preferences
+  - `HotkeySettings`: Key bindings and hotkey configuration
+  - Legacy configuration files for backward compatibility
+  - settings save on loaded from and to JSON
+  
+- **Configuration Manager**
+  - Thread-safe operations with ReaderWriterLockSlim
+  - Standard location in %AppData%/NotesAndTasks
+  - Automatic backups with versioning
+  - Real-time validation with error recovery
+  - Event notifications for changes, validation, and backups
+  - Support for both new models and legacy configuration
+  
+- **Validation System**
+  - Data annotations for property validation
   - Cross-property validation
-  - Pre-save validation
-  - Error recovery
-- Event-driven updates
-- Configuration sections:
-  - Jitter settings
-  - Recoil reduction settings
-  - Hotkey bindings
-  - UI preferences
-  - Backup settings
+  - Pre-save validation checks
+  - Error reporting with context
+  - Recovery mechanisms
+  - Backward compatibility validation
+
+- **Event System**
+  - Configuration change tracking
+  - Validation event handling
+  - Backup completion notifications
+  - Error event propagation
+  - State change notifications
+  - Legacy event support
 
 #### UI System
 - Modern dark theme interface
@@ -195,28 +210,6 @@ A professional Windows Forms application for advanced mouse input management, fe
    - Resource-efficient hook implementation
    - Automatic cleanup on exit
 
-### Settings Configuration
-- **Configuration Manager**
-  - Thread-safe operations with ReaderWriterLockSlim
-  - Automatic backups with versioning
-  - Real-time validation with error recovery
-  - Event notifications with detailed state
-  
-- **Validation System**
-  - Comprehensive input validation
-  - Type safety checks
-  - Range validation
-  - Cross-property validation
-  - Error reporting with context
-  - Recovery mechanisms
-
-- **Event System**
-  - Configuration change tracking
-  - Validation event handling
-  - Backup completion notifications
-  - Error event propagation
-  - State change notifications
-
 ## Development
 
 ### Environment Setup
@@ -254,9 +247,14 @@ dotnet build -c Debug
 # Release build
 dotnet build -c Release
 ```
+
 ### Output Locations
 - Release: `bin/Release/net6.0-windows/Notes&Tasks.exe`
 - Debug: `bin/Debug/net6.0-windows/Notes&Tasks.exe`
+
+### Configuration Files
+- Settings: `%AppData%/NotesAndTasks/config.json`
+- Backups: `%AppData%/NotesAndTasks/Backups/`
 
 ### Testing
 1. **Unit Tests**
@@ -294,14 +292,12 @@ MouseMacro/
 │   │   ├── Controls/         # Custom UI controls
 │   │   │   ├── ModernButton.cs
 │   │   │   └── ModernTrackBar.cs
-│   │   ├── MacroForm.cs      # Main application window
+│   │   ├── MacroForm.cs
 │   │   ├── MacroForm.Designer.cs
 │   │   ├── MacroForm.resx
 │   │   ├── Resources.Designer.cs
-│   │   ├── Resources.resx
-│   │   └── UIManager.cs      # UI state management
-│   ├── Configuration/        # Settings and configuration
-│   │   ├── AppConfiguration.cs
+│   │   └── Resources.resx
+│   ├── Configuration/        # Configuration management
 │   │   ├── ConfigurationEvents.cs
 │   │   ├── ConfigurationManager.cs
 │   │   ├── EventHandlerExtensions.cs
@@ -310,24 +306,26 @@ MouseMacro/
 │   │   ├── SettingsManager.cs
 │   │   ├── SettingsValidation.cs
 │   │   └── Validation.cs
-│   ├── Hooks/               # System hooks and native interop
+│   ├── Hooks/               # System hooks
 │   │   ├── KeyboardHook.cs
 │   │   ├── MouseHook.cs
 │   │   ├── NativeMethods.cs
 │   │   └── WinMessages.cs
-│   ├── Utilities/          # Core functionality
-│   │   ├── HotkeyManager.cs
+│   ├── Models/              # Data models
+│   │   ├── AppSettings.cs
+│   │   ├── MacroSettings.cs
+│   │   ├── UISettings.cs
+│   │   └── HotkeySettings.cs
+│   ├── Utilities/           # Core functionality
 │   │   ├── InputSimulator.cs
 │   │   ├── JitterManager.cs
 │   │   ├── MacroManager.cs
-│   │   ├── RecoilReductionManager.cs
-│   │   └── ToggleType.cs
-│   ├── Models/             # Data models
-│   └── Program.cs          # Application entry point
-├── tests/                  # Unit tests (planned)
-├── MouseMacro.csproj      # Project configuration
-├── README.md              # Project documentation and setup guide
-└── app.manifest           # Application manifest
+│   │   └── RecoilReductionManager.cs
+│   └── Program.cs
+├── tests/                   # Unit tests
+├── docs/                    # Documentation
+├── MouseMacro.csproj       # Project configuration
+└── README.md               # Project documentation
 ```
 
 ## Troubleshooting

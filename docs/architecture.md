@@ -253,58 +253,129 @@ public class JitterManager
 
 ### 3. Configuration System
 
-#### Settings Model
+#### Configuration Models
 ```csharp
-// Settings.cs
-public class Settings
+// AppSettings.cs
+public class AppSettings : INotifyPropertyChanged
 {
+    private readonly MacroSettings _macroSettings;
+    private readonly UISettings _uiSettings;
+    private readonly HotkeySettings _hotkeySettings;
+
+    public MacroSettings MacroSettings => _macroSettings;
+    public UISettings UISettings => _uiSettings;
+    public HotkeySettings HotkeySettings => _hotkeySettings;
+
+    public event PropertyChangedEventHandler PropertyChanged;
+}
+
+// MacroSettings.cs
+public class MacroSettings : INotifyPropertyChanged
+{
+    [Range(1, 20)]
     public int JitterStrength { get; set; } = 3;
+    [Range(1, 20)]
     public int RecoilReductionStrength { get; set; } = 1;
     public bool JitterEnabled { get; set; }
     public bool RecoilReductionEnabled { get; set; }
     public bool AlwaysJitterMode { get; set; }
     public bool AlwaysRecoilReductionMode { get; set; }
+}
+
+// UISettings.cs
+public class UISettings : INotifyPropertyChanged
+{
     public bool MinimizeToTray { get; set; }
+    public bool ShowDebugPanel { get; set; }
+    public bool ShowStatusInTitle { get; set; }
+    public bool ShowTrayNotifications { get; set; }
+    public Point WindowPosition { get; set; }
+    public Size WindowSize { get; set; }
+}
+
+// HotkeySettings.cs
+public class HotkeySettings : INotifyPropertyChanged
+{
     public Keys MacroKey { get; set; } = Keys.Capital;
     public Keys SwitchKey { get; set; } = Keys.Q;
-    public ToggleType ToggleType { get; set; }
+}
+
+// Legacy configuration support
+public class AppConfiguration
+{
+    // Existing configuration properties maintained for compatibility
 }
 ```
 
-#### Settings Management
+#### Configuration Management
 ```csharp
-// SettingsManager.cs
-public class SettingsManager
+// ConfigurationManager.cs
+public class ConfigurationManager : IDisposable
 {
-    private const string CONFIG_FILE = "macro_config.json";
-    private static Settings currentSettings;
+    private static readonly string AppDataPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "NotesAndTasks"
+    );
+    private static readonly string ConfigPath = Path.Combine(AppDataPath, "config.json");
+    private static readonly string BackupPath = Path.Combine(AppDataPath, "Backups");
+    private static readonly int MaxBackupCount = 5;
 
-    public static Settings CurrentSettings
+    private readonly ReaderWriterLockSlim _configLock = new ReaderWriterLockSlim();
+    private AppSettings _currentSettings;
+
+    public event EventHandler<ConfigurationChangedEventArgs> ConfigurationChanged;
+    public event EventHandler<ConfigurationValidationEventArgs> ConfigurationValidating;
+    public event EventHandler<ConfigurationBackupEventArgs> ConfigurationBackupCompleted;
+
+    public AppSettings CurrentSettings
     {
-        get => currentSettings;
-        set
+        get
         {
-            if (SettingsValidation.ValidateSettings(value))
-            {
-                currentSettings = value;
-                SaveSettings();
-            }
+            _configLock.EnterReadLock();
+            try { return _currentSettings; }
+            finally { _configLock.ExitReadLock(); }
         }
     }
 
-    public static void LoadOrCreateSettings()
+    public void LoadConfiguration()
     {
-        if (File.Exists(CONFIG_FILE))
-        {
-            var json = File.ReadAllText(CONFIG_FILE);
-            currentSettings = JsonSerializer.Deserialize<Settings>(json);
-        }
-        else
-        {
-            currentSettings = new Settings();
-            SaveSettings();
-        }
+        // Thread-safe configuration loading with validation and legacy support
     }
+
+    public void SaveConfiguration()
+    {
+        // Thread-safe configuration saving with backup and legacy format support
+    }
+
+    private void CreateBackup()
+    {
+        // Create timestamped backup with rotation
+    }
+}
+```
+
+#### Configuration Events
+```csharp
+// ConfigurationEvents.cs
+public class ConfigurationChangedEventArgs : EventArgs
+{
+    public string Section { get; }
+    public AppSettings PreviousConfig { get; }
+    public AppSettings NewConfig { get; }
+}
+
+public class ConfigurationValidationEventArgs : EventArgs
+{
+    public bool IsValid { get; set; }
+    public string Message { get; set; }
+    public AppSettings Configuration { get; }
+}
+
+public class ConfigurationBackupEventArgs : EventArgs
+{
+    public string BackupPath { get; }
+    public bool Success { get; }
+    public string ErrorMessage { get; }
 }
 ```
 
@@ -475,13 +546,13 @@ MouseMacro/
 │   │   ├── Controls/         # Custom UI controls
 │   │   │   ├── ModernButton.cs
 │   │   │   └── ModernTrackBar.cs
-│   │   ├── MacroForm.cs      # Main application window
+│   │   ├── MacroForm.cs
 │   │   ├── MacroForm.Designer.cs
 │   │   ├── MacroForm.resx
 │   │   ├── Resources.Designer.cs
-│   │   ├── Resources.resx
+│   │   └── Resources.resx
 │   │   └── UIManager.cs      # UI state management
-│   ├── Configuration/        # Settings and configuration
+│   ├── Configuration/        # Configuration management
 │   │   ├── AppConfiguration.cs
 │   │   ├── ConfigurationEvents.cs
 │   │   ├── ConfigurationManager.cs
@@ -491,19 +562,21 @@ MouseMacro/
 │   │   ├── SettingsManager.cs
 │   │   ├── SettingsValidation.cs
 │   │   └── Validation.cs
-│   ├── Hooks/               # System hooks and native interop
+│   ├── Hooks/               # System hooks
 │   │   ├── KeyboardHook.cs
 │   │   ├── MouseHook.cs
 │   │   ├── NativeMethods.cs
 │   │   └── WinMessages.cs
-│   ├── Utilities/          # Core functionality
-│   │   ├── HotkeyManager.cs
+│   ├── Models/              # Data models
+│   │   ├── AppSettings.cs
+│   │   ├── MacroSettings.cs
+│   │   ├── UISettings.cs
+│   │   └── HotkeySettings.cs
+│   ├── Utilities/           # Core functionality
 │   │   ├── InputSimulator.cs
 │   │   ├── JitterManager.cs
 │   │   ├── MacroManager.cs
-│   │   ├── RecoilReductionManager.cs
-│   │   └── ToggleType.cs
-│   ├── Models/             # Data models
+│   │   └── RecoilReductionManager.cs
 │   └── Program.cs          # Application entry point
 ├── tests/                  # Unit tests (planned)
 ├── MouseMacro.csproj      # Project configuration
