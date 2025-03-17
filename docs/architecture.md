@@ -551,9 +551,9 @@ MouseMacro/
 │   │   ├── MacroForm.resx
 │   │   ├── Resources.Designer.cs
 │   │   └── Resources.resx
-│   │   └── UIManager.cs      # UI state management
+│   │   └── UIManager.cs      # UI manager
+│   ├── Configuration.resx
 │   ├── Configuration/        # Configuration management
-│   │   ├── AppConfiguration.cs
 │   │   ├── ConfigurationEvents.cs
 │   │   ├── ConfigurationManager.cs
 │   │   ├── EventHandlerExtensions.cs
@@ -577,9 +577,10 @@ MouseMacro/
 │   │   ├── JitterManager.cs
 │   │   ├── MacroManager.cs
 │   │   └── RecoilReductionManager.cs
-│   └── Program.cs          # Application entry point
-├── tests/                  # Unit tests (planned)
-├── MouseMacro.csproj      # Project configuration
-├── README.md              # Project documentation and setup guide
-└── app.manifest           # Application manifest
+│   └── Program.cs
+├── tests/                   # Unit tests
+├── docs/                    # Documentation
+├── app.manifest            # Application manifest
+├── MouseMacro.csproj       # Project configuration
+└── README.md               # Project documentation
 ```

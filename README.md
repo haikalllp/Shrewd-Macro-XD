@@ -297,6 +297,8 @@ MouseMacro/
 │   │   ├── MacroForm.resx
 │   │   ├── Resources.Designer.cs
 │   │   └── Resources.resx
+│   │   └── UIManager.cs      # UI manager
+│   ├── Configuration.resx
 │   ├── Configuration/        # Configuration management
 │   │   ├── ConfigurationEvents.cs
 │   │   ├── ConfigurationManager.cs
@@ -324,6 +326,7 @@ MouseMacro/
 │   └── Program.cs
 ├── tests/                   # Unit tests
 ├── docs/                    # Documentation
+├── app.manifest            # Application manifest
 ├── MouseMacro.csproj       # Project configuration
 └── README.md               # Project documentation
 ```
