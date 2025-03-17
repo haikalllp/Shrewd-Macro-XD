@@ -8,7 +8,7 @@ This plan details the specific steps to transform the MouseMacro project into a 
 | Phase | Status |
 |-------|--------|
 | Phase 1: Preparation and Structure | ✅ Complete |
-| Phase 2: Code Modularization | 🔄 In Progress (20%) |
+| Phase 2: Code Modularization | 🔄 In Progress (80%) |
 | Phase 3: Architecture Improvements | Not Started |
 | Phase 4: Documentation and Testing | Not Started |
 | Phase 5: Validation and Finalization | Not Started |
@@ -114,12 +114,12 @@ foreach ($file in $fileMoves.Keys) {
 - [x] Update MacroForm.cs to use the new hook classes
 
 #### Step 4: Create Manager Classes
-- [ ] Create InputSimulator.cs in src/Utilities/
-- [ ] Create JitterManager.cs in src/Utilities/
-- [ ] Create RecoilReductionManager.cs in src/Utilities/
-- [ ] Create MacroManager.cs in src/Utilities/
-- [ ] Move relevant logic from MacroForm.cs to these classes
-- [ ] Update MacroForm.cs to use the new manager classes
+- [x] Create InputSimulator.cs in src/Utilities/
+- [x] Create JitterManager.cs in src/Utilities/
+- [x] Create RecoilReductionManager.cs in src/Utilities/
+- [x] Create MacroManager.cs in src/Utilities/
+- [x] Move relevant logic from MacroForm.cs to these classes
+- [x] Update MacroForm.cs to use the new manager classes
 
 #### Step 5: Refactor MacroForm.cs
 - [ ] Inject manager classes into MacroForm
@@ -219,22 +219,22 @@ foreach ($file in $fileMoves.Keys) {
 ### 6. Create InputSimulator class
 - **Description**: Create an InputSimulator class in src/Utilities/ directory to handle mouse movement simulation. Extract SendInput implementation from MacroForm.cs and add methods for mouse movement simulation.
 - **Complexity**: 4/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 7. Create JitterManager class
 - **Description**: Create a JitterManager class in src/Utilities/ directory to handle jitter pattern generation and application. Extract jitter-related functionality from MacroForm.cs, including pattern definition, timer handling, and strength scaling.
 - **Complexity**: 6/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 8. Create RecoilReductionManager class
 - **Description**: Create a RecoilReductionManager class in src/Utilities/ directory to handle recoil reduction functionality. Extract recoil reduction-related code from MacroForm.cs, including timer handling, strength scaling, and movement calculation.
 - **Complexity**: 6/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 9. Create MacroManager class
 - **Description**: Create a MacroManager class in src/Utilities/ directory to coordinate between hook and feature managers. This class will handle macro state (enabled/disabled), mode switching, and delegate tasks to the appropriate managers.
 - **Complexity**: 7/10
-- **Status**: Not Started
+- **Status**: ✅ Complete
 
 ### 10. Create configuration models
 - **Description**: Create configuration model classes in src/Models/ directory to represent the application's configuration. These models will be used by the ConfigurationManager to load and save settings.

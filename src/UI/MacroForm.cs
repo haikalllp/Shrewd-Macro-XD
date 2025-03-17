@@ -7,6 +7,7 @@ using System.IO;
 using System.ComponentModel;
 using NotesAndTasks.Configuration;
 using NotesAndTasks.Hooks;
+using NotesAndTasks.Utilities;
 
 namespace NotesAndTasks
 {
@@ -27,6 +28,7 @@ namespace NotesAndTasks
         #region Fields
         private readonly KeyboardHook keyboardHook;
         private readonly MouseHook mouseHook;
+        private readonly MacroManager macroManager;
         private System.Threading.Timer jitterTimer;
         private readonly ToolTip toolTip;
 
@@ -96,6 +98,7 @@ namespace NotesAndTasks
             // Initialize hooks and tools before InitializeComponent
             keyboardHook = new KeyboardHook();
             mouseHook = new MouseHook();
+            macroManager = new MacroManager();
             toolTip = new ToolTip();
 
             try
@@ -116,6 +119,10 @@ namespace NotesAndTasks
                 keyboardHook.KeyDown += OnKeyDown;
                 mouseHook.MouseDown += OnMouseDown;
                 mouseHook.MouseUp += OnMouseUp;
+
+                // Set up macro manager event handlers
+                macroManager.MacroStateChanged += OnMacroStateChanged;
+                macroManager.ModeChanged += OnModeChanged;
 
                 // Handle application exit
                 Application.ApplicationExit += (s, e) =>
@@ -159,11 +166,11 @@ namespace NotesAndTasks
                 }
                 else if (e.VirtualKeyCode == currentMacroKey && currentToggleType == ToggleType.Keyboard)
                 {
-                    ToggleMacro();
+                    macroManager.ToggleMacro();
                 }
                 else if (e.VirtualKeyCode == currentSwitchKey)
                 {
-                    HandleModeSwitch();
+                    macroManager.SwitchMode();
                 }
             }
             catch (Exception ex)
@@ -179,10 +186,8 @@ namespace NotesAndTasks
                 switch (e.Button)
                 {
                     case MouseButtons.Left:
-                        leftButtonDown = true;
-                        break;
                     case MouseButtons.Right:
-                        rightButtonDown = true;
+                        macroManager.HandleMouseButton(e.Button, true);
                         break;
                     case MouseButtons.Middle:
                         if (isSettingKey)
@@ -208,11 +213,11 @@ namespace NotesAndTasks
                         }
                         else if (currentMacroKey == Keys.MButton)
                         {
-                            ToggleMacro();
+                            macroManager.ToggleMacro();
                         }
                         else if (currentSwitchKey == Keys.MButton)
                         {
-                            HandleModeSwitch();
+                            macroManager.SwitchMode();
                         }
                         break;
                     case MouseButtons.XButton1:
@@ -243,12 +248,12 @@ namespace NotesAndTasks
                         else if ((e.Button == MouseButtons.XButton1 && currentMacroKey == Keys.XButton1) ||
                                 (e.Button == MouseButtons.XButton2 && currentMacroKey == Keys.XButton2))
                         {
-                            ToggleMacro();
+                            macroManager.ToggleMacro();
                         }
                         else if ((e.Button == MouseButtons.XButton1 && currentSwitchKey == Keys.XButton1) ||
                                 (e.Button == MouseButtons.XButton2 && currentSwitchKey == Keys.XButton2))
                         {
-                            HandleModeSwitch();
+                            macroManager.SwitchMode();
                         }
                         break;
                 }
@@ -341,6 +346,39 @@ namespace NotesAndTasks
         }
 
         /// <summary>
+        /// Handles changes in the macro's enabled/disabled state.
+        /// </summary>
+        private void OnMacroStateChanged(object sender, bool isEnabled)
+        {
+            try
+            {
+                UpdateTitle();
+                UpdateDebugInfo($"Macro {(isEnabled ? "enabled" : "disabled")}");
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error in OnMacroStateChanged: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Handles changes in the macro's mode (jitter/recoil reduction).
+        /// </summary>
+        private void OnModeChanged(object sender, bool isJitterMode)
+        {
+            try
+            {
+                UpdateTitle();
+                UpdateModeLabels();
+                UpdateDebugInfo($"Mode switched to {(isJitterMode ? "jitter" : "recoil reduction")}");
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error in OnModeChanged: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Initializes custom components including icons, hotkeys, tooltips, and loads saved settings.
         /// </summary>
         private void InitializeCustomComponents()
@@ -386,16 +424,16 @@ namespace NotesAndTasks
                 try
                 {
                     Validation.ValidateStrength(trackBarJitter.Value, trackBarJitter.Minimum, trackBarJitter.Maximum, nameof(trackBarJitter.Value));
-                    jitterStrength = trackBarJitter.Value;
-                    SettingsManager.CurrentSettings.JitterStrength = jitterStrength;
+                    macroManager.SetJitterStrength(trackBarJitter.Value);
+                    SettingsManager.CurrentSettings.JitterStrength = trackBarJitter.Value;
                     SettingsManager.SaveSettings();
-                    UpdateJitterStrength(jitterStrength);
-                    UpdateDebugInfo($"Jitter strength set to {jitterStrength}");
+                    UpdateJitterStrength(trackBarJitter.Value);
+                    UpdateDebugInfo($"Jitter strength set to {trackBarJitter.Value}");
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
                     UpdateDebugInfo($"Error setting jitter strength: {ex.Message}");
-                    trackBarJitter.Value = Math.Max(trackBarJitter.Minimum, Math.Min(trackBarJitter.Maximum, jitterStrength));
+                    trackBarJitter.Value = Math.Max(trackBarJitter.Minimum, Math.Min(trackBarJitter.Maximum, trackBarJitter.Value));
                 }
             };
 
@@ -404,36 +442,24 @@ namespace NotesAndTasks
                 try
                 {
                     Validation.ValidateStrength(trackBarRecoilReduction.Value, trackBarRecoilReduction.Minimum, trackBarRecoilReduction.Maximum, nameof(trackBarRecoilReduction.Value));
-                    recoilReductionStrength = trackBarRecoilReduction.Value;
-                    SettingsManager.CurrentSettings.RecoilReductionStrength = recoilReductionStrength;
+                    macroManager.SetRecoilReductionStrength(trackBarRecoilReduction.Value);
+                    SettingsManager.CurrentSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
                     SettingsManager.SaveSettings();
-                    UpdateRecoilReductionStrength(recoilReductionStrength);
-                    UpdateDebugInfo($"Recoil reduction strength set to {recoilReductionStrength}");
+                    UpdateRecoilReductionStrength(trackBarRecoilReduction.Value);
+                    UpdateDebugInfo($"Recoil reduction strength set to {trackBarRecoilReduction.Value}");
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
                     UpdateDebugInfo($"Error setting recoil reduction strength: {ex.Message}");
-                    trackBarRecoilReduction.Value = Math.Max(trackBarRecoilReduction.Minimum, Math.Min(trackBarRecoilReduction.Maximum, recoilReductionStrength));
+                    trackBarRecoilReduction.Value = Math.Max(trackBarRecoilReduction.Minimum, Math.Min(trackBarRecoilReduction.Maximum, trackBarRecoilReduction.Value));
                 }
             };
 
             chkAlwaysJitter.CheckedChanged += (sender, e) =>
             {
-                alwaysJitterMode = chkAlwaysJitter.Checked;
-                if (alwaysJitterMode)
-                {
-                    jitterEnabled = true;
-                    recoilReductionEnabled = false;
-                    chkAlwaysRecoilReduction.Checked = false;
-                    btnSetMacroSwitch.Enabled = false;
-                }
-                else
-                {
-                    btnSetMacroSwitch.Enabled = true;
-                }
-                SettingsManager.CurrentSettings.AlwaysJitterMode = alwaysJitterMode;
-                SettingsManager.CurrentSettings.JitterEnabled = jitterEnabled;
-                SettingsManager.CurrentSettings.RecoilReductionEnabled = recoilReductionEnabled;
+                macroManager.SetAlwaysJitterMode(chkAlwaysJitter.Checked);
+                btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
+                SettingsManager.CurrentSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
                 SettingsManager.SaveSettings();
                 UpdateTitle();
                 UpdateModeLabels();
@@ -441,21 +467,9 @@ namespace NotesAndTasks
 
             chkAlwaysRecoilReduction.CheckedChanged += (sender, e) =>
             {
-                alwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                if (alwaysRecoilReductionMode)
-                {
-                    recoilReductionEnabled = true;
-                    jitterEnabled = false;
-                    chkAlwaysJitter.Checked = false;
-                    btnSetMacroSwitch.Enabled = false;
-                }
-                else
-                {
-                    btnSetMacroSwitch.Enabled = true;
-                }
-                SettingsManager.CurrentSettings.AlwaysRecoilReductionMode = alwaysRecoilReductionMode;
-                SettingsManager.CurrentSettings.RecoilReductionEnabled = recoilReductionEnabled;
-                SettingsManager.CurrentSettings.JitterEnabled = jitterEnabled;
+                macroManager.SetAlwaysRecoilReductionMode(chkAlwaysRecoilReduction.Checked);
+                btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
+                SettingsManager.CurrentSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 SettingsManager.SaveSettings();
                 UpdateTitle();
                 UpdateModeLabels();
@@ -497,45 +511,20 @@ namespace NotesAndTasks
                     return;
                 }
 
-                // Apply validated settings
+                // Apply validated settings to UI
                 trackBarJitter.Value = settings.JitterStrength;
-                jitterStrength = settings.JitterStrength;
-                jitterEnabled = settings.JitterEnabled;
-                alwaysJitterMode = settings.AlwaysJitterMode;
-                chkAlwaysJitter.Checked = settings.AlwaysJitterMode;
-
                 trackBarRecoilReduction.Value = settings.RecoilReductionStrength;
-                recoilReductionStrength = settings.RecoilReductionStrength;
-                recoilReductionEnabled = settings.RecoilReductionEnabled;
-                alwaysRecoilReductionMode = settings.AlwaysRecoilReductionMode;
+                chkAlwaysJitter.Checked = settings.AlwaysJitterMode;
                 chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
-
                 chkMinimizeToTray.Checked = settings.MinimizeToTray;
 
-                // Load and validate hotkeys
-                if (!string.IsNullOrEmpty(settings.MacroToggleKey))
-                {
-                    currentMacroKey = (Keys)Enum.Parse(typeof(Keys), settings.MacroToggleKey);
-                    if (!SettingsValidation.IsValidHotkey(currentMacroKey))
-                    {
-                        UpdateDebugInfo("Invalid macro toggle key detected, resetting to default");
-                        currentMacroKey = Keys.Capital;
-                    }
-                }
+                // Apply settings to MacroManager
+                macroManager.SetJitterStrength(settings.JitterStrength);
+                macroManager.SetRecoilReductionStrength(settings.RecoilReductionStrength);
+                macroManager.SetAlwaysJitterMode(settings.AlwaysJitterMode);
+                macroManager.SetAlwaysRecoilReductionMode(settings.AlwaysRecoilReductionMode);
 
-                if (!string.IsNullOrEmpty(settings.ModeSwitchKey))
-                {
-                    currentSwitchKey = (Keys)Enum.Parse(typeof(Keys), settings.ModeSwitchKey);
-                    if (!SettingsValidation.IsValidHotkey(currentSwitchKey))
-                    {
-                        UpdateDebugInfo("Invalid mode switch key detected, resetting to default");
-                        currentSwitchKey = Keys.Q;
-                    }
-                }
-
-                // Update UI
-                UpdateJitterStrength(jitterStrength);
-                UpdateRecoilReductionStrength(recoilReductionStrength);
+                // Update UI elements
                 UpdateTitle();
                 UpdateModeLabels();
                 UpdateDebugInfo("Settings loaded successfully");
@@ -548,94 +537,67 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Saves current settings to persistent storage through the settings manager.
-        /// Validates settings before saving to ensure data integrity.
+        /// Saves the current settings to the settings manager.
         /// </summary>
         private void SaveCurrentSettings()
         {
             try
             {
                 var settings = SettingsManager.CurrentSettings;
-
-                // Update settings object with current values
-                settings.JitterStrength = jitterStrength;
-                settings.JitterEnabled = jitterEnabled;
-                settings.AlwaysJitterMode = alwaysJitterMode;
-                settings.RecoilReductionStrength = recoilReductionStrength;
-                settings.RecoilReductionEnabled = recoilReductionEnabled;
-                settings.AlwaysRecoilReductionMode = alwaysRecoilReductionMode;
+                settings.JitterStrength = trackBarJitter.Value;
+                settings.RecoilReductionStrength = trackBarRecoilReduction.Value;
+                settings.AlwaysJitterMode = chkAlwaysJitter.Checked;
+                settings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 settings.MinimizeToTray = chkMinimizeToTray.Checked;
                 settings.MacroToggleKey = currentMacroKey.ToString();
                 settings.ModeSwitchKey = currentSwitchKey.ToString();
-
-                // Validate settings before saving
-                if (!SettingsValidation.ValidateSettings(settings,
-                    Math.Min(trackBarJitter.Minimum, trackBarRecoilReduction.Minimum),
-                    Math.Max(trackBarJitter.Maximum, trackBarRecoilReduction.Maximum)))
-                {
-                    UpdateDebugInfo("Invalid settings detected, aborting save");
-                    throw new InvalidOperationException("Settings validation failed");
-                }
-
-                // Save validated settings
                 SettingsManager.SaveSettings();
                 UpdateDebugInfo("Settings saved successfully");
             }
             catch (Exception ex)
             {
                 UpdateDebugInfo($"Error saving settings: {ex.Message}");
-                // Consider showing a message box to the user here
-                MessageBox.Show(
-                    "Failed to save settings. Your changes may not persist after closing the application.",
-                    "Settings Save Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
             }
         }
 
         /// <summary>
         /// Resets all settings to their default values.
-        /// Called when settings loading fails or when invalid settings are detected.
         /// </summary>
         private void ResetToDefaultSettings()
         {
             try
             {
-                // Reset strength values
+                // Reset UI controls
                 trackBarJitter.Value = 3;
-                jitterStrength = 3;
                 trackBarRecoilReduction.Value = 1;
-                recoilReductionStrength = 1;
-
-                // Reset mode states
                 chkAlwaysJitter.Checked = false;
-                alwaysJitterMode = false;
-                jitterEnabled = false;
                 chkAlwaysRecoilReduction.Checked = false;
-                alwaysRecoilReductionMode = false;
-                recoilReductionEnabled = true;
+                chkMinimizeToTray.Checked = true;
 
-                // Reset UI preferences
-                chkMinimizeToTray.Checked = false;
+                // Reset MacroManager
+                macroManager.SetJitterStrength(3);
+                macroManager.SetRecoilReductionStrength(1);
+                macroManager.SetAlwaysJitterMode(false);
+                macroManager.SetAlwaysRecoilReductionMode(false);
 
                 // Reset hotkeys
                 currentMacroKey = Keys.Capital;
                 currentSwitchKey = Keys.Q;
+                currentToggleType = ToggleType.Keyboard;
 
                 // Update UI
                 UpdateCurrentKey(currentMacroKey.ToString());
-                UpdateSwitchKey(currentSwitchKey.ToString());
+                UpdateMacroSwitchKey(currentSwitchKey.ToString());
                 UpdateTitle();
                 UpdateModeLabels();
-                UpdateDebugInfo("Settings reset to defaults");
 
                 // Save default settings
                 SaveCurrentSettings();
+                UpdateDebugInfo("Settings reset to defaults");
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error resetting settings to defaults: {ex.Message}");
+                UpdateDebugInfo($"Error resetting settings: {ex.Message}");
             }
         }
 
@@ -1147,48 +1109,32 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Cleans up resources and exits the application.
+        /// Performs cleanup operations before exiting the application.
         /// </summary>
         private void CleanupAndExit()
         {
-            if (isExiting) return;
-            isExiting = true;
-
             try
             {
-                // Save settings before closing
+                isExiting = true;
                 SaveCurrentSettings();
 
-                // Stop hooks
-                keyboardHook.Stop();
-                mouseHook.Stop();
+                // Stop and dispose of hooks
+                keyboardHook?.Dispose();
+                mouseHook?.Dispose();
 
-                // Dispose hooks
-                keyboardHook.Dispose();
-                mouseHook.Dispose();
+                // Stop and dispose of macro manager
+                macroManager?.Dispose();
 
-                // Dispose timer
-                jitterTimer?.Dispose();
+                // Clean up UI resources
+                notifyIcon?.Dispose();
+                toolTip?.Dispose();
 
-                // Hide notify icon
-                notifyIcon.Visible = false;
+                // Close the form
+                this.Close();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error during cleanup: {ex.Message}");
-            }
-
-            // Force process to exit
-            try
-            {
-                using (var process = Process.GetCurrentProcess())
-                {
-                    process.Kill();
-                }
-            }
-            catch
-            {
-                Environment.Exit(0);
+                UpdateDebugInfo($"Error during cleanup: {ex.Message}");
             }
         }
     }
