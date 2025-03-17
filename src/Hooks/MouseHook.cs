@@ -1,8 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Windows.Forms;
 
-namespace NotesAndTasks
+namespace NotesAndTasks.Hooks
 {
     /// <summary>
     /// Manages low-level mouse hook functionality.
@@ -14,14 +15,19 @@ namespace NotesAndTasks
         private bool disposed;
 
         /// <summary>
+        /// Gets the Windows hook identifier.
+        /// </summary>
+        public IntPtr HookID => hookID;
+
+        /// <summary>
         /// Event raised when a mouse button is pressed.
         /// </summary>
-        public event EventHandler<MouseEventArgs> MouseDown;
+        public event EventHandler<MouseHookEventArgs> MouseDown;
 
         /// <summary>
         /// Event raised when a mouse button is released.
         /// </summary>
-        public event EventHandler<MouseEventArgs> MouseUp;
+        public event EventHandler<MouseHookEventArgs> MouseUp;
 
         /// <summary>
         /// Initializes a new instance of the MouseHook class.
@@ -29,11 +35,24 @@ namespace NotesAndTasks
         public MouseHook()
         {
             hookProc = HookCallback;
-            Start();
         }
 
         /// <summary>
-        /// Starts the mouse hook.
+        /// Sets up the mouse hook with the specified module handle.
+        /// </summary>
+        /// <param name="moduleHandle">The handle to the module containing the hook procedure.</param>
+        public void SetHook(IntPtr moduleHandle)
+        {
+            if (hookID != IntPtr.Zero)
+                throw new InvalidOperationException("Hook is already set");
+
+            hookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_MOUSE_LL, hookProc, moduleHandle, 0);
+            if (hookID == IntPtr.Zero)
+                throw new InvalidOperationException("Failed to set mouse hook");
+        }
+
+        /// <summary>
+        /// Starts monitoring mouse events.
         /// </summary>
         public void Start()
         {
@@ -41,25 +60,15 @@ namespace NotesAndTasks
             {
                 using var curProcess = Process.GetCurrentProcess();
                 using var curModule = curProcess.MainModule;
+                if (curModule == null)
+                    throw new InvalidOperationException("Failed to get current module");
 
-                if (curModule != null)
-                {
-                    hookID = NativeMethods.SetWindowsHookEx(
-                        WinMessages.WH_MOUSE_LL,
-                        hookProc,
-                        NativeMethods.GetModuleHandle(curModule.ModuleName),
-                        0);
-
-                    if (hookID == IntPtr.Zero)
-                    {
-                        throw new InvalidOperationException("Failed to initialize mouse hook");
-                    }
-                }
+                SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
             }
         }
 
         /// <summary>
-        /// Stops the mouse hook.
+        /// Stops monitoring mouse events.
         /// </summary>
         public void Stop()
         {
@@ -114,7 +123,7 @@ namespace NotesAndTasks
 
                 if (button != MouseButtons.None)
                 {
-                    var args = new MouseEventArgs(button, mouseData.pt.X, mouseData.pt.Y);
+                    var args = new MouseHookEventArgs(button, mouseData.pt.X, mouseData.pt.Y);
                     if (isDown)
                         MouseDown?.Invoke(this, args);
                     else
@@ -125,7 +134,7 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Disposes of the mouse hook resources.
+        /// Releases the unmanaged resources used by the MouseHook.
         /// </summary>
         public void Dispose()
         {
@@ -134,9 +143,9 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Disposes of the mouse hook resources.
+        /// Releases the unmanaged resources used by the MouseHook and optionally releases the managed resources.
         /// </summary>
-        /// <param name="disposing">True if disposing managed resources.</param>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposed)
@@ -150,7 +159,7 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Finalizer to ensure hook is unregistered.
+        /// Finalizes an instance of the MouseHook class.
         /// </summary>
         ~MouseHook()
         {
@@ -159,9 +168,9 @@ namespace NotesAndTasks
     }
 
     /// <summary>
-    /// Event arguments for mouse events.
+    /// Event arguments for mouse hook events.
     /// </summary>
-    public class MouseEventArgs : EventArgs
+    public class MouseHookEventArgs : EventArgs
     {
         /// <summary>
         /// Gets the mouse button that triggered the event.
@@ -179,12 +188,12 @@ namespace NotesAndTasks
         public int Y { get; }
 
         /// <summary>
-        /// Initializes a new instance of the MouseEventArgs class.
+        /// Initializes a new instance of the MouseHookEventArgs class.
         /// </summary>
         /// <param name="button">The mouse button.</param>
         /// <param name="x">The X coordinate.</param>
         /// <param name="y">The Y coordinate.</param>
-        public MouseEventArgs(MouseButtons button, int x, int y)
+        public MouseHookEventArgs(MouseButtons button, int x, int y)
         {
             Button = button;
             X = x;

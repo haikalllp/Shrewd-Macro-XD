@@ -1,65 +1,74 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Windows.Forms;
 
-namespace NotesAndTasks
+namespace NotesAndTasks.Hooks
 {
     /// <summary>
-    /// Manages low-level keyboard hook functionality.
+    /// Provides low-level keyboard hook functionality for capturing keyboard input events.
     /// </summary>
     public class KeyboardHook : IDisposable
     {
         private IntPtr hookID = IntPtr.Zero;
-        private readonly NativeMethods.LowLevelHookProc hookProc;
+        private readonly NativeMethods.LowLevelHookProc hookCallback;
         private bool disposed;
+
+        /// <summary>
+        /// Gets the Windows hook identifier.
+        /// </summary>
+        public IntPtr HookID => hookID;
 
         /// <summary>
         /// Event raised when a key is pressed.
         /// </summary>
-        public event EventHandler<KeyEventArgs> KeyDown;
+        public event EventHandler<KeyboardHookEventArgs> KeyDown;
 
         /// <summary>
         /// Event raised when a key is released.
         /// </summary>
-        public event EventHandler<KeyEventArgs> KeyUp;
+        public event EventHandler<KeyboardHookEventArgs> KeyUp;
 
         /// <summary>
         /// Initializes a new instance of the KeyboardHook class.
         /// </summary>
         public KeyboardHook()
         {
-            hookProc = HookCallback;
-            Start();
+            hookCallback = HookCallback;
         }
 
         /// <summary>
-        /// Starts the keyboard hook.
+        /// Sets up the keyboard hook with the specified module handle.
+        /// </summary>
+        /// <param name="moduleHandle">The handle to the module containing the hook procedure.</param>
+        public void SetHook(IntPtr moduleHandle)
+        {
+            if (hookID != IntPtr.Zero)
+                throw new InvalidOperationException("Hook is already set");
+
+            hookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, hookCallback, moduleHandle, 0);
+            if (hookID == IntPtr.Zero)
+                throw new InvalidOperationException("Failed to set keyboard hook");
+        }
+
+        /// <summary>
+        /// Starts monitoring keyboard events.
         /// </summary>
         public void Start()
         {
             if (hookID == IntPtr.Zero)
             {
-                using var curProcess = Process.GetCurrentProcess();
+                using var curProcess = System.Diagnostics.Process.GetCurrentProcess();
                 using var curModule = curProcess.MainModule;
+                if (curModule == null)
+                    throw new InvalidOperationException("Failed to get current module");
 
-                if (curModule != null)
-                {
-                    hookID = NativeMethods.SetWindowsHookEx(
-                        WinMessages.WH_KEYBOARD_LL,
-                        hookProc,
-                        NativeMethods.GetModuleHandle(curModule.ModuleName),
-                        0);
-
-                    if (hookID == IntPtr.Zero)
-                    {
-                        throw new InvalidOperationException("Failed to initialize keyboard hook");
-                    }
-                }
+                SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
             }
         }
 
         /// <summary>
-        /// Stops the keyboard hook.
+        /// Stops monitoring keyboard events.
         /// </summary>
         public void Stop()
         {
@@ -74,33 +83,23 @@ namespace NotesAndTasks
         {
             if (nCode >= 0)
             {
-                var keyboardData = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
-                bool isKeyDown = false;
+                var hookStruct = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
 
-                switch ((int)wParam)
+                if (wParam == (IntPtr)WinMessages.WM_KEYDOWN || wParam == (IntPtr)WinMessages.WM_SYSKEYDOWN)
                 {
-                    case WinMessages.WM_KEYDOWN:
-                    case WinMessages.WM_SYSKEYDOWN:
-                        isKeyDown = true;
-                        break;
-                    case WinMessages.WM_KEYUP:
-                    case WinMessages.WM_SYSKEYUP:
-                        break;
-                    default:
-                        return NativeMethods.CallNextHookEx(hookID, nCode, wParam, lParam);
+                    KeyDown?.Invoke(this, new KeyboardHookEventArgs((Keys)hookStruct.vkCode));
                 }
-
-                var args = new KeyEventArgs(keyboardData.vkCode);
-                if (isKeyDown)
-                    KeyDown?.Invoke(this, args);
-                else
-                    KeyUp?.Invoke(this, args);
+                else if (wParam == (IntPtr)WinMessages.WM_KEYUP || wParam == (IntPtr)WinMessages.WM_SYSKEYUP)
+                {
+                    KeyUp?.Invoke(this, new KeyboardHookEventArgs((Keys)hookStruct.vkCode));
+                }
             }
+
             return NativeMethods.CallNextHookEx(hookID, nCode, wParam, lParam);
         }
 
         /// <summary>
-        /// Disposes of the keyboard hook resources.
+        /// Releases the unmanaged resources used by the KeyboardHook.
         /// </summary>
         public void Dispose()
         {
@@ -109,9 +108,9 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Disposes of the keyboard hook resources.
+        /// Releases the unmanaged resources used by the KeyboardHook and optionally releases the managed resources.
         /// </summary>
-        /// <param name="disposing">True if disposing managed resources.</param>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposed)
@@ -125,7 +124,7 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Finalizer to ensure hook is unregistered.
+        /// Finalizes an instance of the KeyboardHook class.
         /// </summary>
         ~KeyboardHook()
         {
@@ -134,20 +133,20 @@ namespace NotesAndTasks
     }
 
     /// <summary>
-    /// Event arguments for keyboard events.
+    /// Event arguments for keyboard hook events.
     /// </summary>
-    public class KeyEventArgs : EventArgs
+    public class KeyboardHookEventArgs : EventArgs
     {
         /// <summary>
         /// Gets the virtual key code of the key.
         /// </summary>
-        public uint VirtualKeyCode { get; }
+        public Keys VirtualKeyCode { get; }
 
         /// <summary>
-        /// Initializes a new instance of the KeyEventArgs class.
+        /// Initializes a new instance of the KeyboardHookEventArgs class.
         /// </summary>
         /// <param name="virtualKeyCode">The virtual key code.</param>
-        public KeyEventArgs(uint virtualKeyCode)
+        public KeyboardHookEventArgs(Keys virtualKeyCode)
         {
             VirtualKeyCode = virtualKeyCode;
         }

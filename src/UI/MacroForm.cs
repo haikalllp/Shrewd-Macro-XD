@@ -6,6 +6,7 @@ using System.Threading;
 using System.IO;
 using System.ComponentModel;
 using NotesAndTasks.Configuration;
+using NotesAndTasks.Hooks;
 
 namespace NotesAndTasks
 {
@@ -24,10 +25,8 @@ namespace NotesAndTasks
     public partial class MacroForm : Form
     {
         #region Fields
-        private IntPtr keyboardHookID = IntPtr.Zero;
-        private IntPtr mouseHookID = IntPtr.Zero;
-        private readonly NativeMethods.LowLevelHookProc keyboardProc;
-        private readonly NativeMethods.LowLevelHookProc mouseProc;
+        private readonly KeyboardHook keyboardHook;
+        private readonly MouseHook mouseHook;
         private System.Threading.Timer jitterTimer;
         private readonly ToolTip toolTip;
 
@@ -95,8 +94,8 @@ namespace NotesAndTasks
         public MacroForm()
         {
             toolTip = new ToolTip();
-            keyboardProc = KeyboardHookCallback;
-            mouseProc = MouseHookCallback;
+            keyboardHook = new KeyboardHook();
+            mouseHook = new MouseHook();
 
             try
             {
@@ -112,6 +111,11 @@ namespace NotesAndTasks
                 this.Resize += OnResizeHandler;
                 this.Load += OnLoadHandler;
 
+                // Set up hook event handlers
+                keyboardHook.KeyDown += OnKeyDown;
+                mouseHook.MouseDown += OnMouseDown;
+                mouseHook.MouseUp += OnMouseUp;
+
                 // Handle application exit
                 Application.ApplicationExit += (s, e) =>
                 {
@@ -124,6 +128,157 @@ namespace NotesAndTasks
             catch (Exception ex)
             {
                 MessageBox.Show($"Error initializing form: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnKeyDown(object sender, KeyboardHookEventArgs e)
+        {
+            try
+            {
+                if (isSettingKey)
+                {
+                    isSettingKey = false;
+                    btnSetKey.Enabled = true;
+                    btnSetKey.Text = "Set Toggle Key";
+                    currentMacroKey = e.VirtualKeyCode;
+                    currentToggleType = ToggleType.Keyboard;
+                    UpdateCurrentKey(currentMacroKey.ToString());
+                    SaveCurrentSettings();
+                    UpdateDebugInfo($"Set toggle key to {currentMacroKey}");
+                }
+                else if (isSettingMacroSwitchKey)
+                {
+                    isSettingMacroSwitchKey = false;
+                    btnSetMacroSwitch.Enabled = true;
+                    btnSetMacroSwitch.Text = "Set Switch Key";
+                    currentSwitchKey = e.VirtualKeyCode;
+                    UpdateMacroSwitchKey(currentSwitchKey.ToString());
+                    SaveCurrentSettings();
+                    UpdateDebugInfo($"Set macro switch key to {currentSwitchKey}");
+                }
+                else if (e.VirtualKeyCode == currentMacroKey && currentToggleType == ToggleType.Keyboard)
+                {
+                    ToggleMacro();
+                }
+                else if (e.VirtualKeyCode == currentSwitchKey)
+                {
+                    HandleModeSwitch();
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error in OnKeyDown: {ex.Message}");
+            }
+        }
+
+        private void OnMouseDown(object sender, MouseHookEventArgs e)
+        {
+            try
+            {
+                switch (e.Button)
+                {
+                    case MouseButtons.Left:
+                        leftButtonDown = true;
+                        break;
+                    case MouseButtons.Right:
+                        rightButtonDown = true;
+                        break;
+                    case MouseButtons.Middle:
+                        if (isSettingKey)
+                        {
+                            isSettingKey = false;
+                            btnSetKey.Enabled = true;
+                            btnSetKey.Text = "Set Toggle Key";
+                            currentMacroKey = Keys.MButton;
+                            currentToggleType = ToggleType.MouseMiddle;
+                            UpdateCurrentKey("MButton");
+                            SaveCurrentSettings();
+                            UpdateDebugInfo("Set toggle key to MButton");
+                        }
+                        else if (isSettingMacroSwitchKey)
+                        {
+                            isSettingMacroSwitchKey = false;
+                            btnSetMacroSwitch.Enabled = true;
+                            btnSetMacroSwitch.Text = "Set Switch Key";
+                            currentSwitchKey = Keys.MButton;
+                            UpdateMacroSwitchKey("MButton");
+                            SaveCurrentSettings();
+                            UpdateDebugInfo("Set macro switch key to MButton");
+                        }
+                        else if (currentMacroKey == Keys.MButton)
+                        {
+                            ToggleMacro();
+                        }
+                        else if (currentSwitchKey == Keys.MButton)
+                        {
+                            HandleModeSwitch();
+                        }
+                        break;
+                    case MouseButtons.XButton1:
+                    case MouseButtons.XButton2:
+                        if (isSettingKey)
+                        {
+                            isSettingKey = false;
+                            btnSetKey.Enabled = true;
+                            btnSetKey.Text = "Set Toggle Key";
+                            string buttonName = e.Button == MouseButtons.XButton1 ? "XButton1" : "XButton2";
+                            currentMacroKey = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
+                            currentToggleType = e.Button == MouseButtons.XButton1 ? ToggleType.MouseX1 : ToggleType.MouseX2;
+                            UpdateCurrentKey(buttonName);
+                            SaveCurrentSettings();
+                            UpdateDebugInfo($"Set toggle key to {buttonName}");
+                        }
+                        else if (isSettingMacroSwitchKey)
+                        {
+                            isSettingMacroSwitchKey = false;
+                            btnSetMacroSwitch.Enabled = true;
+                            btnSetMacroSwitch.Text = "Set Switch Key";
+                            string buttonName = e.Button == MouseButtons.XButton1 ? "XButton1" : "XButton2";
+                            currentSwitchKey = e.Button == MouseButtons.XButton1 ? Keys.XButton1 : Keys.XButton2;
+                            UpdateMacroSwitchKey(buttonName);
+                            SaveCurrentSettings();
+                            UpdateDebugInfo($"Set macro switch key to {buttonName}");
+                        }
+                        else if ((e.Button == MouseButtons.XButton1 && currentMacroKey == Keys.XButton1) ||
+                                (e.Button == MouseButtons.XButton2 && currentMacroKey == Keys.XButton2))
+                        {
+                            ToggleMacro();
+                        }
+                        else if ((e.Button == MouseButtons.XButton1 && currentSwitchKey == Keys.XButton1) ||
+                                (e.Button == MouseButtons.XButton2 && currentSwitchKey == Keys.XButton2))
+                        {
+                            HandleModeSwitch();
+                        }
+                        break;
+                }
+
+                CheckJitterState();
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error in OnMouseDown: {ex.Message}");
+            }
+        }
+
+        private void OnMouseUp(object sender, MouseHookEventArgs e)
+        {
+            try
+            {
+                switch (e.Button)
+                {
+                    case MouseButtons.Left:
+                        leftButtonDown = false;
+                        break;
+                    case MouseButtons.Right:
+                        rightButtonDown = false;
+                        break;
+                }
+
+                CheckJitterState();
+            }
+            catch (Exception ex)
+            {
+                UpdateDebugInfo($"Error in OnMouseUp: {ex.Message}");
             }
         }
 
@@ -170,7 +325,16 @@ namespace NotesAndTasks
         {
             try
             {
-                InitializeHooks();
+                using var curProcess = Process.GetCurrentProcess();
+                using var curModule = curProcess.MainModule;
+
+                if (curModule != null)
+                {
+                    var moduleHandle = NativeMethods.GetModuleHandle(curModule.ModuleName);
+                    keyboardHook.SetHook(moduleHandle);
+                    mouseHook.SetHook(moduleHandle);
+                }
+
                 jitterTimer = new System.Threading.Timer(OnJitterTimer, null, Timeout.Infinite, 10);
                 UpdateTitle();
             }
@@ -477,219 +641,6 @@ namespace NotesAndTasks
             {
                 UpdateDebugInfo($"Error resetting settings to defaults: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Initializes low-level keyboard and mouse hooks for input monitoring.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown when hook initialization fails.</exception>
-        private void InitializeHooks()
-        {
-            try
-            {
-                using var curProcess = Process.GetCurrentProcess();
-                using var curModule = curProcess.MainModule;
-
-                Validation.ValidateNotNull(curModule, nameof(curModule));
-                string moduleName = curModule.ModuleName;
-                Validation.ValidateStringNotNullOrEmpty(moduleName, nameof(moduleName));
-
-                IntPtr moduleHandle = NativeMethods.GetModuleHandle(moduleName);
-                Validation.ValidateHandle(moduleHandle, nameof(moduleHandle));
-
-                keyboardHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, keyboardProc,
-                    moduleHandle, 0);
-                Validation.ValidateHandle(keyboardHookID, "keyboardHookID");
-
-                mouseHookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_MOUSE_LL, mouseProc,
-                    moduleHandle, 0);
-                Validation.ValidateHandle(mouseHookID, "mouseHookID");
-            }
-            catch (Exception ex)
-            {
-                UpdateDebugInfo($"Error in InitializeHooks: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Callback function for the low-level mouse hook.
-        /// Handles mouse button events and manages macro activation states.
-        /// </summary>
-        /// <param name="nCode">Hook code; if less than zero, the hook procedure must pass the message to CallNextHookEx.</param>
-        /// <param name="wParam">Message identifier.</param>
-        /// <param name="lParam">Pointer to a MSLLHOOKSTRUCT structure.</param>
-        /// <returns>If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.</returns>
-        private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (Validation.ValidateHookCode(nCode))
-            {
-                try
-                {
-                    if (lParam == IntPtr.Zero)
-                    {
-                        UpdateDebugInfo("Error: Invalid mouse hook parameter");
-                        return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
-                    }
-
-                    var hookStruct = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
-
-                    switch ((int)wParam)
-                    {
-                        case WinMessages.WM_LBUTTONDOWN:
-                            leftButtonDown = true;
-                            break;
-
-                        case WinMessages.WM_LBUTTONUP:
-                            leftButtonDown = false;
-                            break;
-
-                        case WinMessages.WM_RBUTTONDOWN:
-                            rightButtonDown = true;
-                            break;
-
-                        case WinMessages.WM_RBUTTONUP:
-                            rightButtonDown = false;
-                            break;
-                    }
-
-                    if (wParam == (IntPtr)WinMessages.WM_XBUTTONDOWN)
-                    {
-                        bool isXButton1 = (hookStruct.mouseData >> 16) == WinMessages.XBUTTON1;
-                        bool isXButton2 = (hookStruct.mouseData >> 16) == WinMessages.XBUTTON2;
-
-                        if (isSettingKey)
-                        {
-                            isSettingKey = false;
-                            btnSetKey.Enabled = true;
-                            btnSetKey.Text = "Set Toggle Key";
-                            string buttonName = isXButton1 ? "XButton1" : "XButton2";
-                            currentMacroKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
-                            currentToggleType = isXButton1 ? ToggleType.MouseX1 : ToggleType.MouseX2;
-                            UpdateCurrentKey(buttonName);
-                            SaveCurrentSettings();
-                            UpdateDebugInfo($"Set toggle key to {buttonName}");
-                        }
-                        else if (isSettingMacroSwitchKey)
-                        {
-                            isSettingMacroSwitchKey = false;
-                            btnSetMacroSwitch.Enabled = true;
-                            btnSetMacroSwitch.Text = "Set Switch Key";
-                            string buttonName = isXButton1 ? "XButton1" : "XButton2";
-                            currentSwitchKey = isXButton1 ? Keys.XButton1 : Keys.XButton2;
-                            UpdateMacroSwitchKey(buttonName);
-                            SaveCurrentSettings();
-                            UpdateDebugInfo($"Set macro switch key to {buttonName}");
-                        }
-                        else if ((isXButton1 && currentMacroKey == Keys.XButton1) ||
-                                (isXButton2 && currentMacroKey == Keys.XButton2))
-                        {
-                            ToggleMacro();
-                        }
-                        else if ((isXButton1 && currentSwitchKey == Keys.XButton1) ||
-                                (isXButton2 && currentSwitchKey == Keys.XButton2))
-                        {
-                            HandleModeSwitch();
-                        }
-                    }
-                    else if (wParam == (IntPtr)WinMessages.WM_MBUTTONDOWN)
-                    {
-                        if (isSettingKey)
-                        {
-                            isSettingKey = false;
-                            btnSetKey.Enabled = true;
-                            btnSetKey.Text = "Set Toggle Key";
-                            currentMacroKey = Keys.MButton;
-                            currentToggleType = ToggleType.MouseMiddle;
-                            UpdateCurrentKey("MButton");
-                            SaveCurrentSettings();
-                            UpdateDebugInfo("Set toggle key to MButton");
-                        }
-                        else if (isSettingMacroSwitchKey)
-                        {
-                            isSettingMacroSwitchKey = false;
-                            btnSetMacroSwitch.Enabled = true;
-                            btnSetMacroSwitch.Text = "Set Switch Key";
-                            currentSwitchKey = Keys.MButton;
-                            UpdateMacroSwitchKey("MButton");
-                            SaveCurrentSettings();
-                            UpdateDebugInfo("Set macro switch key to MButton");
-                        }
-                        else if (currentMacroKey == Keys.MButton)
-                        {
-                            ToggleMacro();
-                        }
-                        else if (currentSwitchKey == Keys.MButton)
-                        {
-                            HandleModeSwitch();
-                        }
-                    }
-
-                    CheckJitterState();
-                }
-                catch (Exception ex)
-                {
-                    UpdateDebugInfo($"Error in MouseHookCallback: {ex.Message}");
-                }
-            }
-            return NativeMethods.CallNextHookEx(mouseHookID, nCode, wParam, lParam);
-        }
-
-        /// <summary>
-        /// Callback function for the low-level keyboard hook.
-        /// Handles keyboard events for macro toggling and mode switching.
-        /// </summary>
-        /// <param name="nCode">Hook code; if less than zero, the hook procedure must pass the message to CallNextHookEx.</param>
-        /// <param name="wParam">Message identifier.</param>
-        /// <param name="lParam">Pointer to a KBDLLHOOKSTRUCT structure.</param>
-        /// <returns>If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.</returns>
-        private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (Validation.ValidateHookCode(nCode))
-            {
-                try
-                {
-                    if (wParam == (IntPtr)WinMessages.WM_KEYDOWN)
-                    {
-                        var vkCode = Marshal.ReadInt32(lParam);
-
-                        if (isSettingKey)
-                        {
-                            isSettingKey = false;
-                            btnSetKey.Enabled = true;
-                            btnSetKey.Text = "Set Toggle Key";
-                            currentMacroKey = (Keys)vkCode;
-                            currentToggleType = ToggleType.Keyboard;
-                            UpdateCurrentKey(currentMacroKey.ToString());
-                            SaveCurrentSettings();
-                            UpdateDebugInfo($"Set toggle key to {currentMacroKey}");
-                        }
-                        else if (isSettingMacroSwitchKey)
-                        {
-                            isSettingMacroSwitchKey = false;
-                            btnSetMacroSwitch.Enabled = true;
-                            btnSetMacroSwitch.Text = "Set Switch Key";
-                            currentSwitchKey = (Keys)vkCode;
-                            UpdateMacroSwitchKey(currentSwitchKey.ToString());
-                            SaveCurrentSettings();
-                            UpdateDebugInfo($"Set macro switch key to {currentSwitchKey}");
-                        }
-                        else if ((Keys)vkCode == currentMacroKey && currentToggleType == ToggleType.Keyboard)
-                        {
-                            ToggleMacro();
-                        }
-                        else if ((Keys)vkCode == currentSwitchKey)
-                        {
-                            HandleModeSwitch();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    UpdateDebugInfo($"Error in KeyboardHookCallback: {ex.Message}");
-                }
-            }
-            return NativeMethods.CallNextHookEx(keyboardHookID, nCode, wParam, lParam);
         }
 
         /// <summary>
@@ -1036,39 +987,6 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Performs cleanup and exits the application.
-        /// Ensures all resources are properly disposed and hooks are unregistered.
-        /// </summary>
-        private void CleanupAndExit()
-        {
-            if (isExiting) return;
-            isExiting = true;
-
-            try
-            {
-                // Use Dispose pattern for cleanup
-                this.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during cleanup: {ex.Message}");
-            }
-
-            // Force process to exit
-            try
-            {
-                using (var process = Process.GetCurrentProcess())
-                {
-                    process.Kill();
-                }
-            }
-            catch
-            {
-                Environment.Exit(0);
-            }
-        }
-
-        /// <summary>
         /// Toggles the macro on/off state and updates the UI accordingly.
         /// </summary>
         private void ToggleMacro()
@@ -1230,6 +1148,52 @@ namespace NotesAndTasks
         private void chkMinimizeToTray_CheckedChanged(object sender, EventArgs e)
         {
             SaveCurrentSettings();
+        }
+
+        /// <summary>
+        /// Cleans up resources and exits the application.
+        /// </summary>
+        private void CleanupAndExit()
+        {
+            if (isExiting) return;
+            isExiting = true;
+
+            try
+            {
+                // Save settings before closing
+                SaveCurrentSettings();
+
+                // Stop hooks
+                keyboardHook.Stop();
+                mouseHook.Stop();
+
+                // Dispose hooks
+                keyboardHook.Dispose();
+                mouseHook.Dispose();
+
+                // Dispose timer
+                jitterTimer?.Dispose();
+
+                // Hide notify icon
+                notifyIcon.Visible = false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+
+            // Force process to exit
+            try
+            {
+                using (var process = Process.GetCurrentProcess())
+                {
+                    process.Kill();
+                }
+            }
+            catch
+            {
+                Environment.Exit(0);
+            }
         }
     }
 }

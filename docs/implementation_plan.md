@@ -111,7 +111,7 @@ foreach ($file in $fileMoves.Keys) {
 - [x] Move hook-related code from MacroForm.cs to these classes
 - [x] Implement IDisposable pattern for proper resource cleanup
 - [x] Add public methods for controlling hooks (Start, Stop)
-- [ ] Update MacroForm.cs to use the new hook classes
+- [x] Update MacroForm.cs to use the new hook classes
 
 #### Step 4: Create Manager Classes
 - [ ] Create InputSimulator.cs in src/Utilities/
