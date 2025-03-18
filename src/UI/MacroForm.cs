@@ -244,6 +244,9 @@ namespace NotesAndTasks
                 
                 // Update UI
                 uiManager.UpdateTitle();
+                
+                // Complete the migration by removing the legacy settings file
+                FinalizeMigration();
             }
             catch (Exception ex)
             {
@@ -452,33 +455,33 @@ namespace NotesAndTasks
                 settings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
                 ConfigurationManager.Instance.SaveConfiguration();
                 
-                // Also save to legacy format for backward compatibility during migration
-                try
-                {
-                    if (File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "macro_config.json")))
-                    {
-                        // Only update the legacy system if the file already exists
-                        if (SettingsManager.CurrentSettings != null)
-                        {
-                            SettingsManager.CurrentSettings.JitterStrength = trackBarJitter.Value;
-                            SettingsManager.CurrentSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
-                            SettingsManager.CurrentSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
-                            SettingsManager.CurrentSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                            SettingsManager.CurrentSettings.MinimizeToTray = chkMinimizeToTray.Checked;
-                            SettingsManager.SaveSettings();
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // Ignore errors in the legacy system, as the primary system is the new one
-                }
-                
                 uiManager.UpdateDebugInfo("Settings saved successfully");
             }
             catch (Exception ex)
             {
                 uiManager.UpdateDebugInfo($"Error saving settings: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Finalizes the migration by removing legacy settings files.
+        /// </summary>
+        private void FinalizeMigration()
+        {
+            try
+            {
+                if (ConfigurationManager.Instance.FinalizeMigration())
+                {
+                    uiManager.UpdateDebugInfo("Settings migration completed successfully");
+                }
+                else
+                {
+                    uiManager.UpdateDebugInfo("Unable to remove legacy settings file");
+                }
+            }
+            catch (Exception ex)
+            {
+                uiManager.UpdateDebugInfo($"Error during migration finalization: {ex.Message}");
             }
         }
 

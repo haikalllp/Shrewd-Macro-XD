@@ -386,5 +386,42 @@ namespace NotesAndTasks.Configuration
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
+        /// <summary>
+        /// Finalizes migration by removing the legacy configuration file if it exists
+        /// </summary>
+        /// <returns>True if the file was removed or didn't exist, false if removal failed</returns>
+        public bool FinalizeMigration()
+        {
+            if (File.Exists(LegacyConfigPath))
+            {
+                try
+                {
+                    // Create a backup before removing
+                    string backupDir = Path.Combine(AppDataPath, "LegacyBackups");
+                    Directory.CreateDirectory(backupDir);
+                    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                    string backupFile = Path.Combine(backupDir, $"macro_config_{timestamp}.json");
+                    
+                    // Copy the legacy file to backup
+                    File.Copy(LegacyConfigPath, backupFile, true);
+                    
+                    // Remove the legacy file
+                    File.Delete(LegacyConfigPath);
+                    
+                    System.Diagnostics.Debug.WriteLine($"Legacy configuration file removed: {LegacyConfigPath}");
+                    System.Diagnostics.Debug.WriteLine($"Backup created: {backupFile}");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to remove legacy configuration file: {ex.Message}");
+                    return false;
+                }
+            }
+            
+            // File doesn't exist, nothing to remove
+            return true;
+        }
     }
 } 
