@@ -80,7 +80,7 @@ Copy-Item -Path $sourceDir -Destination $backupDir -Recurse
 <!-- - [ ] Integrate Microsoft.Extensions.Configuration (Ignore No longer needed) -->
 - [x] Implement validation for configuration values
 - [x] Add proper exception handling
-- [x] Store configuration in standard location
+- [x] Store configuration in standard location (same place as exe)
 - [x] Add backup functionality for configuration
 
 #### Step 7: Separate UI and Business Logic

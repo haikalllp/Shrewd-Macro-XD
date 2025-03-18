@@ -23,6 +23,7 @@ namespace NotesAndTasks.Configuration
         {
             this.configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
             this.eventHandlers = new Dictionary<string, List<Delegate>>();
+
             RegisterConfigurationEvents();
         }
 
@@ -31,20 +32,20 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void RegisterConfigurationEvents()
         {
-            // Configuration change handlers
-            RegisterEventHandler("ConfigChanged", 
-                new ConfigurationChangedEventHandler(OnConfigurationChanged));
-            configManager.ConfigurationChanged += OnConfigurationChanged;
+            // Settings change handlers
+            RegisterEventHandler("SettingsChanged", 
+                new EventHandler<SettingsChangedEventArgs>(OnSettingsChanged));
+            configManager.SettingsChanged += OnSettingsChanged;
 
-            // Configuration validation handlers
-            RegisterEventHandler("ConfigValidating",
-                new ConfigurationValidationEventHandler(OnConfigurationValidating));
-            configManager.ConfigurationValidating += OnConfigurationValidating;
+            // Settings validation handlers
+            RegisterEventHandler("SettingsValidating",
+                new EventHandler<SettingsValidationEventArgs>(OnSettingsValidating));
+            configManager.SettingsValidating += OnSettingsValidating;
 
-            // Configuration backup handlers
-            RegisterEventHandler("ConfigBackup",
-                new ConfigurationBackupEventHandler(OnConfigurationBackupCompleted));
-            configManager.ConfigurationBackupCompleted += OnConfigurationBackupCompleted;
+            // Settings backup handlers
+            RegisterEventHandler("SettingsBackup",
+                new EventHandler<SettingsBackupEventArgs>(OnSettingsBackupCompleted));
+            configManager.SettingsBackupCompleted += OnSettingsBackupCompleted;
         }
 
         /// <summary>
@@ -137,194 +138,162 @@ namespace NotesAndTasks.Configuration
         }
 
         /// <summary>
-        /// Configuration changed event handler.
+        /// Handles settings changes
         /// </summary>
-        private void OnConfigurationChanged(object sender, ConfigurationChangedEventArgs e)
+        private void OnSettingsChanged(object sender, SettingsChangedEventArgs e)
         {
-            try
+            if (e.Section == "All")
             {
-                // Handle configuration changes based on section
-                switch (e.Section)
-                {
-                    case "JitterSettings":
-                        HandleJitterSettingsChanged(e.PreviousConfig, e.NewConfig);
-                        break;
-                    case "RecoilSettings":
-                        HandleRecoilSettingsChanged(e.PreviousConfig, e.NewConfig);
-                        break;
-                    case "HotkeySettings":
-                        HandleHotkeySettingsChanged(e.PreviousConfig, e.NewConfig);
-                        break;
-                    case "UISettings":
-                        HandleUISettingsChanged(e.PreviousConfig, e.NewConfig);
-                        break;
-                }
+                // Process all sections
+                HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
+                HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
+                HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
             }
-            catch (Exception ex)
+            else if (e.Section == "MacroSettings")
             {
-                System.Diagnostics.Debug.WriteLine($"Error handling configuration change: {ex.Message}");
+                HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
+            }
+            else if (e.Section == "HotkeySettings")
+            {
+                HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
+            }
+            else if (e.Section == "UISettings")
+            {
+                HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
             }
         }
 
         /// <summary>
-        /// Configuration validating event handler.
+        /// Handles settings validation
         /// </summary>
-        private void OnConfigurationValidating(object sender, ConfigurationValidationEventArgs e)
+        private void OnSettingsValidating(object sender, SettingsValidationEventArgs e)
         {
-            try
-            {
-                // Perform additional validation if needed
-                if (e.Configuration != null)
-                {
-                    ValidateConfigurationConsistency(e);
-                }
-            }
-            catch (Exception ex)
+            var settings = e.Settings;
+            if (settings == null)
             {
                 e.IsValid = false;
-                e.Message = $"Validation error: {ex.Message}";
-                System.Diagnostics.Debug.WriteLine($"Error during configuration validation: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Configuration backup completed event handler.
-        /// </summary>
-        private void OnConfigurationBackupCompleted(object sender, ConfigurationBackupEventArgs e)
-        {
-            try
-            {
-                if (e.Success)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Configuration backup created successfully at: {e.BackupPath}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"Configuration backup failed: {e.ErrorMessage}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error handling backup completion: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Validates configuration consistency.
-        /// </summary>
-        private void ValidateConfigurationConsistency(ConfigurationValidationEventArgs e)
-        {
-            var config = e.Configuration;
-
-            // Validate mode consistency
-            if (config.MacroSettings.AlwaysJitterMode && config.MacroSettings.AlwaysRecoilReductionMode)
-            {
-                e.IsValid = false;
-                e.Message = "Both jitter and recoil reduction cannot be in always-enabled mode";
+                e.Message = "Settings cannot be null";
                 return;
             }
 
-            // Validate hotkey conflicts
-            if (config.HotkeySettings.MacroKey.Key == config.HotkeySettings.SwitchKey.Key && 
-                config.HotkeySettings.MacroKey.Type == config.HotkeySettings.SwitchKey.Type)
+            // Validate macro settings
+            if (settings.MacroSettings.AlwaysJitterMode && settings.MacroSettings.AlwaysRecoilReductionMode)
             {
                 e.IsValid = false;
-                e.Message = "Macro toggle key and mode switch key cannot be the same";
+                e.Message = "Cannot enable both AlwaysJitterMode and AlwaysRecoilReductionMode simultaneously";
+                return;
+            }
+
+            // Validate hotkey settings
+            if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
+            {
+                e.IsValid = false;
+                e.Message = "Macro key and switch key cannot be the same";
                 return;
             }
 
             // Validate UI settings
-            if (config.UISettings.WindowSize.Width <= 0 || config.UISettings.WindowSize.Height <= 0)
+            if (settings.UISettings.WindowSize.Width <= 0 || settings.UISettings.WindowSize.Height <= 0)
             {
                 e.IsValid = false;
-                e.Message = "Window size must be positive";
+                e.Message = "Window size dimensions must be positive";
                 return;
             }
         }
 
         /// <summary>
-        /// Handles changes to jitter settings.
+        /// Handles settings backup completion
         /// </summary>
-        private void HandleJitterSettingsChanged(AppSettings previousConfig, AppSettings newConfig)
+        private void OnSettingsBackupCompleted(object sender, SettingsBackupEventArgs e)
         {
-            if (previousConfig?.MacroSettings.JitterStrength != newConfig.MacroSettings.JitterStrength)
+            if (e.Success)
             {
-                System.Diagnostics.Debug.WriteLine($"Jitter strength changed from {previousConfig?.MacroSettings.JitterStrength} to {newConfig.MacroSettings.JitterStrength}");
+                System.Diagnostics.Debug.WriteLine($"Backup completed successfully: {e.BackupPath}");
             }
-
-            if (previousConfig?.MacroSettings.JitterEnabled != newConfig.MacroSettings.JitterEnabled)
+            else
             {
-                System.Diagnostics.Debug.WriteLine($"Jitter enabled changed from {previousConfig?.MacroSettings.JitterEnabled} to {newConfig.MacroSettings.JitterEnabled}");
-            }
-
-            if (previousConfig?.MacroSettings.AlwaysJitterMode != newConfig.MacroSettings.AlwaysJitterMode)
-            {
-                System.Diagnostics.Debug.WriteLine($"Always jitter mode changed from {previousConfig?.MacroSettings.AlwaysJitterMode} to {newConfig.MacroSettings.AlwaysJitterMode}");
+                System.Diagnostics.Debug.WriteLine($"Backup failed: {e.ErrorMessage}");
             }
         }
 
         /// <summary>
-        /// Handles changes to recoil settings.
+        /// Handles changes to macro settings.
         /// </summary>
-        private void HandleRecoilSettingsChanged(AppSettings previousConfig, AppSettings newConfig)
+        private void HandleMacroSettingsChanges(AppSettings previousSettings, AppSettings newSettings)
         {
-            if (previousConfig?.MacroSettings.RecoilReductionStrength != newConfig.MacroSettings.RecoilReductionStrength)
+            if (previousSettings?.MacroSettings.JitterStrength != newSettings.MacroSettings.JitterStrength)
             {
-                System.Diagnostics.Debug.WriteLine($"Recoil reduction strength changed from {previousConfig?.MacroSettings.RecoilReductionStrength} to {newConfig.MacroSettings.RecoilReductionStrength}");
+                System.Diagnostics.Debug.WriteLine($"Jitter strength changed from {previousSettings?.MacroSettings.JitterStrength} to {newSettings.MacroSettings.JitterStrength}");
             }
 
-            if (previousConfig?.MacroSettings.RecoilReductionEnabled != newConfig.MacroSettings.RecoilReductionEnabled)
+            if (previousSettings?.MacroSettings.JitterEnabled != newSettings.MacroSettings.JitterEnabled)
             {
-                System.Diagnostics.Debug.WriteLine($"Recoil reduction enabled changed from {previousConfig?.MacroSettings.RecoilReductionEnabled} to {newConfig.MacroSettings.RecoilReductionEnabled}");
+                System.Diagnostics.Debug.WriteLine($"Jitter enabled changed from {previousSettings?.MacroSettings.JitterEnabled} to {newSettings.MacroSettings.JitterEnabled}");
             }
 
-            if (previousConfig?.MacroSettings.AlwaysRecoilReductionMode != newConfig.MacroSettings.AlwaysRecoilReductionMode)
+            if (previousSettings?.MacroSettings.AlwaysJitterMode != newSettings.MacroSettings.AlwaysJitterMode)
             {
-                System.Diagnostics.Debug.WriteLine($"Always recoil reduction mode changed from {previousConfig?.MacroSettings.AlwaysRecoilReductionMode} to {newConfig.MacroSettings.AlwaysRecoilReductionMode}");
+                System.Diagnostics.Debug.WriteLine($"Always jitter mode changed from {previousSettings?.MacroSettings.AlwaysJitterMode} to {newSettings.MacroSettings.AlwaysJitterMode}");
+            }
+
+            if (previousSettings?.MacroSettings.RecoilReductionStrength != newSettings.MacroSettings.RecoilReductionStrength)
+            {
+                System.Diagnostics.Debug.WriteLine($"Recoil reduction strength changed from {previousSettings?.MacroSettings.RecoilReductionStrength} to {newSettings.MacroSettings.RecoilReductionStrength}");
+            }
+
+            if (previousSettings?.MacroSettings.RecoilReductionEnabled != newSettings.MacroSettings.RecoilReductionEnabled)
+            {
+                System.Diagnostics.Debug.WriteLine($"Recoil reduction enabled changed from {previousSettings?.MacroSettings.RecoilReductionEnabled} to {newSettings.MacroSettings.RecoilReductionEnabled}");
+            }
+
+            if (previousSettings?.MacroSettings.AlwaysRecoilReductionMode != newSettings.MacroSettings.AlwaysRecoilReductionMode)
+            {
+                System.Diagnostics.Debug.WriteLine($"Always recoil reduction mode changed from {previousSettings?.MacroSettings.AlwaysRecoilReductionMode} to {newSettings.MacroSettings.AlwaysRecoilReductionMode}");
             }
         }
 
         /// <summary>
         /// Handles changes to hotkey settings.
         /// </summary>
-        private void HandleHotkeySettingsChanged(AppSettings previousConfig, AppSettings newConfig)
+        private void HandleHotkeySettingsChanges(AppSettings previousSettings, AppSettings newSettings)
         {
-            if (previousConfig?.HotkeySettings.MacroKey.Key != newConfig.HotkeySettings.MacroKey.Key || 
-                previousConfig?.HotkeySettings.MacroKey.Type != newConfig.HotkeySettings.MacroKey.Type)
+            if (previousSettings?.HotkeySettings.MacroKey.Key != newSettings.HotkeySettings.MacroKey.Key || 
+                previousSettings?.HotkeySettings.MacroKey.Type != newSettings.HotkeySettings.MacroKey.Type)
             {
-                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousConfig?.HotkeySettings.MacroKey.DisplayName} to {newConfig.HotkeySettings.MacroKey.DisplayName}");
+                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousSettings?.HotkeySettings.MacroKey.DisplayName} to {newSettings.HotkeySettings.MacroKey.DisplayName}");
             }
 
-            if (previousConfig?.HotkeySettings.SwitchKey.Key != newConfig.HotkeySettings.SwitchKey.Key ||
-                previousConfig?.HotkeySettings.SwitchKey.Type != newConfig.HotkeySettings.SwitchKey.Type)
+            if (previousSettings?.HotkeySettings.SwitchKey.Key != newSettings.HotkeySettings.SwitchKey.Key ||
+                previousSettings?.HotkeySettings.SwitchKey.Type != newSettings.HotkeySettings.SwitchKey.Type)
             {
-                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousConfig?.HotkeySettings.SwitchKey.DisplayName} to {newConfig.HotkeySettings.SwitchKey.DisplayName}");
+                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousSettings?.HotkeySettings.SwitchKey.DisplayName} to {newSettings.HotkeySettings.SwitchKey.DisplayName}");
             }
         }
 
         /// <summary>
         /// Handles changes to UI settings.
         /// </summary>
-        private void HandleUISettingsChanged(AppSettings previousConfig, AppSettings newConfig)
+        private void HandleUISettingsChanges(AppSettings previousSettings, AppSettings newSettings)
         {
-            if (previousConfig?.UISettings.MinimizeToTray != newConfig.UISettings.MinimizeToTray)
+            if (previousSettings?.UISettings.MinimizeToTray != newSettings.UISettings.MinimizeToTray)
             {
-                System.Diagnostics.Debug.WriteLine($"Minimize to tray changed from {previousConfig?.UISettings.MinimizeToTray} to {newConfig.UISettings.MinimizeToTray}");
+                System.Diagnostics.Debug.WriteLine($"Minimize to tray changed from {previousSettings?.UISettings.MinimizeToTray} to {newSettings.UISettings.MinimizeToTray}");
             }
 
-            if (previousConfig?.UISettings.ShowDebugPanel != newConfig.UISettings.ShowDebugPanel)
+            if (previousSettings?.UISettings.ShowDebugPanel != newSettings.UISettings.ShowDebugPanel)
             {
-                System.Diagnostics.Debug.WriteLine($"Show debug panel changed from {previousConfig?.UISettings.ShowDebugPanel} to {newConfig.UISettings.ShowDebugPanel}");
+                System.Diagnostics.Debug.WriteLine($"Show debug panel changed from {previousSettings?.UISettings.ShowDebugPanel} to {newSettings.UISettings.ShowDebugPanel}");
             }
 
-            if (previousConfig?.UISettings.ShowStatusInTitle != newConfig.UISettings.ShowStatusInTitle)
+            if (previousSettings?.UISettings.ShowStatusInTitle != newSettings.UISettings.ShowStatusInTitle)
             {
-                System.Diagnostics.Debug.WriteLine($"Show status in title changed from {previousConfig?.UISettings.ShowStatusInTitle} to {newConfig.UISettings.ShowStatusInTitle}");
+                System.Diagnostics.Debug.WriteLine($"Show status in title changed from {previousSettings?.UISettings.ShowStatusInTitle} to {newSettings.UISettings.ShowStatusInTitle}");
             }
 
-            if (previousConfig?.UISettings.ShowTrayNotifications != newConfig.UISettings.ShowTrayNotifications)
+            if (previousSettings?.UISettings.ShowTrayNotifications != newSettings.UISettings.ShowTrayNotifications)
             {
-                System.Diagnostics.Debug.WriteLine($"Show tray notifications changed from {previousConfig?.UISettings.ShowTrayNotifications} to {newConfig.UISettings.ShowTrayNotifications}");
+                System.Diagnostics.Debug.WriteLine($"Show tray notifications changed from {previousSettings?.UISettings.ShowTrayNotifications} to {newSettings.UISettings.ShowTrayNotifications}");
             }
         }
 
@@ -388,9 +357,9 @@ namespace NotesAndTasks.Configuration
                 if (disposing)
                 {
                     // Unregister all event handlers
-                    configManager.ConfigurationChanged -= OnConfigurationChanged;
-                    configManager.ConfigurationValidating -= OnConfigurationValidating;
-                    configManager.ConfigurationBackupCompleted -= OnConfigurationBackupCompleted;
+                    configManager.SettingsChanged -= OnSettingsChanged;
+                    configManager.SettingsValidating -= OnSettingsValidating;
+                    configManager.SettingsBackupCompleted -= OnSettingsBackupCompleted;
 
                     eventHandlers.Clear();
                 }

@@ -110,7 +110,7 @@ namespace NotesAndTasks.Utilities
                 settings.HotkeySettings.MacroKey.Key = macroKey;
                 settings.HotkeySettings.SwitchKey.Key = switchKey;
                 settings.HotkeySettings.MacroKey.Type = ConvertToggleTypeToInputType(toggleType);
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
             }
         }
 

@@ -244,9 +244,6 @@ namespace NotesAndTasks
                 
                 // Update UI
                 uiManager.UpdateTitle();
-                
-                // Complete the migration by removing the legacy settings file
-                FinalizeMigration();
             }
             catch (Exception ex)
             {
@@ -350,7 +347,7 @@ namespace NotesAndTasks
                 macroManager.SetAlwaysJitterMode(chkAlwaysJitter.Checked);
                 btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
                 ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
                 uiManager.UpdateTitle();
                 uiManager.UpdateModeLabels();
             };
@@ -360,7 +357,7 @@ namespace NotesAndTasks
                 macroManager.SetAlwaysRecoilReductionMode(chkAlwaysRecoilReduction.Checked);
                 btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
                 ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
                 uiManager.UpdateTitle();
                 uiManager.UpdateModeLabels();
             };
@@ -368,7 +365,7 @@ namespace NotesAndTasks
             chkMinimizeToTray.CheckedChanged += (sender, e) =>
             {
                 ConfigurationManager.Instance.CurrentSettings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
             };
 
             trackBarJitter.ValueChanged += (sender, e) =>
@@ -376,7 +373,7 @@ namespace NotesAndTasks
                 macroManager.SetJitterStrength(trackBarJitter.Value);
                 lblJitterStrengthValue.Text = trackBarJitter.Value.ToString();
                 ConfigurationManager.Instance.CurrentSettings.MacroSettings.JitterStrength = trackBarJitter.Value;
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
             };
 
             trackBarRecoilReduction.ValueChanged += (sender, e) =>
@@ -384,7 +381,7 @@ namespace NotesAndTasks
                 macroManager.SetRecoilReductionStrength(trackBarRecoilReduction.Value);
                 lblRecoilReductionStrengthValue.Text = trackBarRecoilReduction.Value.ToString();
                 ConfigurationManager.Instance.CurrentSettings.MacroSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
             };
         }
 
@@ -453,35 +450,13 @@ namespace NotesAndTasks
                 settings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
                 settings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 settings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
-                ConfigurationManager.Instance.SaveConfiguration();
+                ConfigurationManager.Instance.SaveSettings();
                 
                 uiManager.UpdateDebugInfo("Settings saved successfully");
             }
             catch (Exception ex)
             {
                 uiManager.UpdateDebugInfo($"Error saving settings: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Finalizes the migration by removing legacy settings files.
-        /// </summary>
-        private void FinalizeMigration()
-        {
-            try
-            {
-                if (ConfigurationManager.Instance.FinalizeMigration())
-                {
-                    uiManager.UpdateDebugInfo("Settings migration completed successfully");
-                }
-                else
-                {
-                    uiManager.UpdateDebugInfo("Unable to remove legacy settings file");
-                }
-            }
-            catch (Exception ex)
-            {
-                uiManager.UpdateDebugInfo($"Error during migration finalization: {ex.Message}");
             }
         }
 
