@@ -125,39 +125,52 @@ namespace NotesAndTasks.Utilities
             }
 
             int verticalMovement;
+            const double BASE_RECOIL_STRENGTH = 0.75;
 
-            // Low level recoil reduction
+            // Low level recoil reduction (1-6)
             if (strength <= 6)
             {
+                // lowest level of recoil reduction (1)
                 if (strength == 1)
                 {
-                    verticalMovement = Math.Max(1, (int)Math.Round(0.75 * 0.3));
+                    verticalMovement = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
                 }
+                // Progressive scaling for 2-6 with more distinct steps
                 else
                 {
-                    double logBase = 1.5;
-                    verticalMovement = Math.Max(1, (int)Math.Round(0.75 * Math.Log(strength + 1, logBase)));
+                    // Use stepped scaling to create more noticeable differences
+                    double stepMultiplier = strength switch
+                    {
+                        2 => 1.0,
+                        3 => 1.5,
+                        4 => 1.9,
+                        5 => 2.2,
+                        6 => 3.0,
+                        _ => 1.5
+                    };
+                    verticalMovement = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * stepMultiplier * 2.0));
                 }
             }
-
-            // Medium level recoil reduction
+            // Medium level recoil reduction (7-16)
             else if (strength <= 16)
             {
-                verticalMovement = Math.Max(1, (int)Math.Round(0.75 * strength * 1.2));
+                // Smoother scaling with reduced multiplier
+                double baseValue = BASE_RECOIL_STRENGTH * 1.1;
+                double scalingFactor = 1 + ((strength - 6) * 0.08);
+                verticalMovement = Math.Max(1, (int)Math.Round(baseValue * strength * scalingFactor));
             }
-
-            // High level recoil reduction
+            // High level recoil reduction (17-20)
             else
-                {
-                    double baseValue = 0.75 * 20.0;
-                    double scalingFactor = 1.19; // Reduced from 1.2 to further slow growth
-                    double exponentialBoost = 1.1; // Reduced from 1.1 to further slow growth
-                    verticalMovement = Math.Max(1, (int)Math.Round(
-                        baseValue *
-                        Math.Pow(scalingFactor, strength - 13) *
-                        Math.Pow(exponentialBoost, strength - 13)
-                    ));
-                }
+            {
+                double baseValue = BASE_RECOIL_STRENGTH * 20.0;
+                double scalingFactor = 1.18; // Reduced from 1.19 for smoother scaling
+                double exponentialBoost = 1.08; // Reduced from 1.1 for smoother scaling
+                verticalMovement = Math.Max(1, (int)Math.Round(
+                    baseValue *
+                    Math.Pow(scalingFactor, strength - 13) *
+                    Math.Pow(exponentialBoost, strength - 13)
+                ));
+            }
 
             return SimulateMouseMovement(0, verticalMovement);
         }

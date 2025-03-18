@@ -1,9 +1,9 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Windows.Forms;
 using System.Linq;
-using Newtonsoft.Json;
 using NotesAndTasks.Models;
 
 namespace NotesAndTasks.Configuration
@@ -18,12 +18,12 @@ namespace NotesAndTasks.Configuration
             "NotesAndTasks"
         );
 
-        private static readonly string ConfigPath = Path.Combine(AppDataPath, "config.json");
+        private static readonly string ConfigPath = Path.Combine(AppDataPath, "settings.json");
         private static readonly string BackupPath = Path.Combine(AppDataPath, "Backups");
         private static readonly int MaxBackupCount = 5;
 
         private readonly ReaderWriterLockSlim _configLock = new ReaderWriterLockSlim();
-        private readonly JsonSerializerSettings _jsonSettings;
+        private readonly JsonSerializerOptions _jsonOptions;
         private AppSettings _currentSettings;
         private bool _disposed;
 
@@ -55,9 +55,9 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         public ConfigurationManager()
         {
-            _jsonSettings = new JsonSerializerSettings
+            _jsonOptions = new JsonSerializerOptions
             {
-                Formatting = Formatting.Indented
+                WriteIndented = true
             };
 
             InitializeDirectories();
@@ -75,7 +75,7 @@ namespace NotesAndTasks.Configuration
                 if (File.Exists(ConfigPath))
                 {
                     string jsonContent = File.ReadAllText(ConfigPath);
-                    var loadedSettings = JsonConvert.DeserializeObject<AppSettings>(jsonContent, _jsonSettings);
+                    var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
 
                     var validationArgs = new ConfigurationValidationEventArgs(loadedSettings);
                     ConfigurationValidating?.Invoke(this, validationArgs);
@@ -100,7 +100,11 @@ namespace NotesAndTasks.Configuration
             }
             catch (Exception ex)
             {
-                throw new ConfigurationException("Failed to load configuration", ex);
+                System.Diagnostics.Debug.WriteLine($"Failed to load configuration: {ex.Message}");
+                if (_currentSettings == null)
+                {
+                    _currentSettings = CreateDefaultConfiguration();
+                }
             }
             finally
             {
@@ -121,19 +125,19 @@ namespace NotesAndTasks.Configuration
 
                 if (!validationArgs.IsValid || !ValidateConfiguration(_currentSettings))
                 {
-                    throw new ConfigurationException(validationArgs.Message ?? "Invalid configuration state");
+                    throw new Exception(validationArgs.Message ?? "Invalid configuration state");
                 }
 
                 CreateBackup();
 
-                string jsonContent = JsonConvert.SerializeObject(_currentSettings, _jsonSettings);
+                string jsonContent = JsonSerializer.Serialize(_currentSettings, _jsonOptions);
                 File.WriteAllText(ConfigPath, jsonContent);
 
                 OnConfigurationChanged("All", _currentSettings, _currentSettings);
             }
             catch (Exception ex)
             {
-                throw new ConfigurationException("Failed to save configuration", ex);
+                System.Diagnostics.Debug.WriteLine($"Failed to save configuration: {ex.Message}");
             }
             finally
             {
@@ -157,7 +161,7 @@ namespace NotesAndTasks.Configuration
             try
             {
                 string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                string backupFile = Path.Combine(BackupPath, $"config_{timestamp}.json");
+                string backupFile = Path.Combine(BackupPath, $"settings_{timestamp}.json");
 
                 File.Copy(ConfigPath, backupFile, true);
                 CleanupOldBackups();
@@ -169,7 +173,6 @@ namespace NotesAndTasks.Configuration
             {
                 var args = new ConfigurationBackupEventArgs(null, false, ex.Message);
                 ConfigurationBackupCompleted?.Invoke(this, args);
-                throw;
             }
         }
 
@@ -178,7 +181,7 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void CleanupOldBackups()
         {
-            var backupFiles = Directory.GetFiles(BackupPath, "config_*.json")
+            var backupFiles = Directory.GetFiles(BackupPath, "settings_*.json")
                                      .OrderByDescending(f => f)
                                      .Skip(MaxBackupCount);
 
@@ -209,7 +212,22 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private AppSettings CreateDefaultConfiguration()
         {
-            return new AppSettings();
+            var settings = new AppSettings();
+            
+            // Set default values as per KnownIssue.md
+            settings.MacroSettings.JitterStrength = 3;
+            settings.MacroSettings.RecoilReductionStrength = 1;
+            settings.MacroSettings.AlwaysJitterMode = false;
+            settings.MacroSettings.AlwaysRecoilReductionMode = false;
+            settings.MacroSettings.JitterEnabled = false;
+            settings.MacroSettings.RecoilReductionEnabled = false;
+            settings.UISettings.MinimizeToTray = false;
+            
+            // Default hotkeys
+            settings.HotkeySettings.MacroKey = new InputBinding(Keys.Capital, InputType.Keyboard);
+            settings.HotkeySettings.SwitchKey = new InputBinding(Keys.Q, InputType.Keyboard);
+            
+            return settings;
         }
 
         /// <summary>
@@ -229,15 +247,16 @@ namespace NotesAndTasks.Configuration
                 }
 
                 // Validate HotkeySettings
-                if (!IsValidHotkey(settings.HotkeySettings.MacroKey) ||
-                    !IsValidHotkey(settings.HotkeySettings.SwitchKey) ||
-                    settings.HotkeySettings.MacroKey == settings.HotkeySettings.SwitchKey)
+                if (settings.HotkeySettings.MacroKey == null || settings.HotkeySettings.SwitchKey == null ||
+                    settings.HotkeySettings.MacroKey.Key == Keys.None ||
+                    settings.HotkeySettings.SwitchKey.Key == Keys.None)
                 {
                     return false;
                 }
 
-                // Validate UISettings
-                if (settings.UISettings.WindowSize.Width <= 0 || settings.UISettings.WindowSize.Height <= 0)
+                // Validate that keys are not the same
+                if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                    settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
                 {
                     return false;
                 }
@@ -248,14 +267,6 @@ namespace NotesAndTasks.Configuration
             {
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Validates a hotkey value
-        /// </summary>
-        private bool IsValidHotkey(Keys key)
-        {
-            return key != Keys.None && key != Keys.LButton && key != Keys.RButton;
         }
 
         protected virtual void Dispose(bool disposing)
@@ -275,14 +286,5 @@ namespace NotesAndTasks.Configuration
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-    }
-
-    /// <summary>
-    /// Exception thrown when configuration operations fail
-    /// </summary>
-    public class ConfigurationException : Exception
-    {
-        public ConfigurationException(string message) : base(message) { }
-        public ConfigurationException(string message, Exception innerException) : base(message, innerException) { }
     }
 } 

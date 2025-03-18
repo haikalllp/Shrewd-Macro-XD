@@ -5,17 +5,26 @@ using System.Windows.Forms;
 namespace NotesAndTasks.Models
 {
     /// <summary>
-    /// Configuration settings for hotkeys and key bindings
+    /// Settings related to keyboard shortcuts and hotkeys
     /// </summary>
     public class HotkeySettings : INotifyPropertyChanged
     {
-        private Keys _macroKey = Keys.Capital;  // Default to Caps Lock
-        private Keys _switchKey = Keys.Q;       // Default to Q
+        private InputBinding _macroKey;
+        private InputBinding _switchKey;
 
         /// <summary>
-        /// Gets or sets the key for toggling macro functionality
+        /// Initializes a new instance of the HotkeySettings class with default values
         /// </summary>
-        public Keys MacroKey
+        public HotkeySettings()
+        {
+            _macroKey = new InputBinding(Keys.Capital, InputType.Keyboard);
+            _switchKey = new InputBinding(Keys.Q, InputType.Keyboard);
+        }
+
+        /// <summary>
+        /// Gets or sets the key used to toggle the macro
+        /// </summary>
+        public InputBinding MacroKey
         {
             get => _macroKey;
             set
@@ -29,9 +38,9 @@ namespace NotesAndTasks.Models
         }
 
         /// <summary>
-        /// Gets or sets the key for switching macro modes
+        /// Gets or sets the key used to switch between modes
         /// </summary>
-        public Keys SwitchKey
+        public InputBinding SwitchKey
         {
             get => _switchKey;
             set

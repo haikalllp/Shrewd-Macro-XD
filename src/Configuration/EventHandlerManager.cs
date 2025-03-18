@@ -225,7 +225,8 @@ namespace NotesAndTasks.Configuration
             }
 
             // Validate hotkey conflicts
-            if (config.HotkeySettings.MacroKey == config.HotkeySettings.SwitchKey)
+            if (config.HotkeySettings.MacroKey.Key == config.HotkeySettings.SwitchKey.Key && 
+                config.HotkeySettings.MacroKey.Type == config.HotkeySettings.SwitchKey.Type)
             {
                 e.IsValid = false;
                 e.Message = "Macro toggle key and mode switch key cannot be the same";
@@ -288,14 +289,16 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void HandleHotkeySettingsChanged(AppSettings previousConfig, AppSettings newConfig)
         {
-            if (previousConfig?.HotkeySettings.MacroKey != newConfig.HotkeySettings.MacroKey)
+            if (previousConfig?.HotkeySettings.MacroKey.Key != newConfig.HotkeySettings.MacroKey.Key || 
+                previousConfig?.HotkeySettings.MacroKey.Type != newConfig.HotkeySettings.MacroKey.Type)
             {
-                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousConfig?.HotkeySettings.MacroKey} to {newConfig.HotkeySettings.MacroKey}");
+                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousConfig?.HotkeySettings.MacroKey.DisplayName} to {newConfig.HotkeySettings.MacroKey.DisplayName}");
             }
 
-            if (previousConfig?.HotkeySettings.SwitchKey != newConfig.HotkeySettings.SwitchKey)
+            if (previousConfig?.HotkeySettings.SwitchKey.Key != newConfig.HotkeySettings.SwitchKey.Key ||
+                previousConfig?.HotkeySettings.SwitchKey.Type != newConfig.HotkeySettings.SwitchKey.Type)
             {
-                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousConfig?.HotkeySettings.SwitchKey} to {newConfig.HotkeySettings.SwitchKey}");
+                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousConfig?.HotkeySettings.SwitchKey.DisplayName} to {newConfig.HotkeySettings.SwitchKey.DisplayName}");
             }
         }
 
