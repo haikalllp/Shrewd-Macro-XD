@@ -275,6 +275,7 @@ namespace NotesAndTasks
         /// <param name="e">Event data containing the close reason and cancellation option.</param>
         private void OnFormClosingHandler(object sender, FormClosingEventArgs e)
         {
+            // Only minimize to tray if explicitly requested by user closing AND minimizeToTray is checked
             if (!isExiting && chkMinimizeToTray.Checked && e.CloseReason == CloseReason.UserClosing)
             {
                 e.Cancel = true;
@@ -282,10 +283,14 @@ namespace NotesAndTasks
                 notifyIcon.Visible = true;
                 uiManager.UpdateDebugInfo("Application minimized to system tray");
             }
-            else if (isExiting || !chkMinimizeToTray.Checked)
+            else
             {
-                // Cleanup when actually closing
-                CleanupAndExit();
+                // Always perform cleanup when actually closing (not minimizing)
+                if (!isExiting)
+                {
+                    SaveCurrentSettings();
+                    PerformCleanup();
+                }
             }
         }
 
@@ -548,23 +553,14 @@ namespace NotesAndTasks
         /// </summary>
         private void CleanupAndExit()
         {
+            if (isExiting) return; // Prevent recursive calls
+            
             try
             {
                 isExiting = true;
                 SaveCurrentSettings();
-
-                // Stop and dispose of hooks
-                keyboardHook?.Dispose();
-                mouseHook?.Dispose();
-
-                // Stop and dispose of macro manager
-                macroManager?.Dispose();
-
-                // Clean up UI resources
-                notifyIcon?.Dispose();
-                toolTip?.Dispose();
-                uiManager?.Dispose();
-
+                PerformCleanup();
+                
                 // Close the form
                 this.Close();
             }
@@ -573,14 +569,61 @@ namespace NotesAndTasks
                 uiManager.UpdateDebugInfo($"Error during cleanup: {ex.Message}");
             }
         }
+        
+        /// <summary>
+        /// Performs resource cleanup, separating it from the exit logic
+        /// </summary>
+        private void PerformCleanup()
+        {
+            try
+            {
+                // Stop and dispose of hooks
+                if (keyboardHook != null)
+                {
+                    keyboardHook.Stop();
+                    keyboardHook.Dispose();
+                }
+                
+                if (mouseHook != null)
+                {
+                    mouseHook.Stop();
+                    mouseHook.Dispose();
+                }
+
+                // Stop and dispose of macro manager
+                macroManager?.Dispose();
+
+                // Clean up UI resources
+                if (notifyIcon != null)
+                {
+                    notifyIcon.Visible = false;
+                    notifyIcon.Dispose();
+                }
+                
+                toolTip?.Dispose();
+                uiManager?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+        }
 
         /// <summary>
-        /// Override of OnFormClosing to ensure settings are saved.
+        /// Override of OnFormClosing to ensure settings are saved and proper cleanup is performed.
         /// </summary>
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            SaveCurrentSettings();
+            // Let the handler do its work
             base.OnFormClosing(e);
+            
+            // If we're really closing (not cancelled), ensure cleanup happens
+            if (!e.Cancel && !isExiting)
+            {
+                isExiting = true;
+                SaveCurrentSettings();
+                PerformCleanup();
+            }
         }
     }
 }

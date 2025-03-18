@@ -86,6 +86,18 @@ namespace NotesAndTasks.Utilities
         }
 
         /// <summary>
+        /// Sets the mode switch key with type information.
+        /// </summary>
+        /// <param name="key">The key to set.</param>
+        /// <param name="type">The toggle type (keyboard or mouse).</param>
+        public void SetSwitchKey(Keys key, ToggleType type)
+        {
+            switchKey = key;
+            SwitchKeyChanged?.Invoke(this, key);
+            SaveSettings(type);
+        }
+
+        /// <summary>
         /// Loads hotkey settings from the settings manager.
         /// </summary>
         public void LoadSettings()
@@ -104,12 +116,27 @@ namespace NotesAndTasks.Utilities
         /// </summary>
         private void SaveSettings()
         {
+            SaveSettings(null);
+        }
+        
+        /// <summary>
+        /// Saves current hotkey settings to the settings manager with optional switch key type.
+        /// </summary>
+        private void SaveSettings(ToggleType? switchKeyType = null)
+        {
             var settings = ConfigurationManager.Instance.CurrentSettings;
             if (settings != null)
             {
                 settings.HotkeySettings.MacroKey.Key = macroKey;
                 settings.HotkeySettings.SwitchKey.Key = switchKey;
                 settings.HotkeySettings.MacroKey.Type = ConvertToggleTypeToInputType(toggleType);
+                
+                // Update SwitchKey type based on provided parameter or existing value
+                if (switchKeyType.HasValue)
+                {
+                    settings.HotkeySettings.SwitchKey.Type = ConvertToggleTypeToInputType(switchKeyType.Value);
+                }
+                
                 ConfigurationManager.Instance.SaveSettings();
             }
         }
@@ -209,7 +236,7 @@ namespace NotesAndTasks.Utilities
             {
                 isSettingSwitchKey = false;
                 KeySettingStateChanged?.Invoke(this, false);
-                SetSwitchKey(key);
+                SetSwitchKey(key, type);
                 DebugInfoUpdated?.Invoke(this, $"Set switch key to {button}");
             }
             else if (key == macroKey)

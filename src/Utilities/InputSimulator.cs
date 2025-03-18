@@ -208,15 +208,40 @@ namespace NotesAndTasks.Utilities
         }
 
         /// <summary>
+        /// Releases the unmanaged resources used by the InputSimulator and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    // Dispose managed resources here, if any
+                }
+
+                // Clean up any unmanaged resources here
+                // Nothing specific needed for SendInput API
+
+                disposed = true;
+            }
+        }
+
+        /// <summary>
         /// Disposes of resources used by the InputSimulator.
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                disposed = true;
-                GC.SuppressFinalize(this);
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Finalizes an instance of the InputSimulator class.
+        /// </summary>
+        ~InputSimulator()
+        {
+            Dispose(false);
         }
     }
 } 
