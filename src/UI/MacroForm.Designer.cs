@@ -466,6 +466,7 @@ namespace NotesAndTasks
                 exitMenuItem
             });
             trayContextMenu.Name = "trayContextMenu";
+            trayContextMenu.ShowImageMargin = false;
             trayContextMenu.Size = new Size(151, 48);
             // 
             // showWindowMenuItem

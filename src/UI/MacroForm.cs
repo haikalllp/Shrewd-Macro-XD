@@ -76,8 +76,14 @@ namespace NotesAndTasks
                 InitializeCustomComponents();
 
                 // Initialize tray icon behavior
-                notifyIcon.Click += (s, e) => uiManager.ShowWindow();
-                notifyIcon.DoubleClick += (s, e) => uiManager.ShowWindow();
+                notifyIcon.Click += (s, e) => 
+                {
+                    // Only respond to left clicks
+                    if (((MouseEventArgs)e).Button == MouseButtons.Left)
+                    {
+                        uiManager.ShowWindow();
+                    }
+                };
                 showWindowMenuItem.Click += (s, e) => uiManager.ShowWindow();
                 exitMenuItem.Click += (s, e) => CleanupAndExit();
 
