@@ -30,6 +30,7 @@ namespace NotesAndTasks.Utilities
         private bool isActive = false;
         private int jitterStrength = 3;
         private int recoilReductionStrength = 1;
+        private bool isTransitioningMode = false;
         #endregion
 
         #region Properties
@@ -37,77 +38,147 @@ namespace NotesAndTasks.Utilities
         public bool IsJitterEnabled { get; private set; }
         public bool IsAlwaysJitterMode { get; private set; }
         public bool IsAlwaysRecoilReductionMode { get; private set; }
+
+        /// <summary>
+        /// Gets the current jitter strength value.
+        /// </summary>
+        public int JitterStrength => jitterStrength;
+
+        /// <summary>
+        /// Gets the current recoil reduction strength value.
+        /// </summary>
+        public int RecoilReductionStrength => recoilReductionStrength;
         #endregion
 
         #region Constructor
         public MacroManager()
         {
-            inputSimulator = new InputSimulator();
-            jitterManager = new JitterManager(inputSimulator);
-            recoilManager = new RecoilReductionManager(inputSimulator);
+            try
+            {
+                inputSimulator = new InputSimulator();
+                jitterManager = new JitterManager(inputSimulator);
+                recoilManager = new RecoilReductionManager(inputSimulator);
 
-            // Subscribe to state change events
-            jitterManager.StateChanged += (s, active) => CheckMacroState();
-            recoilManager.StateChanged += (s, active) => CheckMacroState();
+                // Subscribe to state change events
+                jitterManager.StateChanged += OnEffectStateChanged;
+                recoilManager.StateChanged += OnEffectStateChanged;
+            }
+            catch (Exception)
+            {
+                // Clean up if initialization fails
+                Dispose(true);
+                throw;
+            }
         }
         #endregion
 
         #region Public Methods
         public void HandleMouseButton(MouseButtons button, bool isDown)
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
             lock (lockObject)
             {
-                if (button == MouseButtons.Left)
+                try
                 {
-                    leftButtonDown = isDown;
-                }
-                else if (button == MouseButtons.Right)
-                {
-                    rightButtonDown = isDown;
-                }
+                    bool stateChanged = false;
+                    if (button == MouseButtons.Left && leftButtonDown != isDown)
+                    {
+                        leftButtonDown = isDown;
+                        stateChanged = true;
+                    }
+                    else if (button == MouseButtons.Right && rightButtonDown != isDown)
+                    {
+                        rightButtonDown = isDown;
+                        stateChanged = true;
+                    }
 
-                CheckMacroState();
+                    if (stateChanged)
+                    {
+                        CheckMacroState();
+                    }
+                }
+                catch (Exception)
+                {
+                    // Reset button states on error
+                    leftButtonDown = false;
+                    rightButtonDown = false;
+                    StopAllEffects();
+                    throw;
+                }
             }
         }
 
         public void ToggleMacro()
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
             lock (lockObject)
             {
-                IsEnabled = !IsEnabled;
-                MacroStateChanged?.Invoke(this, IsEnabled);
-                CheckMacroState();
+                try
+                {
+                    IsEnabled = !IsEnabled;
+                    MacroStateChanged?.Invoke(this, IsEnabled);
+                    
+                    if (!IsEnabled)
+                    {
+                        // Ensure cleanup when disabling
+                        leftButtonDown = false;
+                        rightButtonDown = false;
+                    }
+                    
+                    CheckMacroState();
+                }
+                catch (Exception)
+                {
+                    // Reset state on error
+                    IsEnabled = false;
+                    StopAllEffects();
+                    throw;
+                }
             }
         }
 
         public void SwitchMode()
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
             lock (lockObject)
             {
-                if (!IsAlwaysJitterMode && !IsAlwaysRecoilReductionMode)
+                if (isTransitioningMode) return;
+                
+                try
                 {
-                    IsJitterEnabled = !IsJitterEnabled;
-                    ModeChanged?.Invoke(this, IsJitterEnabled);
-                    CheckMacroState();
+                    isTransitioningMode = true;
+                    
+                    if (!IsAlwaysJitterMode && !IsAlwaysRecoilReductionMode)
+                    {
+                        bool previousState = IsJitterEnabled;
+                        IsJitterEnabled = !IsJitterEnabled;
+                        
+                        // Only trigger events and state check if the state actually changed
+                        if (previousState != IsJitterEnabled)
+                        {
+                            ModeChanged?.Invoke(this, IsJitterEnabled);
+                            CheckMacroState();
+                        }
+                    }
+                }
+                finally
+                {
+                    isTransitioningMode = false;
                 }
             }
         }
 
         public void SetJitterStrength(int strength)
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
-            if (strength >= 1 && strength <= 20)
+            if (strength < 1 || strength > 20)
+                throw new ArgumentOutOfRangeException(nameof(strength), "Strength must be between 1 and 20.");
+
+            lock (lockObject)
             {
                 jitterStrength = strength;
                 jitterManager.SetStrength(strength);
@@ -116,10 +187,12 @@ namespace NotesAndTasks.Utilities
 
         public void SetRecoilReductionStrength(int strength)
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
-            if (strength >= 1 && strength <= 20)
+            if (strength < 1 || strength > 20)
+                throw new ArgumentOutOfRangeException(nameof(strength), "Strength must be between 1 and 20.");
+
+            lock (lockObject)
             {
                 recoilReductionStrength = strength;
                 recoilManager.SetStrength(strength);
@@ -128,79 +201,192 @@ namespace NotesAndTasks.Utilities
 
         public void SetAlwaysJitterMode(bool enabled)
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
             lock (lockObject)
             {
-                if (enabled && IsAlwaysRecoilReductionMode)
+                if (isTransitioningMode) return;
+                
+                try
                 {
-                    IsAlwaysRecoilReductionMode = false;
+                    isTransitioningMode = true;
+                    
+                    bool stateChanged = false;
+                    
+                    if (enabled && IsAlwaysRecoilReductionMode)
+                    {
+                        IsAlwaysRecoilReductionMode = false;
+                        stateChanged = true;
+                    }
+                    
+                    if (IsAlwaysJitterMode != enabled)
+                    {
+                        IsAlwaysJitterMode = enabled;
+                        stateChanged = true;
+                    }
+                    
+                    if (enabled && !IsJitterEnabled)
+                    {
+                        IsJitterEnabled = true;
+                        stateChanged = true;
+                    }
+                    
+                    if (stateChanged)
+                    {
+                        ModeChanged?.Invoke(this, IsJitterEnabled);
+                        CheckMacroState();
+                    }
                 }
-                IsAlwaysJitterMode = enabled;
-                if (enabled)
+                finally
                 {
-                    IsJitterEnabled = true;
+                    isTransitioningMode = false;
                 }
-                CheckMacroState();
-                ModeChanged?.Invoke(this, IsJitterEnabled);
             }
         }
 
         public void SetAlwaysRecoilReductionMode(bool enabled)
         {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(MacroManager));
+            ThrowIfDisposed();
 
             lock (lockObject)
             {
-                if (enabled && IsAlwaysJitterMode)
+                if (isTransitioningMode) return;
+                
+                try
                 {
-                    IsAlwaysJitterMode = false;
+                    isTransitioningMode = true;
+                    
+                    bool stateChanged = false;
+                    
+                    if (enabled && IsAlwaysJitterMode)
+                    {
+                        IsAlwaysJitterMode = false;
+                        stateChanged = true;
+                    }
+                    
+                    if (IsAlwaysRecoilReductionMode != enabled)
+                    {
+                        IsAlwaysRecoilReductionMode = enabled;
+                        stateChanged = true;
+                    }
+                    
+                    if (enabled && IsJitterEnabled)
+                    {
+                        IsJitterEnabled = false;
+                        stateChanged = true;
+                    }
+                    
+                    if (stateChanged)
+                    {
+                        ModeChanged?.Invoke(this, IsJitterEnabled);
+                        CheckMacroState();
+                    }
                 }
-                IsAlwaysRecoilReductionMode = enabled;
-                if (enabled)
+                finally
                 {
-                    IsJitterEnabled = false;
+                    isTransitioningMode = false;
                 }
-                CheckMacroState();
-                ModeChanged?.Invoke(this, IsJitterEnabled);
             }
         }
         #endregion
 
         #region Private Methods
-        private void CheckMacroState()
+        private void ThrowIfDisposed()
         {
-            bool shouldActivate = IsEnabled && leftButtonDown && rightButtonDown;
+            if (disposed)
+                throw new ObjectDisposedException(nameof(MacroManager));
+        }
 
-            if (shouldActivate && !isActive)
+        private void OnEffectStateChanged(object sender, bool active)
+        {
+            lock (lockObject)
             {
-                isActive = true;
-                if (IsAlwaysJitterMode || (!IsAlwaysRecoilReductionMode && IsJitterEnabled))
-                {
-                    JitterStarted?.Invoke(this, EventArgs.Empty);
-                    jitterManager.Start();
-                }
-                else
-                {
-                    RecoilReductionStarted?.Invoke(this, EventArgs.Empty);
-                    recoilManager.Start();
-                }
+                CheckMacroState();
             }
-            else if (!shouldActivate && isActive)
+        }
+
+        private void StopAllEffects()
+        {
+            // Ensure we're in a locked context
+            if (!Monitor.IsEntered(lockObject))
+                throw new InvalidOperationException("StopAllEffects must be called within a lock");
+
+            try
             {
-                isActive = false;
-                if (IsAlwaysJitterMode || (!IsAlwaysRecoilReductionMode && IsJitterEnabled))
+                if (jitterManager.IsActive)
                 {
                     JitterStopped?.Invoke(this, EventArgs.Empty);
                     jitterManager.Stop();
                 }
-                else
+                if (recoilManager.IsActive)
                 {
                     RecoilReductionStopped?.Invoke(this, EventArgs.Empty);
                     recoilManager.Stop();
                 }
+            }
+            finally
+            {
+                isActive = false;
+            }
+        }
+
+        private void CheckMacroState()
+        {
+            // Ensure we're in a locked context
+            if (!Monitor.IsEntered(lockObject))
+                throw new InvalidOperationException("CheckMacroState must be called within a lock");
+
+            try
+            {
+                bool shouldActivate = IsEnabled && leftButtonDown && rightButtonDown;
+
+                // Always stop effects if we shouldn't be active
+                if (!shouldActivate)
+                {
+                    StopAllEffects();
+                    return;
+                }
+
+                // Determine which mode should be active
+                bool shouldUseJitter = IsAlwaysJitterMode || (!IsAlwaysRecoilReductionMode && IsJitterEnabled);
+
+                // If we're already active but in the wrong mode, stop all effects first
+                if (isActive && (jitterManager.IsActive != shouldUseJitter || recoilManager.IsActive == shouldUseJitter))
+                {
+                    StopAllEffects();
+                }
+
+                // Start the appropriate effect if we're not active
+                if (!isActive)
+                {
+                    try
+                    {
+                        if (shouldUseJitter)
+                        {
+                            JitterStarted?.Invoke(this, EventArgs.Empty);
+                            jitterManager.Start();
+                        }
+                        else
+                        {
+                            RecoilReductionStarted?.Invoke(this, EventArgs.Empty);
+                            recoilManager.Start();
+                        }
+                        isActive = true;
+                    }
+                    catch (Exception)
+                    {
+                        StopAllEffects();
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Reset to a safe state on any error
+                isActive = false;
+                leftButtonDown = false;
+                rightButtonDown = false;
+                throw;
             }
         }
         #endregion
@@ -212,9 +398,31 @@ namespace NotesAndTasks.Utilities
             {
                 if (disposing)
                 {
-                    jitterManager.Dispose();
-                    recoilManager.Dispose();
-                    inputSimulator.Dispose();
+                    lock (lockObject)
+                    {
+                        try
+                        {
+                            // Stop all effects first
+                            StopAllEffects();
+
+                            // Unsubscribe from events
+                            if (jitterManager != null)
+                            {
+                                jitterManager.StateChanged -= OnEffectStateChanged;
+                                jitterManager.Dispose();
+                            }
+                            if (recoilManager != null)
+                            {
+                                recoilManager.StateChanged -= OnEffectStateChanged;
+                                recoilManager.Dispose();
+                            }
+                            inputSimulator?.Dispose();
+                        }
+                        catch
+                        {
+                            // Swallow exceptions in dispose
+                        }
+                    }
                 }
                 disposed = true;
             }
