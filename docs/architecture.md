@@ -132,15 +132,20 @@ IMPORTANT NOTE: For professional system integration the application presents its
 public class KeyboardHook : IDisposable
 {
     private IntPtr hookID = IntPtr.Zero;
-    private readonly HookProc hookProc;
+    private readonly NativeMethods.LowLevelHookProc hookCallback;
+    private bool disposed;
 
-    public event EventHandler<KeyEventArgs> KeyDown;
-    public event EventHandler<KeyEventArgs> KeyUp;
+    public event EventHandler<KeyboardHookEventArgs> KeyDown;
+    public event EventHandler<KeyboardHookEventArgs> KeyUp;
 
     public void Start()
     {
-        hookID = SetWindowsHookEx(WH_KEYBOARD_LL, hookProc, 
-            GetModuleHandle(Process.GetCurrentProcess().MainModule.ModuleName), 0);
+        if (hookID == IntPtr.Zero)
+        {
+            using var curProcess = Process.GetCurrentProcess();
+            using var curModule = curProcess.MainModule;
+            SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
+        }
     }
 }
 
@@ -148,16 +153,20 @@ public class KeyboardHook : IDisposable
 public class MouseHook : IDisposable
 {
     private IntPtr hookID = IntPtr.Zero;
-    private readonly HookProc hookProc;
+    private readonly NativeMethods.LowLevelHookProc hookProc;
+    private bool disposed;
 
-    public event EventHandler<MouseEventArgs> MouseDown;
-    public event EventHandler<MouseEventArgs> MouseUp;
-    public event EventHandler<MouseEventArgs> MouseMove;
+    public event EventHandler<MouseHookEventArgs> MouseDown;
+    public event EventHandler<MouseHookEventArgs> MouseUp;
 
     public void Start()
     {
-        hookID = SetWindowsHookEx(WH_MOUSE_LL, hookProc, 
-            GetModuleHandle(Process.GetCurrentProcess().MainModule.ModuleName), 0);
+        if (hookID == IntPtr.Zero)
+        {
+            using var curProcess = Process.GetCurrentProcess();
+            using var curModule = curProcess.MainModule;
+            SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
+        }
     }
 }
 ```
@@ -193,31 +202,45 @@ public class InputSimulator
 
 ### 2. Macro Engine
 
+#### Base Effect Manager
+```csharp
+// MacroEffectBase.cs
+public abstract class MacroEffectBase : IDisposable
+{
+    protected readonly InputSimulator InputSimulator;
+    protected bool Disposed = false;
+    protected int EffectStrength;
+    protected bool IsEffectActive = false;
+    protected System.Threading.Timer Timer;
+
+    public event EventHandler<bool> StateChanged;
+    public bool IsActive => IsEffectActive;
+    public int Strength { get; protected set; }
+
+    protected abstract void OnTimerTick(object state);
+}
+```
+
 #### Recoil Reduction System
 ```csharp
 // RecoilReductionManager.cs
-public class RecoilReductionManager
+public class RecoilReductionManager : MacroEffectBase
 {
-    private readonly Timer timer;
-    private readonly InputSimulator inputSimulator;
-
-    public int Strength { get; set; } = 1;
-    public bool IsEnabled { get; private set; }
-
-    private void OnTimerTick(object sender, EventArgs e)
+    public RecoilReductionManager(InputSimulator inputSimulator) : base(inputSimulator, 1)
     {
-        if (IsEnabled && IsActive)
-        {
-            int scaledStrength = CalculateScaledStrength(Strength);
-            inputSimulator.MoveMouse(0, scaledStrength);
-        }
     }
 
-    private int CalculateScaledStrength(int strength)
+    protected override void OnTimerTick(object state)
     {
-        if (strength <= 6) return strength;                    // Tier 1
-        if (strength <= 16) return 6 + (strength - 6) * 2;    // Tier 2
-        return 20 + (strength - 13) * 3;                      // Tier 3
+        if (!IsActive) return;
+        try
+        {
+            InputSimulator.SimulateRecoilReduction(Strength);
+        }
+        catch (Exception)
+        {
+            Stop();
+        }
     }
 }
 ```
@@ -225,27 +248,27 @@ public class RecoilReductionManager
 #### Jitter System
 ```csharp
 // JitterManager.cs
-public class JitterManager
+public class JitterManager : MacroEffectBase
 {
-    private readonly Timer timer;
-    private readonly InputSimulator inputSimulator;
-    private int currentPatternIndex;
+    private int currentStep = 0;
+    private readonly (int dx, int dy)[] jitterPattern;
 
-    private readonly (int dx, int dy)[] pattern = {
-        (0, 6), (7, 7), (-7, -7), (7, -7), (-7, 7),
-        (0, -6), (-6, 0), (6, 0), (5, 5), (-5, -5)
-    };
-
-    private void OnTimerTick(object sender, EventArgs e)
+    public JitterManager(InputSimulator inputSimulator) : base(inputSimulator, 3)
     {
-        if (IsEnabled && IsActive)
+    }
+
+    protected override void OnTimerTick(object state)
+    {
+        if (!IsActive) return;
+        try
         {
-            var (dx, dy) = pattern[currentPatternIndex];
-            inputSimulator.MoveMouse(
-                dx * Strength / 10,
-                dy * Strength / 10
-            );
-            currentPatternIndex = (currentPatternIndex + 1) % pattern.Length;
+            var pattern = jitterPattern[currentStep];
+            InputSimulator.SimulateJitterMovement(pattern, Strength);
+            currentStep = (currentStep + 1) % jitterPattern.Length;
+        }
+        catch (Exception)
+        {
+            Stop();
         }
     }
 }
@@ -258,15 +281,9 @@ public class JitterManager
 // AppSettings.cs
 public class AppSettings : INotifyPropertyChanged
 {
-    private readonly MacroSettings _macroSettings;
-    private readonly UISettings _uiSettings;
-    private readonly HotkeySettings _hotkeySettings;
-
-    public MacroSettings MacroSettings => _macroSettings;
-    public UISettings UISettings => _uiSettings;
-    public HotkeySettings HotkeySettings => _hotkeySettings;
-
-    public event PropertyChangedEventHandler PropertyChanged;
+    public MacroSettings MacroSettings { get; }
+    public UISettings UISettings { get; }
+    public HotkeySettings HotkeySettings { get; }
 }
 
 // MacroSettings.cs
@@ -288,7 +305,6 @@ public class UISettings : INotifyPropertyChanged
     public bool MinimizeToTray { get; set; }
     public bool ShowDebugPanel { get; set; }
     public bool ShowStatusInTitle { get; set; }
-    public bool ShowTrayNotifications { get; set; }
     public Point WindowPosition { get; set; }
     public Size WindowSize { get; set; }
 }
@@ -296,14 +312,8 @@ public class UISettings : INotifyPropertyChanged
 // HotkeySettings.cs
 public class HotkeySettings : INotifyPropertyChanged
 {
-    public Keys MacroKey { get; set; } = Keys.Capital;
-    public Keys SwitchKey { get; set; } = Keys.Q;
-}
-
-// Legacy configuration support
-public class AppConfiguration
-{
-    // Existing configuration properties maintained for compatibility
+    public InputBinding MacroKey { get; set; }
+    public InputBinding SwitchKey { get; set; }
 }
 ```
 
@@ -312,44 +322,38 @@ public class AppConfiguration
 // ConfigurationManager.cs
 public class ConfigurationManager : IDisposable
 {
-    private static readonly string AppDataPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "NotesAndTasks"
-    );
-    private static readonly string ConfigPath = Path.Combine(AppDataPath, "config.json");
-    private static readonly string BackupPath = Path.Combine(AppDataPath, "Backups");
+    private static readonly string AppDirectory = Path.GetDirectoryName(Application.ExecutablePath);
+    private static readonly string SettingsFilePath = Path.Combine(AppDirectory, "settings.json");
+    private static readonly string SettingsBackupDirectoryPath = Path.Combine(AppDirectory, "Backups");
     private static readonly int MaxBackupCount = 5;
 
     private readonly ReaderWriterLockSlim _configLock = new ReaderWriterLockSlim();
+    private readonly JsonSerializerOptions _jsonOptions;
     private AppSettings _currentSettings;
 
-    public event EventHandler<ConfigurationChangedEventArgs> ConfigurationChanged;
-    public event EventHandler<ConfigurationValidationEventArgs> ConfigurationValidating;
-    public event EventHandler<ConfigurationBackupEventArgs> ConfigurationBackupCompleted;
+    public event EventHandler<SettingsChangedEventArgs> SettingsChanged;
+    public event EventHandler<SettingsValidationEventArgs> SettingsValidating;
+    public event EventHandler<SettingsBackupEventArgs> SettingsBackupCompleted;
 
-    public AppSettings CurrentSettings
+    public void LoadSettings()
     {
-        get
+        _configLock.EnterWriteLock();
+        try
         {
-            _configLock.EnterReadLock();
-            try { return _currentSettings; }
-            finally { _configLock.ExitReadLock(); }
+            if (File.Exists(SettingsFilePath))
+            {
+                LoadSettingsFromPath(SettingsFilePath);
+            }
+            else
+            {
+                _currentSettings = CreateDefaultSettings();
+                SaveSettings();
+            }
         }
-    }
-
-    public void LoadConfiguration()
-    {
-        // Thread-safe configuration loading with validation and legacy support
-    }
-
-    public void SaveConfiguration()
-    {
-        // Thread-safe configuration saving with backup and legacy format support
-    }
-
-    private void CreateBackup()
-    {
-        // Create timestamped backup with rotation
+        finally
+        {
+            _configLock.ExitWriteLock();
+        }
     }
 }
 ```
@@ -386,26 +390,31 @@ public class ConfigurationBackupEventArgs : EventArgs
 // MacroForm.cs
 public partial class MacroForm : Form
 {
-    private readonly UIManager uiManager;
+    private readonly KeyboardHook keyboardHook;
+    private readonly MouseHook mouseHook;
     private readonly MacroManager macroManager;
     private readonly HotkeyManager hotkeyManager;
+    private readonly UIManager uiManager;
+    private readonly ToolTip toolTip;
 
     public MacroForm()
     {
         InitializeComponent();
-        uiManager = new UIManager(this);
+        
+        // Initialize managers and hooks
         macroManager = new MacroManager();
-        hotkeyManager = new HotkeyManager();
-
-        InitializeEventHandlers();
-        LoadSettings();
-    }
-
-    private void InitializeEventHandlers()
-    {
-        hotkeyManager.KeySettingStateChanged += OnKeySettingStateChanged;
-        macroManager.ModeChanged += OnModeChanged;
-        macroManager.StateChanged += OnStateChanged;
+        hotkeyManager = new HotkeyManager(macroManager);
+        keyboardHook = new KeyboardHook();
+        mouseHook = new MouseHook();
+        
+        // Initialize UI Manager
+        uiManager = new UIManager(
+            this, macroManager, hotkeyManager,
+            debugLabel, lblJitterActive, lblRecoilReductionActive,
+            lblCurrentKeyValue, lblMacroSwitchKeyValue,
+            lblJitterStrengthValue, lblRecoilReductionStrengthValue,
+            notifyIcon, toolTip
+        );
     }
 }
 ```
@@ -413,23 +422,26 @@ public partial class MacroForm : Form
 #### UI Manager
 ```csharp
 // UIManager.cs
-public class UIManager
+public class UIManager : IDisposable
 {
-    private readonly MacroForm form;
-    private readonly Dictionary<string, Control> controls;
+    private readonly Form form;
+    private readonly MacroManager macroManager;
+    private readonly HotkeyManager hotkeyManager;
+    private readonly TextBox debugLabel;
+    private readonly Label lblJitterActive;
+    private readonly Label lblRecoilReductionActive;
+    private readonly NotifyIcon notifyIcon;
+    private readonly ToolTip toolTip;
 
-    public void UpdateModeLabels(bool jitterEnabled, bool recoilEnabled)
+    public void UpdateTitle()
     {
-        if (controls.TryGetValue("lblJitterActive", out var jitterLabel))
-            jitterLabel.Text = jitterEnabled ? "[Active]" : "";
+        string jitterMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" :
+            (macroManager.IsJitterEnabled ? "Jitter" : "Jitter (OFF)");
 
-        if (controls.TryGetValue("lblRecoilActive", out var recoilLabel))
-            recoilLabel.Text = recoilEnabled ? "[Active]" : "";
-    }
+        string recoilMode = macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" :
+            (macroManager.IsJitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction");
 
-    public void UpdateWindowTitle(bool macroEnabled)
-    {
-        form.Text = $"Notes&Tasks - {(macroEnabled ? "ON" : "OFF")}";
+        form.Text = $"Notes&Tasks [{(macroManager.IsEnabled ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
     }
 }
 ```
@@ -438,73 +450,34 @@ public class UIManager
 
 #### Event Categories
 1. **UI Events**
-```csharp
-// Event handler registration in MacroForm
-btnSetMacroKey.Click += (s, e) => hotkeyManager.StartSettingMacroKey();
-btnSetSwitchKey.Click += (s, e) => hotkeyManager.StartSettingSwitchKey();
-trackBarJitter.ValueChanged += (s, e) => macroManager.SetJitterStrength(trackBarJitter.Value);
-```
+   - Form state changes
+   - Control value updates
+   - Window management events
 
 2. **Configuration Events**
-```csharp
-// Settings change notification
-public event EventHandler<SettingsChangedEventArgs> SettingsChanged;
-
-protected virtual void OnSettingsChanged(Settings newSettings)
-{
-    SettingsChanged?.Invoke(this, new SettingsChangedEventArgs(newSettings));
-}
-```
+   - Settings changes
+   - Validation events
+   - Backup completion events
 
 3. **Macro Events**
-```csharp
-// MacroManager.cs
-public event EventHandler<MacroStateEventArgs> StateChanged;
-public event EventHandler<MacroModeEventArgs> ModeChanged;
-
-private void OnStateChanged(bool enabled)
-{
-    StateChanged?.Invoke(this, new MacroStateEventArgs(enabled));
-}
-```
+   - State changes
+   - Mode switches
+   - Effect start/stop events
 
 ### 6. Performance Optimization
 
-#### Timer Management
-```csharp
-// Base timer configuration
-private void InitializeTimers()
-{
-    recoilTimer = new System.Windows.Forms.Timer
-    {
-        Interval = 16,  // ~60Hz
-        Enabled = false
-    };
-
-    jitterTimer = new System.Windows.Forms.Timer
-    {
-        Interval = 25,  // 40Hz
-        Enabled = false
-    };
-}
-```
-
 #### Resource Management
 ```csharp
-public void Dispose()
-{
-    Dispose(true);
-    GC.SuppressFinalize(this);
-}
-
 protected virtual void Dispose(bool disposing)
 {
-    if (disposing)
+    if (!disposed)
     {
-        keyboardHook?.Dispose();
-        mouseHook?.Dispose();
-        recoilTimer?.Dispose();
-        jitterTimer?.Dispose();
+        if (disposing)
+        {
+            Stop();
+            Timer?.Dispose();
+        }
+        disposed = true;
     }
 }
 ```

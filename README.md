@@ -4,14 +4,17 @@ A professional Windows Forms application for advanced mouse input management, fe
 
 ## Features
 
-### Core Systems
+- **Mouse Input Management**
+  - Jitter Effect: Jitter mouse movement patterns strength (1-20)
+  - Recoil Reduction: Vertical mouse movement compensation strength (1-20)
+  - Multiple Operation Modes: Toggle or Always-On for each effect
+  - Adjustable Effect Strengths: Fine-tune the intensity of each effect
 
-#### Input System
-- Low-level keyboard and mouse hooks
-- Advanced input simulation
-- Thread-safe event handling
-- Resource-efficient implementation
-- Automatic cleanup on exit
+- **Modern UI**
+  - Dark Theme: Easy on the eyes during extended use
+  - System Tray Integration: Minimize to tray for discrete operation
+  - Real-time Status Display: Active effects and modes shown in window title
+  - Customizable Window Position and Size: Remembers your preferences
 
 #### Macro Engine
 - **Recoil Reduction System**
@@ -107,13 +110,9 @@ A professional Windows Forms application for advanced mouse input management, fe
 ### Software
 - Windows 10/11 (64-bit)
 - .NET 6.0 Runtime
-- Administrator privileges
+- Administrator privileges (required for input simulation)
 - DirectX 9.0c or later
-
-### Optional
-- Multi-button mouse for extended features
-- High refresh rate display (recommended)
-- SSD for faster startup
+- Standard mouse and keyboard
 
 ## Installation
 
