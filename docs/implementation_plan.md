@@ -92,6 +92,7 @@ Copy-Item -Path $sourceDir -Destination $backupDir -Recurse
 
 #### Step 8: Enhance Code Quality
 - [ ] Rename variables and methods for clarity
+- [ ] Ensuring program is identified as Notes&Tasks or NotesAndTasks
 - [ ] Remove unused code and variables
 - [ ] Apply consistent formatting
 - [ ] Consolidate duplicated code
