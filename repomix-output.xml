@@ -3429,273 +3429,6 @@ namespace NotesAndTasks
 }
 </file>
 
-<file path="src/Utilities/HotkeyManager.cs">
-using System;
-using System.Windows.Forms;
-using NotesAndTasks.Configuration;
-using NotesAndTasks.Models;
-
-namespace NotesAndTasks.Utilities
-{
-    /// <summary>
-    /// Manages hotkeys and key bindings for the macro application.
-    /// </summary>
-    public class HotkeyManager
-    {
-        #region Events
-        public event EventHandler<Keys> MacroKeyChanged;
-        public event EventHandler<Keys> SwitchKeyChanged;
-        public event EventHandler<bool> KeySettingStateChanged;
-        public event EventHandler<string> DebugInfoUpdated;
-        #endregion
-
-        #region Fields
-        private Keys macroKey = Keys.Capital;  // Default to Caps Lock
-        private Keys switchKey = Keys.Q;       // Default to Q
-        private ToggleType toggleType = ToggleType.Keyboard;
-        private bool isSettingMacroKey = false;
-        private bool isSettingSwitchKey = false;
-        private readonly MacroManager macroManager;
-        #endregion
-
-        #region Properties
-        /// <summary>
-        /// Gets the current macro toggle key.
-        /// </summary>
-        public Keys MacroKey => macroKey;
-
-        /// <summary>
-        /// Gets the current mode switch key.
-        /// </summary>
-        public Keys SwitchKey => switchKey;
-
-        /// <summary>
-        /// Gets the current toggle type.
-        /// </summary>
-        public ToggleType ToggleType => toggleType;
-
-        /// <summary>
-        /// Gets whether the manager is currently waiting for a macro key input.
-        /// </summary>
-        public bool IsSettingMacroKey => isSettingMacroKey;
-
-        /// <summary>
-        /// Gets whether the manager is currently waiting for a switch key input.
-        /// </summary>
-        public bool IsSettingSwitchKey => isSettingSwitchKey;
-        #endregion
-
-        #region Constructor
-        public HotkeyManager(MacroManager macroManager)
-        {
-            this.macroManager = macroManager ?? throw new ArgumentNullException(nameof(macroManager));
-        }
-        #endregion
-
-        #region Public Methods
-        /// <summary>
-        /// Sets the macro toggle key.
-        /// </summary>
-        /// <param name="key">The key to set.</param>
-        /// <param name="type">The type of toggle.</param>
-        public void SetMacroKey(Keys key, ToggleType type)
-        {
-            macroKey = key;
-            toggleType = type;
-            MacroKeyChanged?.Invoke(this, key);
-            SaveSettings();
-        }
-
-        /// <summary>
-        /// Sets the mode switch key.
-        /// </summary>
-        /// <param name="key">The key to set.</param>
-        public void SetSwitchKey(Keys key)
-        {
-            switchKey = key;
-            SwitchKeyChanged?.Invoke(this, key);
-            SaveSettings();
-        }
-
-        /// <summary>
-        /// Loads hotkey settings from the settings manager.
-        /// </summary>
-        public void LoadSettings()
-        {
-            var settings = ConfigurationManager.Instance.CurrentSettings;
-            if (settings != null)
-            {
-                macroKey = settings.HotkeySettings.MacroKey.Key;
-                switchKey = settings.HotkeySettings.SwitchKey.Key;
-                toggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
-            }
-        }
-
-        /// <summary>
-        /// Saves current hotkey settings to the settings manager.
-        /// </summary>
-        private void SaveSettings()
-        {
-            var settings = ConfigurationManager.Instance.CurrentSettings;
-            if (settings != null)
-            {
-                settings.HotkeySettings.MacroKey.Key = macroKey;
-                settings.HotkeySettings.SwitchKey.Key = switchKey;
-                settings.HotkeySettings.MacroKey.Type = ConvertToggleTypeToInputType(toggleType);
-                ConfigurationManager.Instance.SaveSettings();
-            }
-        }
-
-        /// <summary>
-        /// Converts InputType to ToggleType
-        /// </summary>
-        private ToggleType ConvertInputTypeToToggleType(Models.InputType inputType)
-        {
-            return inputType == Models.InputType.Keyboard ? ToggleType.Keyboard : ToggleType.MouseMiddle;
-        }
-
-        /// <summary>
-        /// Converts ToggleType to InputType
-        /// </summary>
-        private Models.InputType ConvertToggleTypeToInputType(ToggleType toggleType)
-        {
-            return toggleType == ToggleType.Keyboard ? Models.InputType.Keyboard : Models.InputType.Mouse;
-        }
-
-        /// <summary>
-        /// Resets hotkeys to their default values.
-        /// </summary>
-        public void ResetToDefaults()
-        {
-            SetMacroKey(Keys.Capital, ToggleType.Keyboard);
-            SetSwitchKey(Keys.Q);
-        }
-
-        /// <summary>
-        /// Starts listening for a new macro key.
-        /// </summary>
-        public void StartSettingMacroKey()
-        {
-            isSettingMacroKey = true;
-            isSettingSwitchKey = false;
-            KeySettingStateChanged?.Invoke(this, true);
-            DebugInfoUpdated?.Invoke(this, "Waiting for new macro key...");
-        }
-
-        /// <summary>
-        /// Starts listening for a new switch key.
-        /// </summary>
-        public void StartSettingSwitchKey()
-        {
-            isSettingSwitchKey = true;
-            isSettingMacroKey = false;
-            KeySettingStateChanged?.Invoke(this, true);
-            DebugInfoUpdated?.Invoke(this, "Waiting for new switch key...");
-        }
-
-        /// <summary>
-        /// Handles keyboard input events.
-        /// </summary>
-        public void HandleKeyDown(Keys virtualKeyCode)
-        {
-            if (isSettingMacroKey)
-            {
-                isSettingMacroKey = false;
-                KeySettingStateChanged?.Invoke(this, false);
-                SetMacroKey(virtualKeyCode, ToggleType.Keyboard);
-                DebugInfoUpdated?.Invoke(this, $"Set macro key to {virtualKeyCode}");
-            }
-            else if (isSettingSwitchKey)
-            {
-                isSettingSwitchKey = false;
-                KeySettingStateChanged?.Invoke(this, false);
-                SetSwitchKey(virtualKeyCode);
-                DebugInfoUpdated?.Invoke(this, $"Set switch key to {virtualKeyCode}");
-            }
-            else if (virtualKeyCode == macroKey && toggleType == ToggleType.Keyboard)
-            {
-                macroManager.ToggleMacro();
-            }
-            else if (virtualKeyCode == switchKey)
-            {
-                macroManager.SwitchMode();
-            }
-        }
-
-        /// <summary>
-        /// Handles mouse button input events.
-        /// </summary>
-        public void HandleMouseButton(MouseButtons button)
-        {
-            Keys key = MouseButtonToKeys(button);
-            ToggleType type = MouseButtonToToggleType(button);
-
-            if (isSettingMacroKey)
-            {
-                isSettingMacroKey = false;
-                KeySettingStateChanged?.Invoke(this, false);
-                SetMacroKey(key, type);
-                DebugInfoUpdated?.Invoke(this, $"Set macro key to {button}");
-            }
-            else if (isSettingSwitchKey)
-            {
-                isSettingSwitchKey = false;
-                KeySettingStateChanged?.Invoke(this, false);
-                SetSwitchKey(key);
-                DebugInfoUpdated?.Invoke(this, $"Set switch key to {button}");
-            }
-            else if (key == macroKey)
-            {
-                macroManager.ToggleMacro();
-            }
-            else if (key == switchKey)
-            {
-                macroManager.SwitchMode();
-            }
-        }
-
-        /// <summary>
-        /// Cancels any ongoing key setting operation.
-        /// </summary>
-        public void CancelKeySetting()
-        {
-            if (isSettingMacroKey || isSettingSwitchKey)
-            {
-                isSettingMacroKey = false;
-                isSettingSwitchKey = false;
-                KeySettingStateChanged?.Invoke(this, false);
-                DebugInfoUpdated?.Invoke(this, "Key setting cancelled");
-            }
-        }
-
-        #region Private Methods
-        private Keys MouseButtonToKeys(MouseButtons button)
-        {
-            return button switch
-            {
-                MouseButtons.Middle => Keys.MButton,
-                MouseButtons.XButton1 => Keys.XButton1,
-                MouseButtons.XButton2 => Keys.XButton2,
-                _ => Keys.None
-            };
-        }
-
-        private ToggleType MouseButtonToToggleType(MouseButtons button)
-        {
-            return button switch
-            {
-                MouseButtons.Middle => ToggleType.MouseMiddle,
-                MouseButtons.XButton1 => ToggleType.MouseX1,
-                MouseButtons.XButton2 => ToggleType.MouseX2,
-                _ => ToggleType.Keyboard
-            };
-        }
-        #endregion
-        #endregion
-    }
-}
-</file>
-
 <file path="src/Utilities/MacroManager.cs">
 using System;
 using System.Windows.Forms;
@@ -4501,6 +4234,391 @@ namespace NotesAndTasks.Configuration
 }
 </file>
 
+<file path="src/Utilities/HotkeyManager.cs">
+using System;
+using System.Windows.Forms;
+using NotesAndTasks.Configuration;
+using NotesAndTasks.Models;
+
+namespace NotesAndTasks.Utilities
+{
+    /// <summary>
+    /// Manages hotkeys and key bindings for the macro application.
+    /// </summary>
+    public class HotkeyManager
+    {
+        #region Events
+        public event EventHandler<Keys> MacroKeyChanged;
+        public event EventHandler<Keys> SwitchKeyChanged;
+        public event EventHandler<bool> KeySettingStateChanged;
+        public event EventHandler<string> DebugInfoUpdated;
+        #endregion
+
+        #region Fields
+        private Keys macroKey = Keys.Capital;  // Default to Caps Lock
+        private Keys switchKey = Keys.Q;       // Default to Q
+        private ToggleType toggleType = ToggleType.Keyboard;
+        private bool isSettingMacroKey = false;
+        private bool isSettingSwitchKey = false;
+        private readonly MacroManager macroManager;
+        #endregion
+
+        #region Properties
+        /// <summary>
+        /// Gets the current macro toggle key.
+        /// </summary>
+        public Keys MacroKey => macroKey;
+
+        /// <summary>
+        /// Gets the current mode switch key.
+        /// </summary>
+        public Keys SwitchKey => switchKey;
+
+        /// <summary>
+        /// Gets the current toggle type.
+        /// </summary>
+        public ToggleType ToggleType => toggleType;
+
+        /// <summary>
+        /// Gets whether the manager is currently waiting for a macro key input.
+        /// </summary>
+        public bool IsSettingMacroKey => isSettingMacroKey;
+
+        /// <summary>
+        /// Gets whether the manager is currently waiting for a switch key input.
+        /// </summary>
+        public bool IsSettingSwitchKey => isSettingSwitchKey;
+        #endregion
+
+        #region Constructor
+        public HotkeyManager(MacroManager macroManager)
+        {
+            this.macroManager = macroManager ?? throw new ArgumentNullException(nameof(macroManager));
+        }
+        #endregion
+
+        #region Public Methods
+        /// <summary>
+        /// Sets the macro toggle key.
+        /// </summary>
+        /// <param name="key">The key to set.</param>
+        /// <param name="type">The type of toggle.</param>
+        public void SetMacroKey(Keys key, ToggleType type)
+        {
+            macroKey = key;
+            toggleType = type;
+            MacroKeyChanged?.Invoke(this, key);
+            SaveSettings();
+        }
+
+        /// <summary>
+        /// Sets the mode switch key.
+        /// </summary>
+        /// <param name="key">The key to set.</param>
+        public void SetSwitchKey(Keys key)
+        {
+            switchKey = key;
+            SwitchKeyChanged?.Invoke(this, key);
+            SaveSettings();
+        }
+
+        /// <summary>
+        /// Sets the mode switch key with type information.
+        /// </summary>
+        /// <param name="key">The key to set.</param>
+        /// <param name="type">The toggle type (keyboard or mouse).</param>
+        public void SetSwitchKey(Keys key, ToggleType type)
+        {
+            switchKey = key;
+            SwitchKeyChanged?.Invoke(this, key);
+            SaveSettings(type);
+        }
+
+        /// <summary>
+        /// Loads hotkey settings from the settings manager.
+        /// </summary>
+        public void LoadSettings()
+        {
+            var settings = ConfigurationManager.Instance.CurrentSettings;
+            if (settings != null)
+            {
+                macroKey = settings.HotkeySettings.MacroKey.Key;
+                switchKey = settings.HotkeySettings.SwitchKey.Key;
+                toggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
+            }
+        }
+
+        /// <summary>
+        /// Saves current hotkey settings to the settings manager.
+        /// </summary>
+        private void SaveSettings()
+        {
+            SaveSettings(null);
+        }
+        
+        /// <summary>
+        /// Saves current hotkey settings to the settings manager with optional switch key type.
+        /// </summary>
+        private void SaveSettings(ToggleType? switchKeyType = null)
+        {
+            var settings = ConfigurationManager.Instance.CurrentSettings;
+            if (settings != null)
+            {
+                settings.HotkeySettings.MacroKey.Key = macroKey;
+                settings.HotkeySettings.SwitchKey.Key = switchKey;
+                settings.HotkeySettings.MacroKey.Type = ConvertToggleTypeToInputType(toggleType);
+                
+                // Update SwitchKey type based on provided parameter or existing value
+                if (switchKeyType.HasValue)
+                {
+                    settings.HotkeySettings.SwitchKey.Type = ConvertToggleTypeToInputType(switchKeyType.Value);
+                }
+                
+                ConfigurationManager.Instance.SaveSettings();
+            }
+        }
+
+        /// <summary>
+        /// Converts InputType to ToggleType
+        /// </summary>
+        private ToggleType ConvertInputTypeToToggleType(Models.InputType inputType)
+        {
+            return inputType == Models.InputType.Keyboard ? ToggleType.Keyboard : ToggleType.MouseMiddle;
+        }
+
+        /// <summary>
+        /// Converts ToggleType to InputType
+        /// </summary>
+        private Models.InputType ConvertToggleTypeToInputType(ToggleType toggleType)
+        {
+            return toggleType == ToggleType.Keyboard ? Models.InputType.Keyboard : Models.InputType.Mouse;
+        }
+
+        /// <summary>
+        /// Resets hotkeys to their default values.
+        /// </summary>
+        public void ResetToDefaults()
+        {
+            SetMacroKey(Keys.Capital, ToggleType.Keyboard);
+            SetSwitchKey(Keys.Q);
+        }
+
+        /// <summary>
+        /// Starts listening for a new macro key.
+        /// </summary>
+        public void StartSettingMacroKey()
+        {
+            isSettingMacroKey = true;
+            isSettingSwitchKey = false;
+            KeySettingStateChanged?.Invoke(this, true);
+            DebugInfoUpdated?.Invoke(this, "Waiting for new macro key...");
+        }
+
+        /// <summary>
+        /// Starts listening for a new switch key.
+        /// </summary>
+        public void StartSettingSwitchKey()
+        {
+            isSettingSwitchKey = true;
+            isSettingMacroKey = false;
+            KeySettingStateChanged?.Invoke(this, true);
+            DebugInfoUpdated?.Invoke(this, "Waiting for new switch key...");
+        }
+
+        /// <summary>
+        /// Handles keyboard input events.
+        /// </summary>
+        public void HandleKeyDown(Keys virtualKeyCode)
+        {
+            if (isSettingMacroKey)
+            {
+                isSettingMacroKey = false;
+                KeySettingStateChanged?.Invoke(this, false);
+                SetMacroKey(virtualKeyCode, ToggleType.Keyboard);
+                DebugInfoUpdated?.Invoke(this, $"Set macro key to {virtualKeyCode}");
+            }
+            else if (isSettingSwitchKey)
+            {
+                isSettingSwitchKey = false;
+                KeySettingStateChanged?.Invoke(this, false);
+                SetSwitchKey(virtualKeyCode);
+                DebugInfoUpdated?.Invoke(this, $"Set switch key to {virtualKeyCode}");
+            }
+            else if (virtualKeyCode == macroKey && toggleType == ToggleType.Keyboard)
+            {
+                macroManager.ToggleMacro();
+            }
+            else if (virtualKeyCode == switchKey)
+            {
+                macroManager.SwitchMode();
+            }
+        }
+
+        /// <summary>
+        /// Handles mouse button input events.
+        /// </summary>
+        public void HandleMouseButton(MouseButtons button)
+        {
+            Keys key = MouseButtonToKeys(button);
+            ToggleType type = MouseButtonToToggleType(button);
+
+            if (isSettingMacroKey)
+            {
+                isSettingMacroKey = false;
+                KeySettingStateChanged?.Invoke(this, false);
+                SetMacroKey(key, type);
+                DebugInfoUpdated?.Invoke(this, $"Set macro key to {button}");
+            }
+            else if (isSettingSwitchKey)
+            {
+                isSettingSwitchKey = false;
+                KeySettingStateChanged?.Invoke(this, false);
+                SetSwitchKey(key, type);
+                DebugInfoUpdated?.Invoke(this, $"Set switch key to {button}");
+            }
+            else if (key == macroKey)
+            {
+                macroManager.ToggleMacro();
+            }
+            else if (key == switchKey)
+            {
+                macroManager.SwitchMode();
+            }
+        }
+
+        /// <summary>
+        /// Cancels any ongoing key setting operation.
+        /// </summary>
+        public void CancelKeySetting()
+        {
+            if (isSettingMacroKey || isSettingSwitchKey)
+            {
+                isSettingMacroKey = false;
+                isSettingSwitchKey = false;
+                KeySettingStateChanged?.Invoke(this, false);
+                DebugInfoUpdated?.Invoke(this, "Key setting cancelled");
+            }
+        }
+
+        #region Private Methods
+        private Keys MouseButtonToKeys(MouseButtons button)
+        {
+            return button switch
+            {
+                MouseButtons.Middle => Keys.MButton,
+                MouseButtons.XButton1 => Keys.XButton1,
+                MouseButtons.XButton2 => Keys.XButton2,
+                _ => Keys.None
+            };
+        }
+
+        private ToggleType MouseButtonToToggleType(MouseButtons button)
+        {
+            return button switch
+            {
+                MouseButtons.Middle => ToggleType.MouseMiddle,
+                MouseButtons.XButton1 => ToggleType.MouseX1,
+                MouseButtons.XButton2 => ToggleType.MouseX2,
+                _ => ToggleType.Keyboard
+            };
+        }
+        #endregion
+        #endregion
+    }
+}
+</file>
+
+<file path="src/Utilities/RecoilReductionManager.cs">
+using System;
+using System.Windows.Forms;
+
+namespace NotesAndTasks.Utilities
+{
+    /// <summary>
+    /// Manages recoil reduction functionality for mouse movement.
+    /// This class handles the timing and strength of vertical compensation.
+    /// </summary>
+    public class RecoilReductionManager : MacroEffectBase
+    {
+        /// <summary>
+        /// Initializes a new instance of the RecoilReductionManager class.
+        /// </summary>
+        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
+        public RecoilReductionManager(InputSimulator inputSimulator) : base(inputSimulator, 1)
+        {
+        }
+
+        /// <summary>
+        /// Timer callback that applies the recoil reduction movement.
+        /// </summary>
+        protected override void OnTimerTick(object state)
+        {
+            if (!IsActive) return;
+
+            try
+            {
+                // Use InputSimulator's SimulateRecoilReduction method to avoid duplication
+                InputSimulator.SimulateRecoilReduction(Strength);
+            }
+            catch (Exception)
+            {
+                Stop();
+            }
+        }
+    }
+}
+</file>
+
+<file path="MouseMacro.csproj">
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UacUIApproved>true</UacUIApproved>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>Notes&amp;Tasks</AssemblyName>
+    <RootNamespace>NotesAndTasks</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ApplicationIcon>assets\logo.ico</ApplicationIcon>
+    <Title>Notes &amp; Tasks</Title>
+    <Authors>HaikalllP</Authors>
+    <Description>Task Management and Note Taking Application</Description>
+    <SignAssembly>true</SignAssembly>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <Version>1.0.0.1</Version> <!-- Incrementing the version for the next release -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="src\UI\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>
+</file>
+
 <file path="src/Utilities/InputSimulator.cs">
 using System;
 using System.Runtime.InteropServices;
@@ -4712,109 +4830,43 @@ namespace NotesAndTasks.Utilities
         }
 
         /// <summary>
+        /// Releases the unmanaged resources used by the InputSimulator and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    // Dispose managed resources here, if any
+                }
+
+                // Clean up any unmanaged resources here
+                // Nothing specific needed for SendInput API
+
+                disposed = true;
+            }
+        }
+
+        /// <summary>
         /// Disposes of resources used by the InputSimulator.
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                disposed = true;
-                GC.SuppressFinalize(this);
-            }
-        }
-    }
-}
-</file>
-
-<file path="src/Utilities/RecoilReductionManager.cs">
-using System;
-using System.Windows.Forms;
-
-namespace NotesAndTasks.Utilities
-{
-    /// <summary>
-    /// Manages recoil reduction functionality for mouse movement.
-    /// This class handles the timing and strength of vertical compensation.
-    /// </summary>
-    public class RecoilReductionManager : MacroEffectBase
-    {
-        /// <summary>
-        /// Initializes a new instance of the RecoilReductionManager class.
-        /// </summary>
-        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
-        public RecoilReductionManager(InputSimulator inputSimulator) : base(inputSimulator, 1)
-        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
-        /// Timer callback that applies the recoil reduction movement.
+        /// Finalizes an instance of the InputSimulator class.
         /// </summary>
-        protected override void OnTimerTick(object state)
+        ~InputSimulator()
         {
-            if (!IsActive) return;
-
-            try
-            {
-                // Use InputSimulator's SimulateRecoilReduction method to avoid duplication
-                InputSimulator.SimulateRecoilReduction(Strength);
-            }
-            catch (Exception)
-            {
-                Stop();
-            }
+            Dispose(false);
         }
     }
 }
-</file>
-
-<file path="MouseMacro.csproj">
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UacUIApproved>true</UacUIApproved>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>Notes&amp;Tasks</AssemblyName>
-    <RootNamespace>NotesAndTasks</RootNamespace>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <ApplicationIcon>assets\logo.ico</ApplicationIcon>
-    <Title>Notes &amp; Tasks</Title>
-    <Authors>HaikalllP</Authors>
-    <Description>Task Management and Note Taking Application</Description>
-    <SignAssembly>true</SignAssembly>
-    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <Version>1.0.0.1</Version> <!-- Incrementing the version for the next release -->
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>embedded</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>none</DebugType>
-    <Optimize>true</Optimize>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="src\**\*.cs">
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="src\UI\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-</Project>
 </file>
 
 <file path="src/UI/MacroForm.Designer.cs">
@@ -7285,6 +7337,7 @@ namespace NotesAndTasks
         /// <param name="e">Event data containing the close reason and cancellation option.</param>
         private void OnFormClosingHandler(object sender, FormClosingEventArgs e)
         {
+            // Only minimize to tray if explicitly requested by user closing AND minimizeToTray is checked
             if (!isExiting && chkMinimizeToTray.Checked && e.CloseReason == CloseReason.UserClosing)
             {
                 e.Cancel = true;
@@ -7292,10 +7345,14 @@ namespace NotesAndTasks
                 notifyIcon.Visible = true;
                 uiManager.UpdateDebugInfo("Application minimized to system tray");
             }
-            else if (isExiting || !chkMinimizeToTray.Checked)
+            else
             {
-                // Cleanup when actually closing
-                CleanupAndExit();
+                // Always perform cleanup when actually closing (not minimizing)
+                if (!isExiting)
+                {
+                    SaveCurrentSettings();
+                    PerformCleanup();
+                }
             }
         }
 
@@ -7558,23 +7615,14 @@ namespace NotesAndTasks
         /// </summary>
         private void CleanupAndExit()
         {
+            if (isExiting) return; // Prevent recursive calls
+            
             try
             {
                 isExiting = true;
                 SaveCurrentSettings();
-
-                // Stop and dispose of hooks
-                keyboardHook?.Dispose();
-                mouseHook?.Dispose();
-
-                // Stop and dispose of macro manager
-                macroManager?.Dispose();
-
-                // Clean up UI resources
-                notifyIcon?.Dispose();
-                toolTip?.Dispose();
-                uiManager?.Dispose();
-
+                PerformCleanup();
+                
                 // Close the form
                 this.Close();
             }
@@ -7583,14 +7631,61 @@ namespace NotesAndTasks
                 uiManager.UpdateDebugInfo($"Error during cleanup: {ex.Message}");
             }
         }
+        
+        /// <summary>
+        /// Performs resource cleanup, separating it from the exit logic
+        /// </summary>
+        private void PerformCleanup()
+        {
+            try
+            {
+                // Stop and dispose of hooks
+                if (keyboardHook != null)
+                {
+                    keyboardHook.Stop();
+                    keyboardHook.Dispose();
+                }
+                
+                if (mouseHook != null)
+                {
+                    mouseHook.Stop();
+                    mouseHook.Dispose();
+                }
+
+                // Stop and dispose of macro manager
+                macroManager?.Dispose();
+
+                // Clean up UI resources
+                if (notifyIcon != null)
+                {
+                    notifyIcon.Visible = false;
+                    notifyIcon.Dispose();
+                }
+                
+                toolTip?.Dispose();
+                uiManager?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+        }
 
         /// <summary>
-        /// Override of OnFormClosing to ensure settings are saved.
+        /// Override of OnFormClosing to ensure settings are saved and proper cleanup is performed.
         /// </summary>
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            SaveCurrentSettings();
+            // Let the handler do its work
             base.OnFormClosing(e);
+            
+            // If we're really closing (not cancelled), ensure cleanup happens
+            if (!e.Cancel && !isExiting)
+            {
+                isExiting = true;
+                SaveCurrentSettings();
+                PerformCleanup();
+            }
         }
     }
 }
