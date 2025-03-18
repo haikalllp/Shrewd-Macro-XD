@@ -20,6 +20,7 @@ namespace NotesAndTasks.Configuration
         private static readonly string SettingsFilePath = Path.Combine(AppDirectory, "settings.json");
         private static readonly string SettingsBackupDirectoryPath = Path.Combine(AppDirectory, "Backups");
         private static readonly int MaxBackupCount = 5;
+        private static readonly int MaxBackupAgeDays = 7; // Keep backups for 7 days maximum
 
         // Legacy settings path for compatibility
         private static readonly string LegacySettingsFilePath = Path.Combine(AppDirectory, "macro_config.json");
@@ -267,24 +268,43 @@ namespace NotesAndTasks.Configuration
         }
 
         /// <summary>
-        /// Removes old backup files exceeding the maximum count
+        /// Removes old backup files exceeding the maximum count or age
         /// </summary>
         private void CleanupOldBackups()
         {
-            var backupFiles = Directory.GetFiles(SettingsBackupDirectoryPath, "settings_*.json")
-                                     .OrderByDescending(f => f)
-                                     .Skip(MaxBackupCount);
-
-            foreach (var file in backupFiles)
+            try
             {
-                try
+                var backupFiles = Directory.GetFiles(SettingsBackupDirectoryPath, "settings_*.json")
+                                         .Select(f => new FileInfo(f))
+                                         .OrderByDescending(f => f.LastWriteTime)
+                                         .ToList();
+
+                // Remove files exceeding count limit
+                var filesToDeleteCount = backupFiles.Skip(MaxBackupCount).ToList();
+                
+                // Remove files exceeding age limit
+                var cutoffDate = DateTime.Now.AddDays(-MaxBackupAgeDays);
+                var filesToDeleteAge = backupFiles.Where(f => f.LastWriteTime < cutoffDate).ToList();
+                
+                // Combine both lists and remove duplicates
+                var filesToDelete = filesToDeleteCount.Union(filesToDeleteAge);
+
+                foreach (var file in filesToDelete)
                 {
-                    File.Delete(file);
+                    try
+                    {
+                        file.Delete();
+                        System.Diagnostics.Debug.WriteLine($"Deleted old backup: {file.Name}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to delete backup {file.Name}: {ex.Message}");
+                    }
                 }
-                catch (Exception)
-                {
-                    // Log but continue if deletion fails
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to cleanup backups: {ex.Message}");
             }
         }
 

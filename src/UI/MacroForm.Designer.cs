@@ -455,12 +455,16 @@ namespace NotesAndTasks
             // notifyIcon
             // 
             notifyIcon.ContextMenuStrip = trayContextMenu;
-            notifyIcon.Text = "NotesAndTasks";
-            notifyIcon.Visible = true;
+            notifyIcon.Text = "Notes&Tasks";
+            notifyIcon.Visible = false;
             // 
             // trayContextMenu
             // 
-            trayContextMenu.Items.AddRange(new ToolStripItem[] { showWindowMenuItem, exitMenuItem });
+            trayContextMenu.Items.AddRange(new ToolStripItem[] {
+                showWindowMenuItem,
+                new ToolStripSeparator(),
+                exitMenuItem
+            });
             trayContextMenu.Name = "trayContextMenu";
             trayContextMenu.Size = new Size(151, 48);
             // 
@@ -468,7 +472,8 @@ namespace NotesAndTasks
             // 
             showWindowMenuItem.Name = "showWindowMenuItem";
             showWindowMenuItem.Size = new Size(150, 22);
-            showWindowMenuItem.Text = "Show Window";
+            showWindowMenuItem.Text = "Open";
+            showWindowMenuItem.Font = new Font(showWindowMenuItem.Font, FontStyle.Bold);
             // 
             // exitMenuItem
             // 
