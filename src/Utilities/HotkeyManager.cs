@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Forms;
 using NotesAndTasks.Configuration;
+using NotesAndTasks.Models;
 
 namespace NotesAndTasks.Utilities
 {
@@ -89,12 +90,12 @@ namespace NotesAndTasks.Utilities
         /// </summary>
         public void LoadSettings()
         {
-            var settings = SettingsManager.CurrentSettings;
+            var settings = ConfigurationManager.Instance.CurrentSettings;
             if (settings != null)
             {
-                macroKey = settings.MacroKey;
-                switchKey = settings.SwitchKey;
-                toggleType = settings.ToggleType;
+                macroKey = settings.HotkeySettings.MacroKey.Key;
+                switchKey = settings.HotkeySettings.SwitchKey.Key;
+                toggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
             }
         }
 
@@ -103,14 +104,30 @@ namespace NotesAndTasks.Utilities
         /// </summary>
         private void SaveSettings()
         {
-            var settings = SettingsManager.CurrentSettings;
+            var settings = ConfigurationManager.Instance.CurrentSettings;
             if (settings != null)
             {
-                settings.MacroKey = macroKey;
-                settings.SwitchKey = switchKey;
-                settings.ToggleType = toggleType;
-                SettingsManager.SaveSettings();
+                settings.HotkeySettings.MacroKey.Key = macroKey;
+                settings.HotkeySettings.SwitchKey.Key = switchKey;
+                settings.HotkeySettings.MacroKey.Type = ConvertToggleTypeToInputType(toggleType);
+                ConfigurationManager.Instance.SaveConfiguration();
             }
+        }
+
+        /// <summary>
+        /// Converts InputType to ToggleType
+        /// </summary>
+        private ToggleType ConvertInputTypeToToggleType(Models.InputType inputType)
+        {
+            return inputType == Models.InputType.Keyboard ? ToggleType.Keyboard : ToggleType.MouseMiddle;
+        }
+
+        /// <summary>
+        /// Converts ToggleType to InputType
+        /// </summary>
+        private Models.InputType ConvertToggleTypeToInputType(ToggleType toggleType)
+        {
+            return toggleType == ToggleType.Keyboard ? Models.InputType.Keyboard : Models.InputType.Mouse;
         }
 
         /// <summary>

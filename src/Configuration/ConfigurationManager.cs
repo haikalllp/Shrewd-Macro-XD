@@ -22,14 +22,45 @@ namespace NotesAndTasks.Configuration
         private static readonly string BackupPath = Path.Combine(AppDataPath, "Backups");
         private static readonly int MaxBackupCount = 5;
 
+        // Legacy configuration path for compatibility
+        private static readonly string LegacyConfigPath = Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory, 
+            "macro_config.json"
+        );
+
         private readonly ReaderWriterLockSlim _configLock = new ReaderWriterLockSlim();
         private readonly JsonSerializerOptions _jsonOptions;
         private AppSettings _currentSettings;
         private bool _disposed;
 
+        // Singleton instance
+        private static ConfigurationManager _instance;
+        private static readonly object _instanceLock = new object();
+
         public event EventHandler<ConfigurationChangedEventArgs> ConfigurationChanged;
         public event EventHandler<ConfigurationValidationEventArgs> ConfigurationValidating;
         public event EventHandler<ConfigurationBackupEventArgs> ConfigurationBackupCompleted;
+
+        /// <summary>
+        /// Gets the singleton instance of the ConfigurationManager
+        /// </summary>
+        public static ConfigurationManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    lock (_instanceLock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new ConfigurationManager();
+                        }
+                    }
+                }
+                return _instance;
+            }
+        }
 
         /// <summary>
         /// Gets the current application settings
@@ -53,12 +84,15 @@ namespace NotesAndTasks.Configuration
         /// <summary>
         /// Initializes a new instance of the ConfigurationManager class
         /// </summary>
-        public ConfigurationManager()
+        private ConfigurationManager()
         {
             _jsonOptions = new JsonSerializerOptions
             {
                 WriteIndented = true
             };
+
+            // Register custom converters
+            _jsonOptions.Converters.Add(new InputBindingConverter());
 
             InitializeDirectories();
             LoadConfiguration();
@@ -72,26 +106,17 @@ namespace NotesAndTasks.Configuration
             _configLock.EnterWriteLock();
             try
             {
+                // Try new configuration path first
                 if (File.Exists(ConfigPath))
                 {
-                    string jsonContent = File.ReadAllText(ConfigPath);
-                    var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
-
-                    var validationArgs = new ConfigurationValidationEventArgs(loadedSettings);
-                    ConfigurationValidating?.Invoke(this, validationArgs);
-
-                    if (validationArgs.IsValid && ValidateConfiguration(loadedSettings))
-                    {
-                        var previousSettings = _currentSettings;
-                        _currentSettings = loadedSettings;
-                        OnConfigurationChanged("All", previousSettings, _currentSettings);
-                    }
-                    else
-                    {
-                        _currentSettings = CreateDefaultConfiguration();
-                        SaveConfiguration(); // Save default configuration
-                    }
+                    LoadConfigurationFromPath(ConfigPath);
                 }
+                // If new configuration doesn't exist, try to load from legacy path
+                else if (File.Exists(LegacyConfigPath))
+                {
+                    MigrateLegacyConfiguration();
+                }
+                // If no configuration exists, create defaults
                 else
                 {
                     _currentSettings = CreateDefaultConfiguration();
@@ -109,6 +134,81 @@ namespace NotesAndTasks.Configuration
             finally
             {
                 _configLock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// Loads configuration from the specified file path
+        /// </summary>
+        private void LoadConfigurationFromPath(string path)
+        {
+            string jsonContent = File.ReadAllText(path);
+            var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
+
+            var validationArgs = new ConfigurationValidationEventArgs(loadedSettings);
+            ConfigurationValidating?.Invoke(this, validationArgs);
+
+            if (validationArgs.IsValid && ValidateConfiguration(loadedSettings))
+            {
+                var previousSettings = _currentSettings;
+                _currentSettings = loadedSettings;
+                OnConfigurationChanged("All", previousSettings, _currentSettings);
+            }
+            else
+            {
+                _currentSettings = CreateDefaultConfiguration();
+                SaveConfiguration(); // Save default configuration
+            }
+        }
+
+        /// <summary>
+        /// Migrates settings from the legacy configuration file to the new format
+        /// </summary>
+        private void MigrateLegacyConfiguration()
+        {
+            try
+            {
+                string jsonContent = File.ReadAllText(LegacyConfigPath);
+                var legacySettings = Newtonsoft.Json.JsonConvert.DeserializeObject<Settings>(jsonContent);
+
+                if (legacySettings != null)
+                {
+                    // Create new configuration from legacy settings
+                    var settings = new AppSettings();
+                    
+                    // Macro settings
+                    settings.MacroSettings.JitterStrength = legacySettings.JitterStrength;
+                    settings.MacroSettings.RecoilReductionStrength = legacySettings.RecoilReductionStrength;
+                    settings.MacroSettings.AlwaysJitterMode = legacySettings.AlwaysJitterMode;
+                    settings.MacroSettings.AlwaysRecoilReductionMode = legacySettings.AlwaysRecoilReductionMode;
+                    settings.MacroSettings.JitterEnabled = legacySettings.JitterEnabled;
+                    settings.MacroSettings.RecoilReductionEnabled = legacySettings.RecoilReductionEnabled;
+                    
+                    // UI settings
+                    settings.UISettings.MinimizeToTray = legacySettings.MinimizeToTray;
+                    
+                    // Hotkey settings
+                    settings.HotkeySettings.MacroKey = new InputBinding(legacySettings.MacroKey, 
+                        legacySettings.ToggleType == Utilities.ToggleType.Keyboard ? InputType.Keyboard : InputType.Mouse);
+                    settings.HotkeySettings.SwitchKey = new InputBinding(legacySettings.SwitchKey, InputType.Keyboard);
+
+                    _currentSettings = settings;
+                    SaveConfiguration();
+                    
+                    // Log the migration
+                    System.Diagnostics.Debug.WriteLine("Migrated settings from legacy format to new format");
+                }
+                else
+                {
+                    _currentSettings = CreateDefaultConfiguration();
+                    SaveConfiguration();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to migrate legacy configuration: {ex.Message}");
+                _currentSettings = CreateDefaultConfiguration();
+                SaveConfiguration();
             }
         }
 
@@ -214,7 +314,7 @@ namespace NotesAndTasks.Configuration
         {
             var settings = new AppSettings();
             
-            // Set default values as per KnownIssue.md
+            // Set default values
             settings.MacroSettings.JitterStrength = 3;
             settings.MacroSettings.RecoilReductionStrength = 1;
             settings.MacroSettings.AlwaysJitterMode = false;

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Security.Principal;
+using NotesAndTasks.Configuration;
 
 namespace NotesAndTasks
 {
@@ -81,6 +82,9 @@ namespace NotesAndTasks
 
                 try
                 {
+                    // Initialize configuration manager before application starts
+                    var _ = ConfigurationManager.Instance;
+                    
                     Application.Run(new MacroForm());
                 }
                 finally

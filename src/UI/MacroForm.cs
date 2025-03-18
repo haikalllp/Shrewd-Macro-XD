@@ -9,6 +9,7 @@ using NotesAndTasks.Configuration;
 using NotesAndTasks.Hooks;
 using NotesAndTasks.Utilities;
 using NotesAndTasks.UI;
+using NotesAndTasks.Models;
 
 namespace NotesAndTasks
 {
@@ -345,8 +346,8 @@ namespace NotesAndTasks
             {
                 macroManager.SetAlwaysJitterMode(chkAlwaysJitter.Checked);
                 btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
-                SettingsManager.CurrentSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
-                SettingsManager.SaveSettings();
+                ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
+                ConfigurationManager.Instance.SaveConfiguration();
                 uiManager.UpdateTitle();
                 uiManager.UpdateModeLabels();
             };
@@ -355,32 +356,32 @@ namespace NotesAndTasks
             {
                 macroManager.SetAlwaysRecoilReductionMode(chkAlwaysRecoilReduction.Checked);
                 btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
-                SettingsManager.CurrentSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                SettingsManager.SaveSettings();
+                ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
+                ConfigurationManager.Instance.SaveConfiguration();
                 uiManager.UpdateTitle();
                 uiManager.UpdateModeLabels();
             };
 
             chkMinimizeToTray.CheckedChanged += (sender, e) =>
             {
-                SettingsManager.CurrentSettings.MinimizeToTray = chkMinimizeToTray.Checked;
-                SettingsManager.SaveSettings();
+                ConfigurationManager.Instance.CurrentSettings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
+                ConfigurationManager.Instance.SaveConfiguration();
             };
 
             trackBarJitter.ValueChanged += (sender, e) =>
             {
                 macroManager.SetJitterStrength(trackBarJitter.Value);
                 lblJitterStrengthValue.Text = trackBarJitter.Value.ToString();
-                SettingsManager.CurrentSettings.JitterStrength = trackBarJitter.Value;
-                SettingsManager.SaveSettings();
+                ConfigurationManager.Instance.CurrentSettings.MacroSettings.JitterStrength = trackBarJitter.Value;
+                ConfigurationManager.Instance.SaveConfiguration();
             };
 
             trackBarRecoilReduction.ValueChanged += (sender, e) =>
             {
                 macroManager.SetRecoilReductionStrength(trackBarRecoilReduction.Value);
                 lblRecoilReductionStrengthValue.Text = trackBarRecoilReduction.Value.ToString();
-                SettingsManager.CurrentSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
-                SettingsManager.SaveSettings();
+                ConfigurationManager.Instance.CurrentSettings.MacroSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
+                ConfigurationManager.Instance.SaveConfiguration();
             };
         }
 
@@ -392,13 +393,11 @@ namespace NotesAndTasks
         {
             try
             {
-                var settings = SettingsManager.CurrentSettings;
+                var settings = ConfigurationManager.Instance.CurrentSettings;
                 Validation.ValidateNotNull(settings, nameof(settings));
 
                 // Validate all settings before applying them
-                if (!SettingsValidation.ValidateSettings(settings, 
-                    Math.Min(trackBarJitter.Minimum, trackBarRecoilReduction.Minimum),
-                    Math.Max(trackBarJitter.Maximum, trackBarRecoilReduction.Maximum)))
+                if (!ValidateSettings(settings))
                 {
                     uiManager.UpdateDebugInfo("Invalid settings detected, resetting to defaults");
                     ResetToDefaultSettings();
@@ -406,11 +405,11 @@ namespace NotesAndTasks
                 }
 
                 // Apply validated settings to UI
-                trackBarJitter.Value = settings.JitterStrength;
-                trackBarRecoilReduction.Value = settings.RecoilReductionStrength;
-                chkAlwaysJitter.Checked = settings.AlwaysJitterMode;
-                chkAlwaysRecoilReduction.Checked = settings.AlwaysRecoilReductionMode;
-                chkMinimizeToTray.Checked = settings.MinimizeToTray;
+                trackBarJitter.Value = settings.MacroSettings.JitterStrength;
+                trackBarRecoilReduction.Value = settings.MacroSettings.RecoilReductionStrength;
+                chkAlwaysJitter.Checked = settings.MacroSettings.AlwaysJitterMode;
+                chkAlwaysRecoilReduction.Checked = settings.MacroSettings.AlwaysRecoilReductionMode;
+                chkMinimizeToTray.Checked = settings.UISettings.MinimizeToTray;
 
                 // Update UI elements
                 uiManager.UpdateTitle();
@@ -425,19 +424,56 @@ namespace NotesAndTasks
         }
 
         /// <summary>
+        /// Validates settings to ensure they're within expected ranges
+        /// </summary>
+        private bool ValidateSettings(AppSettings settings)
+        {
+            if (settings == null) return false;
+            
+            return settings.MacroSettings.JitterStrength >= trackBarJitter.Minimum && 
+                   settings.MacroSettings.JitterStrength <= trackBarJitter.Maximum &&
+                   settings.MacroSettings.RecoilReductionStrength >= trackBarRecoilReduction.Minimum &&
+                   settings.MacroSettings.RecoilReductionStrength <= trackBarRecoilReduction.Maximum;
+        }
+
+        /// <summary>
         /// Saves the current settings to the settings manager.
         /// </summary>
         private void SaveCurrentSettings()
         {
             try
             {
-                var settings = SettingsManager.CurrentSettings;
-                settings.JitterStrength = trackBarJitter.Value;
-                settings.RecoilReductionStrength = trackBarRecoilReduction.Value;
-                settings.AlwaysJitterMode = chkAlwaysJitter.Checked;
-                settings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                settings.MinimizeToTray = chkMinimizeToTray.Checked;
-                SettingsManager.SaveSettings();
+                // Save to new configuration system
+                var settings = ConfigurationManager.Instance.CurrentSettings;
+                settings.MacroSettings.JitterStrength = trackBarJitter.Value;
+                settings.MacroSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
+                settings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
+                settings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
+                settings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
+                ConfigurationManager.Instance.SaveConfiguration();
+                
+                // Also save to legacy format for backward compatibility during migration
+                try
+                {
+                    if (File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "macro_config.json")))
+                    {
+                        // Only update the legacy system if the file already exists
+                        if (SettingsManager.CurrentSettings != null)
+                        {
+                            SettingsManager.CurrentSettings.JitterStrength = trackBarJitter.Value;
+                            SettingsManager.CurrentSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
+                            SettingsManager.CurrentSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
+                            SettingsManager.CurrentSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
+                            SettingsManager.CurrentSettings.MinimizeToTray = chkMinimizeToTray.Checked;
+                            SettingsManager.SaveSettings();
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Ignore errors in the legacy system, as the primary system is the new one
+                }
+                
                 uiManager.UpdateDebugInfo("Settings saved successfully");
             }
             catch (Exception ex)
