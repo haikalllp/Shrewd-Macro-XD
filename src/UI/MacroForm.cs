@@ -121,7 +121,6 @@ namespace NotesAndTasks
                         {
                             chkAlwaysRecoilReduction.Checked = false;
                             macroManager.SetAlwaysJitterMode(true);
-                            btnSetMacroSwitch.Enabled = false;
                             ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = true;
                             ConfigurationManager.Instance.SaveSettings();
                             uiManager.UpdateTitle();
@@ -130,7 +129,6 @@ namespace NotesAndTasks
                         else
                         {
                             macroManager.SetAlwaysJitterMode(false);
-                            btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
                             ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = false;
                             ConfigurationManager.Instance.SaveSettings();
                             uiManager.UpdateTitle();
@@ -152,7 +150,6 @@ namespace NotesAndTasks
                         {
                             chkAlwaysJitter.Checked = false;
                             macroManager.SetAlwaysRecoilReductionMode(true);
-                            btnSetMacroSwitch.Enabled = false;
                             ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = true;
                             ConfigurationManager.Instance.SaveSettings();
                             uiManager.UpdateTitle();
@@ -161,7 +158,6 @@ namespace NotesAndTasks
                         else
                         {
                             macroManager.SetAlwaysRecoilReductionMode(false);
-                            btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
                             ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = false;
                             ConfigurationManager.Instance.SaveSettings();
                             uiManager.UpdateTitle();
