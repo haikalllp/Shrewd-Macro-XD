@@ -35,6 +35,8 @@ namespace NotesAndTasks
         private readonly UIManager uiManager;
         private readonly ToolTip toolTip;
         private bool isExiting = false;
+        private readonly EventHandler alwaysJitterCheckedChanged;
+        private readonly EventHandler alwaysRecoilReductionCheckedChanged;
         #endregion
 
         /// <summary>
@@ -109,6 +111,73 @@ namespace NotesAndTasks
                         CleanupAndExit();
                     }
                 };
+
+                // Initialize event handlers
+                alwaysJitterCheckedChanged = (sender, e) =>
+                {
+                    try
+                    {
+                        if (chkAlwaysJitter.Checked)
+                        {
+                            chkAlwaysRecoilReduction.Checked = false;
+                            macroManager.SetAlwaysJitterMode(true);
+                            btnSetMacroSwitch.Enabled = false;
+                            ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = true;
+                            ConfigurationManager.Instance.SaveSettings();
+                            uiManager.UpdateTitle();
+                            uiManager.UpdateModeLabels();
+                        }
+                        else
+                        {
+                            macroManager.SetAlwaysJitterMode(false);
+                            btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
+                            ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = false;
+                            ConfigurationManager.Instance.SaveSettings();
+                            uiManager.UpdateTitle();
+                            uiManager.UpdateModeLabels();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error toggling jitter: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        chkAlwaysJitter.Checked = false;
+                    }
+                };
+
+                alwaysRecoilReductionCheckedChanged = (sender, e) =>
+                {
+                    try
+                    {
+                        if (chkAlwaysRecoilReduction.Checked)
+                        {
+                            chkAlwaysJitter.Checked = false;
+                            macroManager.SetAlwaysRecoilReductionMode(true);
+                            btnSetMacroSwitch.Enabled = false;
+                            ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = true;
+                            ConfigurationManager.Instance.SaveSettings();
+                            uiManager.UpdateTitle();
+                            uiManager.UpdateModeLabels();
+                        }
+                        else
+                        {
+                            macroManager.SetAlwaysRecoilReductionMode(false);
+                            btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
+                            ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = false;
+                            ConfigurationManager.Instance.SaveSettings();
+                            uiManager.UpdateTitle();
+                            uiManager.UpdateModeLabels();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error toggling recoil reduction: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        chkAlwaysRecoilReduction.Checked = false;
+                    }
+                };
+
+                // Subscribe to events
+                chkAlwaysJitter.CheckedChanged += alwaysJitterCheckedChanged;
+                chkAlwaysRecoilReduction.CheckedChanged += alwaysRecoilReductionCheckedChanged;
             }
             catch (Exception ex)
             {
@@ -340,26 +409,6 @@ namespace NotesAndTasks
             btnSetMacroSwitch.Click += (sender, e) =>
             {
                 hotkeyManager.StartSettingSwitchKey();
-            };
-
-            chkAlwaysJitter.CheckedChanged += (sender, e) =>
-            {
-                macroManager.SetAlwaysJitterMode(chkAlwaysJitter.Checked);
-                btnSetMacroSwitch.Enabled = !chkAlwaysJitter.Checked;
-                ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
-                ConfigurationManager.Instance.SaveSettings();
-                uiManager.UpdateTitle();
-                uiManager.UpdateModeLabels();
-            };
-
-            chkAlwaysRecoilReduction.CheckedChanged += (sender, e) =>
-            {
-                macroManager.SetAlwaysRecoilReductionMode(chkAlwaysRecoilReduction.Checked);
-                btnSetMacroSwitch.Enabled = !chkAlwaysRecoilReduction.Checked;
-                ConfigurationManager.Instance.CurrentSettings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                ConfigurationManager.Instance.SaveSettings();
-                uiManager.UpdateTitle();
-                uiManager.UpdateModeLabels();
             };
 
             chkMinimizeToTray.CheckedChanged += (sender, e) =>

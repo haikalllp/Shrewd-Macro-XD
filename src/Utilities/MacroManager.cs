@@ -210,27 +210,22 @@ namespace NotesAndTasks.Utilities
                 try
                 {
                     isTransitioningMode = true;
-                    
                     bool stateChanged = false;
-                    
-                    if (enabled && IsAlwaysRecoilReductionMode)
+
+                    // First handle disabling if requested
+                    if (!enabled && IsAlwaysJitterMode)
                     {
-                        IsAlwaysRecoilReductionMode = false;
+                        IsAlwaysJitterMode = false;
                         stateChanged = true;
                     }
-                    
-                    if (IsAlwaysJitterMode != enabled)
+                    // Only allow enabling if the other mode is not enabled
+                    else if (enabled && !IsAlwaysJitterMode && !IsAlwaysRecoilReductionMode)
                     {
-                        IsAlwaysJitterMode = enabled;
-                        stateChanged = true;
-                    }
-                    
-                    if (enabled && !IsJitterEnabled)
-                    {
+                        IsAlwaysJitterMode = true;
                         IsJitterEnabled = true;
                         stateChanged = true;
                     }
-                    
+
                     if (stateChanged)
                     {
                         ModeChanged?.Invoke(this, IsJitterEnabled);
@@ -255,27 +250,22 @@ namespace NotesAndTasks.Utilities
                 try
                 {
                     isTransitioningMode = true;
-                    
                     bool stateChanged = false;
-                    
-                    if (enabled && IsAlwaysJitterMode)
+
+                    // First handle disabling if requested
+                    if (!enabled && IsAlwaysRecoilReductionMode)
                     {
-                        IsAlwaysJitterMode = false;
+                        IsAlwaysRecoilReductionMode = false;
                         stateChanged = true;
                     }
-                    
-                    if (IsAlwaysRecoilReductionMode != enabled)
+                    // Only allow enabling if the other mode is not enabled
+                    else if (enabled && !IsAlwaysRecoilReductionMode && !IsAlwaysJitterMode)
                     {
-                        IsAlwaysRecoilReductionMode = enabled;
-                        stateChanged = true;
-                    }
-                    
-                    if (enabled && IsJitterEnabled)
-                    {
+                        IsAlwaysRecoilReductionMode = true;
                         IsJitterEnabled = false;
                         stateChanged = true;
                     }
-                    
+
                     if (stateChanged)
                     {
                         ModeChanged?.Invoke(this, IsJitterEnabled);
@@ -435,4 +425,4 @@ namespace NotesAndTasks.Utilities
         }
         #endregion
     }
-} 
+}

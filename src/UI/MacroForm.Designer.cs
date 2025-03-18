@@ -21,6 +21,17 @@ namespace NotesAndTasks
         {
             if (disposing)
             {
+                // Unsubscribe from events
+                if (chkAlwaysJitter != null)
+                {
+                    chkAlwaysJitter.CheckedChanged -= alwaysJitterCheckedChanged;
+                }
+                if (chkAlwaysRecoilReduction != null)
+                {
+                    chkAlwaysRecoilReduction.CheckedChanged -= alwaysRecoilReductionCheckedChanged;
+                }
+
+                // Dispose other resources
                 if (components != null)
                 {
                     components.Dispose();
