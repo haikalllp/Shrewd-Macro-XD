@@ -439,10 +439,7 @@ namespace NotesAndTasks
             try
             {
                 var settings = ConfigurationManager.Instance.CurrentSettings;
-                Validation.ValidateNotNull(settings, nameof(settings));
-
-                // Validate all settings before applying them
-                if (!ValidateSettings(settings))
+                if (settings == null)
                 {
                     uiManager.UpdateDebugInfo("Invalid settings detected, resetting to defaults");
                     ResetToDefaultSettings();
@@ -469,26 +466,12 @@ namespace NotesAndTasks
         }
 
         /// <summary>
-        /// Validates settings to ensure they're within expected ranges
-        /// </summary>
-        private bool ValidateSettings(AppSettings settings)
-        {
-            if (settings == null) return false;
-            
-            return settings.MacroSettings.JitterStrength >= trackBarJitter.Minimum && 
-                   settings.MacroSettings.JitterStrength <= trackBarJitter.Maximum &&
-                   settings.MacroSettings.RecoilReductionStrength >= trackBarRecoilReduction.Minimum &&
-                   settings.MacroSettings.RecoilReductionStrength <= trackBarRecoilReduction.Maximum;
-        }
-
-        /// <summary>
         /// Saves the current settings to the settings manager.
         /// </summary>
         private void SaveCurrentSettings()
         {
             try
             {
-                // Save to new configuration system
                 var settings = ConfigurationManager.Instance.CurrentSettings;
                 settings.MacroSettings.JitterStrength = trackBarJitter.Value;
                 settings.MacroSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
@@ -496,7 +479,6 @@ namespace NotesAndTasks
                 settings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
                 settings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
                 ConfigurationManager.Instance.SaveSettings();
-                
                 uiManager.UpdateDebugInfo("Settings saved successfully");
             }
             catch (Exception ex)
@@ -517,7 +499,7 @@ namespace NotesAndTasks
                 trackBarRecoilReduction.Value = 1;
                 chkAlwaysJitter.Checked = false;
                 chkAlwaysRecoilReduction.Checked = false;
-                chkMinimizeToTray.Checked = true;
+                chkMinimizeToTray.Checked = false;
 
                 // Reset MacroManager
                 macroManager.SetJitterStrength(3);
@@ -528,14 +510,12 @@ namespace NotesAndTasks
                 // Reset hotkeys
                 hotkeyManager.ResetToDefaults();
 
+                // Save default settings
+                SaveCurrentSettings();
+
                 // Update UI
-                uiManager.UpdateCurrentKey(hotkeyManager.MacroKey.ToString());
-                uiManager.UpdateSwitchKey(hotkeyManager.SwitchKey.ToString());
                 uiManager.UpdateTitle();
                 uiManager.UpdateModeLabels();
-
-                // Save settings
-                SaveCurrentSettings();
                 uiManager.UpdateDebugInfo("Settings reset to defaults");
             }
             catch (Exception ex)

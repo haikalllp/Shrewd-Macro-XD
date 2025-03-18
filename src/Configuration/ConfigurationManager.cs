@@ -50,7 +50,15 @@ namespace NotesAndTasks.Configuration
                     {
                         if (_instance == null)
                         {
-                            _instance = new ConfigurationManager();
+                            try
+                            {
+                                _instance = new ConfigurationManager();
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Failed to create ConfigurationManager instance: {ex.Message}");
+                                throw;
+                            }
                         }
                     }
                 }
@@ -82,16 +90,40 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private ConfigurationManager()
         {
-            _jsonOptions = new JsonSerializerOptions
+            try
             {
-                WriteIndented = true
-            };
+                _jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
 
-            // Register custom converters
-            _jsonOptions.Converters.Add(new InputBindingConverter());
+                // Register custom converters
+                _jsonOptions.Converters.Add(new InputBindingConverter());
 
-            InitializeDirectories();
-            LoadSettings();
+                InitializeDirectories();
+                LoadSettings();
+
+                // If settings are still null after LoadSettings, create defaults
+                if (_currentSettings == null)
+                {
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to initialize ConfigurationManager: {ex.Message}");
+                // Create default settings even if initialization fails
+                _currentSettings = CreateDefaultSettings();
+                try
+                {
+                    SaveSettings();
+                }
+                catch
+                {
+                    // Ignore save errors during initialization
+                }
+            }
         }
 
         /// <summary>
@@ -118,13 +150,27 @@ namespace NotesAndTasks.Configuration
                     _currentSettings = CreateDefaultSettings();
                     SaveSettings(); // Save default settings
                 }
+
+                // Validate settings after loading
+                if (_currentSettings == null || !ValidateSettings(_currentSettings))
+                {
+                    System.Diagnostics.Debug.WriteLine("Invalid settings detected after loading, creating defaults");
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to load settings: {ex.Message}");
-                if (_currentSettings == null)
+                // Create default settings if loading fails
+                _currentSettings = CreateDefaultSettings();
+                try
                 {
-                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
+                }
+                catch
+                {
+                    // Ignore save errors during load failure recovery
                 }
             }
             finally
@@ -202,27 +248,31 @@ namespace NotesAndTasks.Configuration
                         settings.HotkeySettings.SwitchKey = new InputBinding((Keys)switchKeyValue, InputType.Keyboard);
 
                         _currentSettings = settings;
-                        SaveSettings();
+                        SaveSettings(); // Save in new format
                         
-                        // Log the migration
-                        System.Diagnostics.Debug.WriteLine("Migrated settings from legacy format to new format");
+                        try
+                        {
+                            // Try to rename old config file as backup
+                            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                            string backupPath = Path.Combine(AppDirectory, $"macro_config_{timestamp}.json.bak");
+                            File.Move(LegacySettingsFilePath, backupPath);
+                        }
+                        catch
+                        {
+                            // If we can't rename, that's fine - we've already migrated the settings
+                        }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error during settings migration: {ex.Message}");
+                        // If anything fails during migration, create new default settings
                         _currentSettings = CreateDefaultSettings();
                         SaveSettings();
                     }
                 }
-                else
-                {
-                    _currentSettings = CreateDefaultSettings();
-                    SaveSettings();
-                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to migrate legacy settings: {ex.Message}");
+                // If anything fails during migration, create new default settings
                 _currentSettings = CreateDefaultSettings();
                 SaveSettings();
             }
@@ -319,7 +369,25 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void InitializeDirectories()
         {
-            Directory.CreateDirectory(SettingsBackupDirectoryPath);
+            try
+            {
+                // Create application directory if it doesn't exist
+                if (!Directory.Exists(AppDirectory))
+                {
+                    Directory.CreateDirectory(AppDirectory);
+                }
+
+                // Create backup directory if it doesn't exist
+                if (!Directory.Exists(SettingsBackupDirectoryPath))
+                {
+                    Directory.CreateDirectory(SettingsBackupDirectoryPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to initialize directories: {ex.Message}");
+                throw; // Rethrow to handle in constructor
+            }
         }
 
         /// <summary>
@@ -337,6 +405,10 @@ namespace NotesAndTasks.Configuration
             settings.MacroSettings.JitterEnabled = false;
             settings.MacroSettings.RecoilReductionEnabled = false;
             settings.UISettings.MinimizeToTray = false;
+            settings.UISettings.ShowStatusInTitle = true;
+            settings.UISettings.ShowTrayNotifications = true;
+            settings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
+            settings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
             
             // Default hotkeys
             settings.HotkeySettings.MacroKey = new InputBinding(Keys.Capital, InputType.Keyboard);
