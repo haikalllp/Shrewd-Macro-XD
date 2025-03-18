@@ -182,6 +182,10 @@ namespace NotesAndTasks.Configuration
             string jsonContent = File.ReadAllText(path);
             var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
 
+            // Always set default window position and size
+            loadedSettings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
+            loadedSettings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
+
             var validationArgs = new SettingsValidationEventArgs(loadedSettings);
             SettingsValidating?.Invoke(this, validationArgs);
 
