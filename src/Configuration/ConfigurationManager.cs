@@ -134,19 +134,14 @@ namespace NotesAndTasks.Configuration
             _configLock.EnterWriteLock();
             try
             {
-                // Try new settings path first
+                // Try to load settings from file
                 if (File.Exists(SettingsFilePath))
                 {
                     LoadSettingsFromPath(SettingsFilePath);
                 }
-                // If new settings don't exist, try to load from legacy path
-                else if (File.Exists(LegacySettingsFilePath))
-                {
-                    MigrateLegacySettings();
-                }
-                // If no settings exist, create defaults
                 else
                 {
+                    // If no settings exist, create defaults
                     _currentSettings = CreateDefaultSettings();
                     SaveSettings(); // Save default settings
                 }
@@ -200,81 +195,6 @@ namespace NotesAndTasks.Configuration
             {
                 _currentSettings = CreateDefaultSettings();
                 SaveSettings(); // Save default settings
-            }
-        }
-
-        /// <summary>
-        /// Migrates settings from the legacy settings file to the new format
-        /// </summary>
-        private void MigrateLegacySettings()
-        {
-            try
-            {
-                string jsonContent = File.ReadAllText(LegacySettingsFilePath);
-                // Use dynamic to avoid direct dependency on the Settings class that no longer exists
-                dynamic legacySettings = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonContent);
-
-                if (legacySettings != null)
-                {
-                    // Create new settings from legacy settings
-                    var settings = new AppSettings();
-                    
-                    try
-                    {
-                        // Macro settings
-                        settings.MacroSettings.JitterStrength = legacySettings.JitterStrength;
-                        settings.MacroSettings.RecoilReductionStrength = legacySettings.RecoilReductionStrength;
-                        settings.MacroSettings.AlwaysJitterMode = legacySettings.AlwaysJitterMode;
-                        settings.MacroSettings.AlwaysRecoilReductionMode = legacySettings.AlwaysRecoilReductionMode;
-                        settings.MacroSettings.JitterEnabled = legacySettings.JitterEnabled;
-                        settings.MacroSettings.RecoilReductionEnabled = legacySettings.RecoilReductionEnabled;
-                        
-                        // UI settings
-                        settings.UISettings.MinimizeToTray = legacySettings.MinimizeToTray;
-                        
-                        // Hotkey settings - handle with care since we need to determine the type
-                        var macroKeyValue = (int)legacySettings.MacroKey;
-                        var switchKeyValue = (int)legacySettings.SwitchKey;
-                        var toggleTypeValue = (int)legacySettings.ToggleType;
-                        
-                        // Set to keyboard by default (0 in the enum)
-                        var inputType = InputType.Keyboard;
-                        if (toggleTypeValue != 0) // Not keyboard type
-                        {
-                            inputType = InputType.Mouse;
-                        }
-                        
-                        settings.HotkeySettings.MacroKey = new InputBinding((Keys)macroKeyValue, inputType);
-                        settings.HotkeySettings.SwitchKey = new InputBinding((Keys)switchKeyValue, InputType.Keyboard);
-
-                        _currentSettings = settings;
-                        SaveSettings(); // Save in new format
-                        
-                        try
-                        {
-                            // Try to rename old config file as backup
-                            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                            string backupPath = Path.Combine(AppDirectory, $"macro_config_{timestamp}.json.bak");
-                            File.Move(LegacySettingsFilePath, backupPath);
-                        }
-                        catch
-                        {
-                            // If we can't rename, that's fine - we've already migrated the settings
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // If anything fails during migration, create new default settings
-                        _currentSettings = CreateDefaultSettings();
-                        SaveSettings();
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // If anything fails during migration, create new default settings
-                _currentSettings = CreateDefaultSettings();
-                SaveSettings();
             }
         }
 
