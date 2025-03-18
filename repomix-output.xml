@@ -43,6 +43,7 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
+app.manifest
 build.bat
 buildCommand.md
 docs/architecture.md
@@ -96,6 +97,20 @@ dotnet clean && rmdir /s /q bin obj && dotnet restore && dotnet build -c Debug &
 
 # PowerShell
 dotnet clean; Remove-Item -Recurse -Force bin,obj; dotnet restore; dotnet build -c Debug; dotnet build -c Release
+</file>
+
+<file path="app.manifest">
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="Notes&amp;Tasks"/>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="true" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>
 </file>
 
 <file path="build.bat">
@@ -1768,126 +1783,6 @@ namespace NotesAndTasks.UI
 }
 </file>
 
-<file path="src/Utilities/MacroEffectBase.cs">
-using System;
-using System.Windows.Forms;
-
-namespace NotesAndTasks.Utilities
-{
-    /// <summary>
-    /// Base class for macro effect managers like jitter and recoil reduction.
-    /// Provides common functionality for handling strength, activation state, and lifecycle.
-    /// </summary>
-    public abstract class MacroEffectBase : IDisposable
-    {
-        protected readonly InputSimulator InputSimulator;
-        protected bool Disposed = false;
-        protected int EffectStrength;
-        protected bool IsEffectActive = false;
-        protected System.Threading.Timer Timer;
-
-        /// <summary>
-        /// Event raised when the effect state changes.
-        /// </summary>
-        public event EventHandler<bool> StateChanged;
-
-        /// <summary>
-        /// Gets whether the effect is currently active.
-        /// </summary>
-        public bool IsActive => IsEffectActive;
-
-        /// <summary>
-        /// Gets or sets the current effect strength (1-20).
-        /// </summary>
-        public int Strength
-        {
-            get => EffectStrength;
-            protected set
-            {
-                if (value < 1 || value > 20)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Strength must be between 1 and 20.");
-                EffectStrength = value;
-            }
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the MacroEffectBase class.
-        /// </summary>
-        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
-        /// <param name="defaultStrength">The default strength value.</param>
-        protected MacroEffectBase(InputSimulator inputSimulator, int defaultStrength)
-        {
-            InputSimulator = inputSimulator ?? throw new ArgumentNullException(nameof(inputSimulator));
-            EffectStrength = defaultStrength;
-            Timer = new System.Threading.Timer(OnTimerTick, null, System.Threading.Timeout.Infinite, 10);
-        }
-
-        /// <summary>
-        /// Sets the effect strength value (1-20).
-        /// </summary>
-        /// <param name="value">The strength value to set.</param>
-        public void SetStrength(int value)
-        {
-            if (Disposed)
-                throw new ObjectDisposedException(GetType().Name);
-            Strength = value;
-        }
-
-        /// <summary>
-        /// Starts the effect.
-        /// </summary>
-        public void Start()
-        {
-            if (Disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
-            if (!IsEffectActive)
-            {
-                IsEffectActive = true;
-                Timer.Change(0, 10);
-                StateChanged?.Invoke(this, true);
-            }
-        }
-
-        /// <summary>
-        /// Stops the effect.
-        /// </summary>
-        public void Stop()
-        {
-            if (Disposed)
-                throw new ObjectDisposedException(GetType().Name);
-
-            if (IsEffectActive)
-            {
-                IsEffectActive = false;
-                Timer.Change(System.Threading.Timeout.Infinite, 10);
-                StateChanged?.Invoke(this, false);
-            }
-        }
-
-        /// <summary>
-        /// Timer callback that applies the effect.
-        /// Must be implemented by derived classes.
-        /// </summary>
-        protected abstract void OnTimerTick(object state);
-
-        /// <summary>
-        /// Disposes of resources used by the manager.
-        /// </summary>
-        public void Dispose()
-        {
-            if (!Disposed)
-            {
-                Stop();
-                Timer.Dispose();
-                Disposed = true;
-                GC.SuppressFinalize(this);
-            }
-        }
-    }
-}
-</file>
-
 <file path="src/Utilities/ToggleType.cs">
 namespace NotesAndTasks.Utilities
 {
@@ -3110,6 +3005,141 @@ namespace NotesAndTasks.Models
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+}
+</file>
+
+<file path="src/Utilities/MacroEffectBase.cs">
+using System;
+using System.Windows.Forms;
+using System.Threading;
+
+namespace NotesAndTasks.Utilities
+{
+    /// <summary>
+    /// Base class for macro effect managers like jitter and recoil reduction.
+    /// Provides common functionality for handling strength, activation state, and lifecycle.
+    /// </summary>
+    public abstract class MacroEffectBase : IDisposable
+    {
+        protected readonly InputSimulator InputSimulator;
+        protected bool Disposed = false;
+        protected int EffectStrength;
+        protected bool IsEffectActive = false;
+        protected System.Threading.Timer Timer;
+
+        /// <summary>
+        /// Event raised when the effect state changes.
+        /// </summary>
+        public event EventHandler<bool> StateChanged;
+
+        /// <summary>
+        /// Gets whether the effect is currently active.
+        /// </summary>
+        public bool IsActive => IsEffectActive;
+
+        /// <summary>
+        /// Gets or sets the current effect strength (1-20).
+        /// </summary>
+        public int Strength
+        {
+            get => EffectStrength;
+            protected set
+            {
+                if (value < 1 || value > 20)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Strength must be between 1 and 20.");
+                EffectStrength = value;
+            }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the MacroEffectBase class.
+        /// </summary>
+        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
+        /// <param name="defaultStrength">The default strength value.</param>
+        protected MacroEffectBase(InputSimulator inputSimulator, int defaultStrength)
+        {
+            InputSimulator = inputSimulator ?? throw new ArgumentNullException(nameof(inputSimulator));
+            EffectStrength = defaultStrength;
+            Timer = new System.Threading.Timer(OnTimerTick, null, System.Threading.Timeout.Infinite, 10);
+        }
+
+        /// <summary>
+        /// Sets the effect strength value (1-20).
+        /// </summary>
+        /// <param name="value">The strength value to set.</param>
+        public void SetStrength(int value)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(GetType().Name);
+            Strength = value;
+        }
+
+        /// <summary>
+        /// Starts the effect.
+        /// </summary>
+        public void Start()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(GetType().Name);
+
+            if (!IsEffectActive)
+            {
+                IsEffectActive = true;
+                Timer.Change(0, 10);
+                StateChanged?.Invoke(this, true);
+            }
+        }
+
+        /// <summary>
+        /// Stops the effect.
+        /// </summary>
+        public void Stop()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(GetType().Name);
+
+            if (IsEffectActive)
+            {
+                IsEffectActive = false;
+                Timer.Change(System.Threading.Timeout.Infinite, 10);
+                StateChanged?.Invoke(this, false);
+            }
+        }
+
+        /// <summary>
+        /// Timer callback that applies the effect.
+        /// Must be implemented by derived classes.
+        /// </summary>
+        protected abstract void OnTimerTick(object state);
+
+        /// <summary>
+        /// Disposes of resources used by the manager.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!Disposed)
+            {
+                // First stop any active effects
+                if (IsEffectActive)
+                {
+                    Stop();
+                }
+
+                // Ensure timer is stopped by setting infinite delay
+                Timer?.Change(Timeout.Infinite, Timeout.Infinite);
+
+                // Small delay to ensure any pending timer callbacks complete
+                Thread.Sleep(50);
+
+                // Now safe to dispose the timer
+                Timer?.Dispose();
+                Timer = null;
+
+                Disposed = true;
+                GC.SuppressFinalize(this);
+            }
         }
     }
 }
@@ -4471,6 +4501,322 @@ namespace NotesAndTasks.Configuration
 }
 </file>
 
+<file path="src/Utilities/InputSimulator.cs">
+using System;
+using System.Runtime.InteropServices;
+using NotesAndTasks.Hooks;
+
+namespace NotesAndTasks.Utilities
+{
+    /// <summary>
+    /// Provides functionality for simulating mouse input and movement.
+    /// This class encapsulates the Windows SendInput API for mouse control.
+    /// </summary>
+    public class InputSimulator : IDisposable
+    {
+        private bool disposed = false;
+        private readonly object lockObject = new object();
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct INPUT
+        {
+            public uint type;
+            public MOUSEINPUT mi;
+        }
+
+        private const int INPUT_MOUSE = 0;
+        private const int MOUSEEVENTF_MOVE = 0x0001;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+
+        /// <summary>
+        /// Simulates mouse movement by the specified delta values.
+        /// </summary>
+        /// <param name="deltaX">The change in X coordinate.</param>
+        /// <param name="deltaY">The change in Y coordinate.</param>
+        /// <returns>True if the input was successfully simulated, false otherwise.</returns>
+        public bool SimulateMouseMovement(int deltaX, int deltaY)
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(nameof(InputSimulator));
+            }
+
+            try
+            {
+                lock (lockObject)
+                {
+                    // Validate movement values
+                    if (Math.Abs(deltaX) > 100 || Math.Abs(deltaY) > 100)
+                    {
+                        return false;
+                    }
+
+                    var input = new INPUT
+                    {
+                        type = INPUT_MOUSE,
+                        mi = new MOUSEINPUT
+                        {
+                            dx = deltaX,
+                            dy = deltaY,
+                            mouseData = 0,
+                            time = 0,
+                            dwExtraInfo = IntPtr.Zero,
+                            dwFlags = MOUSEEVENTF_MOVE
+                        }
+                    };
+
+                    return SendInput(1, ref input, Marshal.SizeOf(input)) == 1;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Simulates mouse movement with jitter pattern.
+        /// </summary>
+        /// <param name="pattern">The jitter pattern coordinates (dx, dy).</param>
+        /// <param name="strength">The strength multiplier for the pattern (1-20).</param>
+        /// <returns>True if the input was successfully simulated, false otherwise.</returns>
+        public bool SimulateJitterMovement((int dx, int dy) pattern, int strength)
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(nameof(InputSimulator));
+            }
+
+            if (strength < 1 || strength > 20)
+            {
+                throw new ArgumentOutOfRangeException(nameof(strength), "Strength must be between 1 and 20.");
+            }
+
+            int scaledDx = (int)(pattern.dx * strength / 7.0);
+            int scaledDy = (int)(pattern.dy * strength / 7.0);
+
+            return SimulateMouseMovement(scaledDx, scaledDy);
+        }
+
+        /// <summary>
+        /// Simulates mouse movement for recoil reduction.
+        /// </summary>
+        /// <param name="strength">The strength of the recoil reduction (1-20).</param>
+        /// <returns>True if the input was successfully simulated, false otherwise.</returns>
+        public bool SimulateRecoilReduction(int strength)
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(nameof(InputSimulator));
+            }
+
+            if (strength < 1 || strength > 20)
+            {
+                throw new ArgumentOutOfRangeException(nameof(strength), "Strength must be between 1 and 20.");
+            }
+
+            int verticalMovement;
+            const double BASE_RECOIL_STRENGTH = 0.75;
+
+            // Low level recoil reduction (1-6)
+            if (strength <= 6)
+            {
+                // lowest level of recoil reduction (1)
+                if (strength == 1)
+                {
+                    verticalMovement = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
+                }
+                // Progressive scaling for 2-6 with more distinct steps
+                else
+                {
+                    // Use stepped scaling to create more noticeable differences
+                    double stepMultiplier = strength switch
+                    {
+                        2 => 1.0,
+                        3 => 1.5,
+                        4 => 1.9,
+                        5 => 2.2,
+                        6 => 3.0,
+                        _ => 1.5
+                    };
+                    verticalMovement = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * stepMultiplier * 2.0));
+                }
+            }
+            // Medium level recoil reduction (7-16)
+            else if (strength <= 16)
+            {
+                // Smoother scaling with reduced multiplier
+                double baseValue = BASE_RECOIL_STRENGTH * 1.1;
+                double scalingFactor = 1 + ((strength - 6) * 0.08);
+                verticalMovement = Math.Max(1, (int)Math.Round(baseValue * strength * scalingFactor));
+            }
+            // High level recoil reduction (17-20)
+            else
+            {
+                double baseValue = BASE_RECOIL_STRENGTH * 20.0;
+                double scalingFactor = 1.18; // Reduced from 1.19 for smoother scaling
+                double exponentialBoost = 1.08; // Reduced from 1.1 for smoother scaling
+                verticalMovement = Math.Max(1, (int)Math.Round(
+                    baseValue *
+                    Math.Pow(scalingFactor, strength - 13) *
+                    Math.Pow(exponentialBoost, strength - 13)
+                ));
+            }
+
+            return SimulateMouseMovement(0, verticalMovement);
+        }
+
+        /// <summary>
+        /// Moves the mouse to the specified coordinates.
+        /// </summary>
+        /// <param name="dx">The change in X coordinate.</param>
+        /// <param name="dy">The change in Y coordinate.</param>
+        public void MoveMouse(int dx, int dy)
+        {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(InputSimulator));
+
+            if (Math.Abs(dx) > 100 || Math.Abs(dy) > 100)
+            {
+                throw new ArgumentOutOfRangeException("Movement values exceeded safe limits");
+            }
+
+            var input = new INPUT
+            {
+                type = INPUT_MOUSE,
+                mi = new MOUSEINPUT
+                {
+                    dx = dx,
+                    dy = dy,
+                    mouseData = 0,
+                    dwFlags = MOUSEEVENTF_MOVE,
+                    time = 0,
+                    dwExtraInfo = IntPtr.Zero
+                }
+            };
+
+            SendInput(1, ref input, Marshal.SizeOf(input));
+        }
+
+        /// <summary>
+        /// Disposes of resources used by the InputSimulator.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!disposed)
+            {
+                disposed = true;
+                GC.SuppressFinalize(this);
+            }
+        }
+    }
+}
+</file>
+
+<file path="src/Utilities/RecoilReductionManager.cs">
+using System;
+using System.Windows.Forms;
+
+namespace NotesAndTasks.Utilities
+{
+    /// <summary>
+    /// Manages recoil reduction functionality for mouse movement.
+    /// This class handles the timing and strength of vertical compensation.
+    /// </summary>
+    public class RecoilReductionManager : MacroEffectBase
+    {
+        /// <summary>
+        /// Initializes a new instance of the RecoilReductionManager class.
+        /// </summary>
+        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
+        public RecoilReductionManager(InputSimulator inputSimulator) : base(inputSimulator, 1)
+        {
+        }
+
+        /// <summary>
+        /// Timer callback that applies the recoil reduction movement.
+        /// </summary>
+        protected override void OnTimerTick(object state)
+        {
+            if (!IsActive) return;
+
+            try
+            {
+                // Use InputSimulator's SimulateRecoilReduction method to avoid duplication
+                InputSimulator.SimulateRecoilReduction(Strength);
+            }
+            catch (Exception)
+            {
+                Stop();
+            }
+        }
+    }
+}
+</file>
+
+<file path="MouseMacro.csproj">
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UacUIApproved>true</UacUIApproved>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>Notes&amp;Tasks</AssemblyName>
+    <RootNamespace>NotesAndTasks</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ApplicationIcon>assets\logo.ico</ApplicationIcon>
+    <Title>Notes &amp; Tasks</Title>
+    <Authors>HaikalllP</Authors>
+    <Description>Task Management and Note Taking Application</Description>
+    <SignAssembly>true</SignAssembly>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <Version>1.0.0.1</Version> <!-- Incrementing the version for the next release -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="src\UI\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>
+</file>
+
 <file path="src/UI/MacroForm.Designer.cs">
 using System;
 using System.ComponentModel;
@@ -4929,20 +5275,26 @@ namespace NotesAndTasks
             // notifyIcon
             // 
             notifyIcon.ContextMenuStrip = trayContextMenu;
-            notifyIcon.Text = "NotesAndTasks";
-            notifyIcon.Visible = true;
+            notifyIcon.Text = "Notes&Tasks";
+            notifyIcon.Visible = false;
             // 
             // trayContextMenu
             // 
-            trayContextMenu.Items.AddRange(new ToolStripItem[] { showWindowMenuItem, exitMenuItem });
+            trayContextMenu.Items.AddRange(new ToolStripItem[] {
+                showWindowMenuItem,
+                new ToolStripSeparator(),
+                exitMenuItem
+            });
             trayContextMenu.Name = "trayContextMenu";
+            trayContextMenu.ShowImageMargin = false;
             trayContextMenu.Size = new Size(151, 48);
             // 
             // showWindowMenuItem
             // 
             showWindowMenuItem.Name = "showWindowMenuItem";
             showWindowMenuItem.Size = new Size(150, 22);
-            showWindowMenuItem.Text = "Show Window";
+            showWindowMenuItem.Text = "Open";
+            showWindowMenuItem.Font = new Font(showWindowMenuItem.Font, FontStyle.Bold);
             // 
             // exitMenuItem
             // 
@@ -5010,322 +5362,6 @@ namespace NotesAndTasks
 }
 </file>
 
-<file path="src/Utilities/InputSimulator.cs">
-using System;
-using System.Runtime.InteropServices;
-using NotesAndTasks.Hooks;
-
-namespace NotesAndTasks.Utilities
-{
-    /// <summary>
-    /// Provides functionality for simulating mouse input and movement.
-    /// This class encapsulates the Windows SendInput API for mouse control.
-    /// </summary>
-    public class InputSimulator : IDisposable
-    {
-        private bool disposed = false;
-        private readonly object lockObject = new object();
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MOUSEINPUT
-        {
-            public int dx;
-            public int dy;
-            public uint mouseData;
-            public uint dwFlags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct INPUT
-        {
-            public uint type;
-            public MOUSEINPUT mi;
-        }
-
-        private const int INPUT_MOUSE = 0;
-        private const int MOUSEEVENTF_MOVE = 0x0001;
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
-
-        /// <summary>
-        /// Simulates mouse movement by the specified delta values.
-        /// </summary>
-        /// <param name="deltaX">The change in X coordinate.</param>
-        /// <param name="deltaY">The change in Y coordinate.</param>
-        /// <returns>True if the input was successfully simulated, false otherwise.</returns>
-        public bool SimulateMouseMovement(int deltaX, int deltaY)
-        {
-            if (disposed)
-            {
-                throw new ObjectDisposedException(nameof(InputSimulator));
-            }
-
-            try
-            {
-                lock (lockObject)
-                {
-                    // Validate movement values
-                    if (Math.Abs(deltaX) > 100 || Math.Abs(deltaY) > 100)
-                    {
-                        return false;
-                    }
-
-                    var input = new INPUT
-                    {
-                        type = INPUT_MOUSE,
-                        mi = new MOUSEINPUT
-                        {
-                            dx = deltaX,
-                            dy = deltaY,
-                            mouseData = 0,
-                            time = 0,
-                            dwExtraInfo = IntPtr.Zero,
-                            dwFlags = MOUSEEVENTF_MOVE
-                        }
-                    };
-
-                    return SendInput(1, ref input, Marshal.SizeOf(input)) == 1;
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Simulates mouse movement with jitter pattern.
-        /// </summary>
-        /// <param name="pattern">The jitter pattern coordinates (dx, dy).</param>
-        /// <param name="strength">The strength multiplier for the pattern (1-20).</param>
-        /// <returns>True if the input was successfully simulated, false otherwise.</returns>
-        public bool SimulateJitterMovement((int dx, int dy) pattern, int strength)
-        {
-            if (disposed)
-            {
-                throw new ObjectDisposedException(nameof(InputSimulator));
-            }
-
-            if (strength < 1 || strength > 20)
-            {
-                throw new ArgumentOutOfRangeException(nameof(strength), "Strength must be between 1 and 20.");
-            }
-
-            int scaledDx = (int)(pattern.dx * strength / 7.0);
-            int scaledDy = (int)(pattern.dy * strength / 7.0);
-
-            return SimulateMouseMovement(scaledDx, scaledDy);
-        }
-
-        /// <summary>
-        /// Simulates mouse movement for recoil reduction.
-        /// </summary>
-        /// <param name="strength">The strength of the recoil reduction (1-20).</param>
-        /// <returns>True if the input was successfully simulated, false otherwise.</returns>
-        public bool SimulateRecoilReduction(int strength)
-        {
-            if (disposed)
-            {
-                throw new ObjectDisposedException(nameof(InputSimulator));
-            }
-
-            if (strength < 1 || strength > 20)
-            {
-                throw new ArgumentOutOfRangeException(nameof(strength), "Strength must be between 1 and 20.");
-            }
-
-            int verticalMovement;
-            const double BASE_RECOIL_STRENGTH = 0.75;
-
-            // Low level recoil reduction (1-6)
-            if (strength <= 6)
-            {
-                // lowest level of recoil reduction (1)
-                if (strength == 1)
-                {
-                    verticalMovement = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * 0.3));
-                }
-                // Progressive scaling for 2-6 with more distinct steps
-                else
-                {
-                    // Use stepped scaling to create more noticeable differences
-                    double stepMultiplier = strength switch
-                    {
-                        2 => 1.0,
-                        3 => 1.5,
-                        4 => 1.9,
-                        5 => 2.2,
-                        6 => 3.0,
-                        _ => 1.5
-                    };
-                    verticalMovement = Math.Max(1, (int)Math.Round(BASE_RECOIL_STRENGTH * stepMultiplier * 2.0));
-                }
-            }
-            // Medium level recoil reduction (7-16)
-            else if (strength <= 16)
-            {
-                // Smoother scaling with reduced multiplier
-                double baseValue = BASE_RECOIL_STRENGTH * 1.1;
-                double scalingFactor = 1 + ((strength - 6) * 0.08);
-                verticalMovement = Math.Max(1, (int)Math.Round(baseValue * strength * scalingFactor));
-            }
-            // High level recoil reduction (17-20)
-            else
-            {
-                double baseValue = BASE_RECOIL_STRENGTH * 20.0;
-                double scalingFactor = 1.18; // Reduced from 1.19 for smoother scaling
-                double exponentialBoost = 1.08; // Reduced from 1.1 for smoother scaling
-                verticalMovement = Math.Max(1, (int)Math.Round(
-                    baseValue *
-                    Math.Pow(scalingFactor, strength - 13) *
-                    Math.Pow(exponentialBoost, strength - 13)
-                ));
-            }
-
-            return SimulateMouseMovement(0, verticalMovement);
-        }
-
-        /// <summary>
-        /// Moves the mouse to the specified coordinates.
-        /// </summary>
-        /// <param name="dx">The change in X coordinate.</param>
-        /// <param name="dy">The change in Y coordinate.</param>
-        public void MoveMouse(int dx, int dy)
-        {
-            if (disposed)
-                throw new ObjectDisposedException(nameof(InputSimulator));
-
-            if (Math.Abs(dx) > 100 || Math.Abs(dy) > 100)
-            {
-                throw new ArgumentOutOfRangeException("Movement values exceeded safe limits");
-            }
-
-            var input = new INPUT
-            {
-                type = INPUT_MOUSE,
-                mi = new MOUSEINPUT
-                {
-                    dx = dx,
-                    dy = dy,
-                    mouseData = 0,
-                    dwFlags = MOUSEEVENTF_MOVE,
-                    time = 0,
-                    dwExtraInfo = IntPtr.Zero
-                }
-            };
-
-            SendInput(1, ref input, Marshal.SizeOf(input));
-        }
-
-        /// <summary>
-        /// Disposes of resources used by the InputSimulator.
-        /// </summary>
-        public void Dispose()
-        {
-            if (!disposed)
-            {
-                disposed = true;
-                GC.SuppressFinalize(this);
-            }
-        }
-    }
-}
-</file>
-
-<file path="src/Utilities/RecoilReductionManager.cs">
-using System;
-using System.Windows.Forms;
-
-namespace NotesAndTasks.Utilities
-{
-    /// <summary>
-    /// Manages recoil reduction functionality for mouse movement.
-    /// This class handles the timing and strength of vertical compensation.
-    /// </summary>
-    public class RecoilReductionManager : MacroEffectBase
-    {
-        /// <summary>
-        /// Initializes a new instance of the RecoilReductionManager class.
-        /// </summary>
-        /// <param name="inputSimulator">The input simulator to use for mouse movement.</param>
-        public RecoilReductionManager(InputSimulator inputSimulator) : base(inputSimulator, 1)
-        {
-        }
-
-        /// <summary>
-        /// Timer callback that applies the recoil reduction movement.
-        /// </summary>
-        protected override void OnTimerTick(object state)
-        {
-            if (!IsActive) return;
-
-            try
-            {
-                // Use InputSimulator's SimulateRecoilReduction method to avoid duplication
-                InputSimulator.SimulateRecoilReduction(Strength);
-            }
-            catch (Exception)
-            {
-                Stop();
-            }
-        }
-    }
-}
-</file>
-
-<file path="MouseMacro.csproj">
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UacUIApproved>true</UacUIApproved>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>Notes&amp;Tasks</AssemblyName>
-    <RootNamespace>NotesAndTasks</RootNamespace>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <ApplicationIcon>assets\logo.ico</ApplicationIcon>
-    <Title>Notes &amp; Tasks</Title>
-    <Authors>HaikalllP</Authors>
-    <Description>Task Management and Note Taking Application</Description>
-    <SignAssembly>true</SignAssembly>
-    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <Version>1.0.0.1</Version> <!-- Incrementing the version for the next release -->
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>embedded</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>none</DebugType>
-    <Optimize>true</Optimize>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="src\**\*.cs">
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="src\UI\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-</Project>
-</file>
-
 <file path="src/Configuration/ConfigurationManager.cs">
 using System;
 using System.IO;
@@ -5349,6 +5385,7 @@ namespace NotesAndTasks.Configuration
         private static readonly string SettingsFilePath = Path.Combine(AppDirectory, "settings.json");
         private static readonly string SettingsBackupDirectoryPath = Path.Combine(AppDirectory, "Backups");
         private static readonly int MaxBackupCount = 5;
+        private static readonly int MaxBackupAgeDays = 7; // Keep backups for 7 days maximum
 
         // Legacy settings path for compatibility
         private static readonly string LegacySettingsFilePath = Path.Combine(AppDirectory, "macro_config.json");
@@ -5511,6 +5548,10 @@ namespace NotesAndTasks.Configuration
             string jsonContent = File.ReadAllText(path);
             var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
 
+            // Always set default window position and size
+            loadedSettings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
+            loadedSettings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
+
             var validationArgs = new SettingsValidationEventArgs(loadedSettings);
             SettingsValidating?.Invoke(this, validationArgs);
 
@@ -5592,24 +5633,43 @@ namespace NotesAndTasks.Configuration
         }
 
         /// <summary>
-        /// Removes old backup files exceeding the maximum count
+        /// Removes old backup files exceeding the maximum count or age
         /// </summary>
         private void CleanupOldBackups()
         {
-            var backupFiles = Directory.GetFiles(SettingsBackupDirectoryPath, "settings_*.json")
-                                     .OrderByDescending(f => f)
-                                     .Skip(MaxBackupCount);
-
-            foreach (var file in backupFiles)
+            try
             {
-                try
+                var backupFiles = Directory.GetFiles(SettingsBackupDirectoryPath, "settings_*.json")
+                                         .Select(f => new FileInfo(f))
+                                         .OrderByDescending(f => f.LastWriteTime)
+                                         .ToList();
+
+                // Remove files exceeding count limit
+                var filesToDeleteCount = backupFiles.Skip(MaxBackupCount).ToList();
+                
+                // Remove files exceeding age limit
+                var cutoffDate = DateTime.Now.AddDays(-MaxBackupAgeDays);
+                var filesToDeleteAge = backupFiles.Where(f => f.LastWriteTime < cutoffDate).ToList();
+                
+                // Combine both lists and remove duplicates
+                var filesToDelete = filesToDeleteCount.Union(filesToDeleteAge);
+
+                foreach (var file in filesToDelete)
                 {
-                    File.Delete(file);
+                    try
+                    {
+                        file.Delete();
+                        System.Diagnostics.Debug.WriteLine($"Deleted old backup: {file.Name}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to delete backup {file.Name}: {ex.Message}");
+                    }
                 }
-                catch (Exception)
-                {
-                    // Log but continue if deletion fails
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to cleanup backups: {ex.Message}");
             }
         }
 
@@ -6547,6 +6607,406 @@ Total estimated time: 10 days
 - Application performs as expected
 </file>
 
+<file path="README.md">
+# Notes & Tasks (Mouse Macro)
+
+A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. IMPORTANT NOTE: For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
+
+## Features
+
+- **Mouse Input Management**
+  - Jitter Effect: Jitter mouse movement patterns strength (1-20)
+  - Recoil Reduction: Vertical mouse movement compensation strength (1-20)
+  - Multiple Operation Modes: Toggle or Always-On for each effect
+  - Adjustable Effect Strengths: Fine-tune the intensity of each effect
+
+- **Modern UI**
+  - Dark Theme: Easy on the eyes during extended use
+  - System Tray Integration: Minimize to tray for discrete operation
+  - Real-time Status Display: Active effects and modes shown in window title
+  - Customizable Window Position and Size: Remembers your preferences
+
+#### Macro Engine
+- **Recoil Reduction System**
+  - Three-tier strength scaling:
+    - Tier 1 (1-6): Linear scaling with logarithmic base
+    - Tier 2 (7-16): Enhanced scaling with 1.2x multiplier
+    - Tier 3 (17-20): Exponential scaling with dynamic boost
+  - Real-time strength adjustment (1-20)
+  - Optimized movement patterns
+  - Default strength: 1
+  - Advanced vertical compensation
+  - Dynamic pattern adjustment
+
+- **Jitter System**
+  - Complex 24-point movement pattern
+  - Dynamic strength scaling (1-20)
+  - Pattern cycling with smooth transitions
+  - Default strength: 3
+  - Optimized for performance
+  - Pattern customization options
+
+- **Mode Switching**
+  - Intelligent mode toggling
+  - Support for keyboard and mouse buttons (Mouse3-5)
+  - Always mode options with validation
+  - Real-time mode state tracking
+  - Visual state indicators
+
+#### Configuration System
+- **Configuration Models**
+  - `AppSettings`: Root configuration class containing all settings
+  - `MacroSettings`: Jitter and recoil reduction settings
+  - `UISettings`: Window and interface preferences
+  - `HotkeySettings`: Key bindings and hotkey configuration
+  - Legacy configuration files for backward compatibility
+  - settings save on loaded from and to JSON
+  
+- **Configuration Manager**
+  - Thread-safe operations with ReaderWriterLockSlim
+  - Standard location in %AppData%/NotesAndTasks
+  - Automatic backups with versioning
+  - Real-time validation with error recovery
+  - Event notifications for changes, validation, and backups
+  - Support for both new models and legacy configuration
+  
+- **Validation System**
+  - Data annotations for property validation
+  - Cross-property validation
+  - Pre-save validation checks
+  - Error reporting with context
+  - Recovery mechanisms
+  - Backward compatibility validation
+
+- **Event System**
+  - Configuration change tracking
+  - Validation event handling
+  - Backup completion notifications
+  - Error event propagation
+  - State change notifications
+  - Legacy event support
+
+#### UI System
+- Modern dark theme interface
+- Real-time status indicators
+- Professional window management
+- System tray integration
+- DPI-aware scaling
+- Single instance enforcement
+- Clean system integration
+
+#### Event System
+- Centralized event management
+- Type-safe event registration
+- Automatic resource cleanup
+- Comprehensive error handling:
+  - Exception tracking
+  - State recovery
+  - Debug logging
+- Categories:
+  - UI events
+  - Configuration events
+  - Macro events
+  - System events
+
+## Requirements
+
+### Hardware
+- Windows 10/11 compatible PC
+- DirectX compatible display
+- Mouse with standard buttons
+- Keyboard for hotkey support
+
+### Software
+- Windows 10/11 (64-bit)
+- .NET 6.0 Runtime
+- Administrator privileges (required for input simulation)
+- DirectX 9.0c or later
+- Standard mouse and keyboard
+
+## Installation
+
+### Download Latest Release
+1. Download the latest `Notes&Tasks.exe` from the [releases page](https://github.com/yourusername/MouseMacro/releases)
+2. Extract the archive to your desired location
+3. Run `Notes&Tasks.exe` with administrator privileges
+
+## Usage Guide
+
+### First-Time Setup
+1. Launch the application
+2. Configure hotkeys:
+   - Set Macro Toggle Key (default: Caps Lock)
+   - Set Mode Switch Key (default: Q)
+3. Adjust feature settings:
+   - Jitter strength (1-20)
+   - Recoil reduction strength (1-20)
+4. Choose toggle modes:
+   - Hold: Features active while key held
+   - Toggle: Features toggle on/off with key press
+
+### Basic Operation
+1. **Starting the Macro**
+   - Press the Macro Toggle Key to enable/disable
+   - Status shown in window title and system tray
+
+2. **Switching Modes**
+   - Press Mode Switch Key to cycle between:
+     - Jitter mode
+     - Recoil reduction mode
+     - Combined mode
+
+3. **Quick Settings**
+   - Use trackbars for real-time strength adjustment
+   - Toggle "Always On" for persistent effects
+   - Minimize to tray for discrete operation
+
+### Usage Scenarios
+
+#### 1. Dynamic Mode Switching
+```
+1. Press Toggle Key → Macro ON
+2. Press Q to switch between modes
+3. Hold LMB + RMB → Current mode activates
+4. Release buttons → Effect stops
+5. Press Q again → Switch to other mode
+```
+
+#### 2. Always Jitter Mode
+```
+1. Enable "Always Jitter Mode" checkbox
+2. Press Toggle Key → Macro ON
+3. Hold LMB + RMB → Jitter pattern active
+4. Release buttons → Jitter stops
+5. Q key has no effect (locked to jitter)
+```
+
+#### 3. Always Recoil Reduction Mode
+```
+1. Enable "Always Recoil Reduction Mode"
+2. Press Toggle Key → Macro ON
+3. Hold LMB + RMB → Recoil reduction active
+4. Release buttons → Effect stops
+5. Q key has no effect (locked to recoil reduction)
+```
+
+#### 4. Strength Optimization
+```
+1. Start with default strengths:
+   - Recoil Reduction: 1
+   - Jitter: 3
+2. Test each mode
+3. Adjust strength per mode as needed
+4. Settings persist between mode switches
+```
+
+### Important Notes
+- Effects ONLY activate when BOTH buttons are held
+- Mode switch key (Q) works in real-time
+- Always mode prevents accidental switching
+- Each mode maintains its own strength setting
+- Visual indicators show current active mode
+- Window title reflects current state
+
+### Advanced Features
+1. **Custom Patterns**
+   - Jitter patterns optimized for different scenarios
+   - Recoil reduction with dynamic scaling
+   - Combined mode synchronization
+
+2. **Performance Optimization**
+   - Timer-based execution for consistent timing
+   - Resource-efficient hook implementation
+   - Automatic cleanup on exit
+
+## Development
+
+### Environment Setup
+1. **Required Tools**
+   - Visual Studio 2022 or later
+   - .NET 6.0 SDK
+   - Git for version control
+
+2. **Getting Started**
+   ```powershell
+   git clone https://github.com/yourusername/MouseMacro.git
+   cd MouseMacro
+   ```
+
+### Build From Source Options
+
+#### Option 1: Using build.bat
+1. Double-click `build.bat` in the project root
+2. Script handles:
+   - Admin rights elevation
+   - NuGet package restoration
+   - Debug and Release builds
+   - Output directory creation
+
+#### Option 2: Using Visual Studio
+1. Open `MouseMacro.sln`
+2. Select build configuration (Debug/Release)
+3. Build solution (F6)
+
+#### Option 3: Using Command Line
+```powershell
+# Debug build
+dotnet build -c Debug
+
+# Release build
+dotnet build -c Release
+```
+
+### Output Locations
+- Release: `bin/Release/net6.0-windows/Notes&Tasks.exe`
+- Debug: `bin/Debug/net6.0-windows/Notes&Tasks.exe`
+
+### Configuration Files
+- Settings: `%AppData%/NotesAndTasks/config.json`
+- Backups: `%AppData%/NotesAndTasks/Backups/`
+
+### Testing
+1. **Unit Tests**
+   ```powershell
+   dotnet test
+   ```
+   - Validates core functionality
+   - Tests hook implementation
+   - Verifies configuration management
+
+2. **Manual Testing**
+   - UI responsiveness
+   - Feature functionality
+   - Resource usage
+   - Error handling
+
+### Project Structure
+```
+MouseMacro/
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon
+├── bin/                    # Compiled binaries
+│   ├── Debug/             # Debug build output
+│   └── Release/           # Release build output
+├── docs/                   # Documentation
+├── obj/                    # Intermediate build files
+│   ├── Debug/             # Debug build intermediates
+│   │   └── net6.0-windows/
+│   │       ├── ref/       # Assembly reference files
+│   │       ├── refint/    # Reference interface files
+│   │       └── *.cache    # Build cache files
+│   └── Release/           # Release build intermediates
+├── src/
+│   ├── UI/                    # User interface components
+│   │   ├── Controls/         # Custom UI controls
+│   │   │   ├── ModernButton.cs
+│   │   │   └── ModernTrackBar.cs
+│   │   ├── MacroForm.cs
+│   │   ├── MacroForm.Designer.cs
+│   │   ├── MacroForm.resx
+│   │   ├── Resources.Designer.cs
+│   │   └── Resources.resx
+│   │   └── UIManager.cs      # UI manager
+│   ├── Configuration.resx
+│   ├── Configuration/        # Configuration management
+│   │   ├── ConfigurationEvents.cs
+│   │   ├── ConfigurationManager.cs
+│   │   ├── EventHandlerExtensions.cs
+│   │   ├── EventHandlerManager.cs
+│   │   ├── Settings.cs
+│   │   ├── SettingsManager.cs
+│   │   ├── SettingsValidation.cs
+│   │   └── Validation.cs
+│   ├── Hooks/               # System hooks
+│   │   ├── KeyboardHook.cs
+│   │   ├── MouseHook.cs
+│   │   ├── NativeMethods.cs
+│   │   └── WinMessages.cs
+│   ├── Models/              # Data models
+│   │   ├── AppSettings.cs
+│   │   ├── MacroSettings.cs
+│   │   ├── UISettings.cs
+│   │   └── HotkeySettings.cs
+│   ├── Utilities/           # Core functionality
+│   │   ├── InputSimulator.cs
+│   │   ├── JitterManager.cs
+│   │   ├── MacroManager.cs
+│   │   └── RecoilReductionManager.cs
+│   └── Program.cs
+├── tests/                   # Unit tests
+├── docs/                    # Documentation
+├── app.manifest            # Application manifest
+├── MouseMacro.csproj       # Project configuration
+└── README.md               # Project documentation
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Application Won't Start**
+   - Run as administrator
+   - Check for existing instance
+   - Verify .NET Runtime installation
+   - Check Task Manager for hung instances
+   - Verify file permissions
+
+2. **Performance Issues**
+   - Use Release build
+   - Check system resources
+   - Adjust timer intervals
+   - Monitor debug output
+   - Close resource-intensive applications
+
+3. **Configuration Problems**
+   - Delete corrupted config file
+   - Check file permissions
+   - Verify JSON format
+   - Reset to defaults
+   - Check backup configurations
+
+### Error Handling
+- **Validation Errors**
+  - Automatic recovery
+  - Default value fallback
+  - User notification
+  - State preservation
+
+- **Runtime Errors**
+  - Exception handling
+  - Resource cleanup
+  - State recovery
+  - Debug logging
+  - User feedback
+
+## Contributing
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Submit pull request
+
+## License
+
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+
+The MIT License is a permissive license that allows you to:
+- ✅ Use the software commercially
+- ✅ Modify the software
+- ✅ Distribute the software
+- ✅ Use the software privately
+- ✅ Sublicense the software
+
+Under the following conditions:
+- ℹ️ License and copyright notice must be included
+- ⚠️ Software is provided "as is", without warranty
+
+## Acknowledgments
+
+- Windows Forms (.NET 6.0)
+- Windows API (user32.dll)
+- .NET Community
+</file>
+
 <file path="src/UI/MacroForm.cs">
 using System;
 using System.Runtime.InteropServices;
@@ -6626,7 +7086,14 @@ namespace NotesAndTasks
                 InitializeCustomComponents();
 
                 // Initialize tray icon behavior
-                notifyIcon.DoubleClick += (s, e) => uiManager.ShowWindow();
+                notifyIcon.Click += (s, e) => 
+                {
+                    // Only respond to left clicks
+                    if (((MouseEventArgs)e).Button == MouseButtons.Left)
+                    {
+                        uiManager.ShowWindow();
+                    }
+                };
                 showWindowMenuItem.Click += (s, e) => uiManager.ShowWindow();
                 exitMenuItem.Click += (s, e) => CleanupAndExit();
 
@@ -7127,406 +7594,6 @@ namespace NotesAndTasks
         }
     }
 }
-</file>
-
-<file path="README.md">
-# Notes & Tasks (Mouse Macro)
-
-A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. IMPORTANT NOTE: For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
-
-## Features
-
-- **Mouse Input Management**
-  - Jitter Effect: Jitter mouse movement patterns strength (1-20)
-  - Recoil Reduction: Vertical mouse movement compensation strength (1-20)
-  - Multiple Operation Modes: Toggle or Always-On for each effect
-  - Adjustable Effect Strengths: Fine-tune the intensity of each effect
-
-- **Modern UI**
-  - Dark Theme: Easy on the eyes during extended use
-  - System Tray Integration: Minimize to tray for discrete operation
-  - Real-time Status Display: Active effects and modes shown in window title
-  - Customizable Window Position and Size: Remembers your preferences
-
-#### Macro Engine
-- **Recoil Reduction System**
-  - Three-tier strength scaling:
-    - Tier 1 (1-6): Linear scaling with logarithmic base
-    - Tier 2 (7-16): Enhanced scaling with 1.2x multiplier
-    - Tier 3 (17-20): Exponential scaling with dynamic boost
-  - Real-time strength adjustment (1-20)
-  - Optimized movement patterns
-  - Default strength: 1
-  - Advanced vertical compensation
-  - Dynamic pattern adjustment
-
-- **Jitter System**
-  - Complex 24-point movement pattern
-  - Dynamic strength scaling (1-20)
-  - Pattern cycling with smooth transitions
-  - Default strength: 3
-  - Optimized for performance
-  - Pattern customization options
-
-- **Mode Switching**
-  - Intelligent mode toggling
-  - Support for keyboard and mouse buttons (Mouse3-5)
-  - Always mode options with validation
-  - Real-time mode state tracking
-  - Visual state indicators
-
-#### Configuration System
-- **Configuration Models**
-  - `AppSettings`: Root configuration class containing all settings
-  - `MacroSettings`: Jitter and recoil reduction settings
-  - `UISettings`: Window and interface preferences
-  - `HotkeySettings`: Key bindings and hotkey configuration
-  - Legacy configuration files for backward compatibility
-  - settings save on loaded from and to JSON
-  
-- **Configuration Manager**
-  - Thread-safe operations with ReaderWriterLockSlim
-  - Standard location in %AppData%/NotesAndTasks
-  - Automatic backups with versioning
-  - Real-time validation with error recovery
-  - Event notifications for changes, validation, and backups
-  - Support for both new models and legacy configuration
-  
-- **Validation System**
-  - Data annotations for property validation
-  - Cross-property validation
-  - Pre-save validation checks
-  - Error reporting with context
-  - Recovery mechanisms
-  - Backward compatibility validation
-
-- **Event System**
-  - Configuration change tracking
-  - Validation event handling
-  - Backup completion notifications
-  - Error event propagation
-  - State change notifications
-  - Legacy event support
-
-#### UI System
-- Modern dark theme interface
-- Real-time status indicators
-- Professional window management
-- System tray integration
-- DPI-aware scaling
-- Single instance enforcement
-- Clean system integration
-
-#### Event System
-- Centralized event management
-- Type-safe event registration
-- Automatic resource cleanup
-- Comprehensive error handling:
-  - Exception tracking
-  - State recovery
-  - Debug logging
-- Categories:
-  - UI events
-  - Configuration events
-  - Macro events
-  - System events
-
-## Requirements
-
-### Hardware
-- Windows 10/11 compatible PC
-- DirectX compatible display
-- Mouse with standard buttons
-- Keyboard for hotkey support
-
-### Software
-- Windows 10/11 (64-bit)
-- .NET 6.0 Runtime
-- Administrator privileges (required for input simulation)
-- DirectX 9.0c or later
-- Standard mouse and keyboard
-
-## Installation
-
-### Download Latest Release
-1. Download the latest `Notes&Tasks.exe` from the [releases page](https://github.com/yourusername/MouseMacro/releases)
-2. Extract the archive to your desired location
-3. Run `Notes&Tasks.exe` with administrator privileges
-
-## Usage Guide
-
-### First-Time Setup
-1. Launch the application
-2. Configure hotkeys:
-   - Set Macro Toggle Key (default: Caps Lock)
-   - Set Mode Switch Key (default: Q)
-3. Adjust feature settings:
-   - Jitter strength (1-20)
-   - Recoil reduction strength (1-20)
-4. Choose toggle modes:
-   - Hold: Features active while key held
-   - Toggle: Features toggle on/off with key press
-
-### Basic Operation
-1. **Starting the Macro**
-   - Press the Macro Toggle Key to enable/disable
-   - Status shown in window title and system tray
-
-2. **Switching Modes**
-   - Press Mode Switch Key to cycle between:
-     - Jitter mode
-     - Recoil reduction mode
-     - Combined mode
-
-3. **Quick Settings**
-   - Use trackbars for real-time strength adjustment
-   - Toggle "Always On" for persistent effects
-   - Minimize to tray for discrete operation
-
-### Usage Scenarios
-
-#### 1. Dynamic Mode Switching
-```
-1. Press Toggle Key → Macro ON
-2. Press Q to switch between modes
-3. Hold LMB + RMB → Current mode activates
-4. Release buttons → Effect stops
-5. Press Q again → Switch to other mode
-```
-
-#### 2. Always Jitter Mode
-```
-1. Enable "Always Jitter Mode" checkbox
-2. Press Toggle Key → Macro ON
-3. Hold LMB + RMB → Jitter pattern active
-4. Release buttons → Jitter stops
-5. Q key has no effect (locked to jitter)
-```
-
-#### 3. Always Recoil Reduction Mode
-```
-1. Enable "Always Recoil Reduction Mode"
-2. Press Toggle Key → Macro ON
-3. Hold LMB + RMB → Recoil reduction active
-4. Release buttons → Effect stops
-5. Q key has no effect (locked to recoil reduction)
-```
-
-#### 4. Strength Optimization
-```
-1. Start with default strengths:
-   - Recoil Reduction: 1
-   - Jitter: 3
-2. Test each mode
-3. Adjust strength per mode as needed
-4. Settings persist between mode switches
-```
-
-### Important Notes
-- Effects ONLY activate when BOTH buttons are held
-- Mode switch key (Q) works in real-time
-- Always mode prevents accidental switching
-- Each mode maintains its own strength setting
-- Visual indicators show current active mode
-- Window title reflects current state
-
-### Advanced Features
-1. **Custom Patterns**
-   - Jitter patterns optimized for different scenarios
-   - Recoil reduction with dynamic scaling
-   - Combined mode synchronization
-
-2. **Performance Optimization**
-   - Timer-based execution for consistent timing
-   - Resource-efficient hook implementation
-   - Automatic cleanup on exit
-
-## Development
-
-### Environment Setup
-1. **Required Tools**
-   - Visual Studio 2022 or later
-   - .NET 6.0 SDK
-   - Git for version control
-
-2. **Getting Started**
-   ```powershell
-   git clone https://github.com/yourusername/MouseMacro.git
-   cd MouseMacro
-   ```
-
-### Build From Source Options
-
-#### Option 1: Using build.bat
-1. Double-click `build.bat` in the project root
-2. Script handles:
-   - Admin rights elevation
-   - NuGet package restoration
-   - Debug and Release builds
-   - Output directory creation
-
-#### Option 2: Using Visual Studio
-1. Open `MouseMacro.sln`
-2. Select build configuration (Debug/Release)
-3. Build solution (F6)
-
-#### Option 3: Using Command Line
-```powershell
-# Debug build
-dotnet build -c Debug
-
-# Release build
-dotnet build -c Release
-```
-
-### Output Locations
-- Release: `bin/Release/net6.0-windows/Notes&Tasks.exe`
-- Debug: `bin/Debug/net6.0-windows/Notes&Tasks.exe`
-
-### Configuration Files
-- Settings: `%AppData%/NotesAndTasks/config.json`
-- Backups: `%AppData%/NotesAndTasks/Backups/`
-
-### Testing
-1. **Unit Tests**
-   ```powershell
-   dotnet test
-   ```
-   - Validates core functionality
-   - Tests hook implementation
-   - Verifies configuration management
-
-2. **Manual Testing**
-   - UI responsiveness
-   - Feature functionality
-   - Resource usage
-   - Error handling
-
-### Project Structure
-```
-MouseMacro/
-├── assets/                  # Application resources
-│   ├── logo.ico            # Application icon
-├── bin/                    # Compiled binaries
-│   ├── Debug/             # Debug build output
-│   └── Release/           # Release build output
-├── docs/                   # Documentation
-├── obj/                    # Intermediate build files
-│   ├── Debug/             # Debug build intermediates
-│   │   └── net6.0-windows/
-│   │       ├── ref/       # Assembly reference files
-│   │       ├── refint/    # Reference interface files
-│   │       └── *.cache    # Build cache files
-│   └── Release/           # Release build intermediates
-├── src/
-│   ├── UI/                    # User interface components
-│   │   ├── Controls/         # Custom UI controls
-│   │   │   ├── ModernButton.cs
-│   │   │   └── ModernTrackBar.cs
-│   │   ├── MacroForm.cs
-│   │   ├── MacroForm.Designer.cs
-│   │   ├── MacroForm.resx
-│   │   ├── Resources.Designer.cs
-│   │   └── Resources.resx
-│   │   └── UIManager.cs      # UI manager
-│   ├── Configuration.resx
-│   ├── Configuration/        # Configuration management
-│   │   ├── ConfigurationEvents.cs
-│   │   ├── ConfigurationManager.cs
-│   │   ├── EventHandlerExtensions.cs
-│   │   ├── EventHandlerManager.cs
-│   │   ├── Settings.cs
-│   │   ├── SettingsManager.cs
-│   │   ├── SettingsValidation.cs
-│   │   └── Validation.cs
-│   ├── Hooks/               # System hooks
-│   │   ├── KeyboardHook.cs
-│   │   ├── MouseHook.cs
-│   │   ├── NativeMethods.cs
-│   │   └── WinMessages.cs
-│   ├── Models/              # Data models
-│   │   ├── AppSettings.cs
-│   │   ├── MacroSettings.cs
-│   │   ├── UISettings.cs
-│   │   └── HotkeySettings.cs
-│   ├── Utilities/           # Core functionality
-│   │   ├── InputSimulator.cs
-│   │   ├── JitterManager.cs
-│   │   ├── MacroManager.cs
-│   │   └── RecoilReductionManager.cs
-│   └── Program.cs
-├── tests/                   # Unit tests
-├── docs/                    # Documentation
-├── app.manifest            # Application manifest
-├── MouseMacro.csproj       # Project configuration
-└── README.md               # Project documentation
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Application Won't Start**
-   - Run as administrator
-   - Check for existing instance
-   - Verify .NET Runtime installation
-   - Check Task Manager for hung instances
-   - Verify file permissions
-
-2. **Performance Issues**
-   - Use Release build
-   - Check system resources
-   - Adjust timer intervals
-   - Monitor debug output
-   - Close resource-intensive applications
-
-3. **Configuration Problems**
-   - Delete corrupted config file
-   - Check file permissions
-   - Verify JSON format
-   - Reset to defaults
-   - Check backup configurations
-
-### Error Handling
-- **Validation Errors**
-  - Automatic recovery
-  - Default value fallback
-  - User notification
-  - State preservation
-
-- **Runtime Errors**
-  - Exception handling
-  - Resource cleanup
-  - State recovery
-  - Debug logging
-  - User feedback
-
-## Contributing
-1. Fork the repository
-2. Create feature branch
-3. Commit changes
-4. Submit pull request
-
-## License
-
-This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
-
-The MIT License is a permissive license that allows you to:
-- ✅ Use the software commercially
-- ✅ Modify the software
-- ✅ Distribute the software
-- ✅ Use the software privately
-- ✅ Sublicense the software
-
-Under the following conditions:
-- ℹ️ License and copyright notice must be included
-- ⚠️ Software is provided "as is", without warranty
-
-## Acknowledgments
-
-- Windows Forms (.NET 6.0)
-- Windows API (user32.dll)
-- .NET Community
 </file>
 
 </files>
