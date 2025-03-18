@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace NotesAndTasks.Utilities
 {
@@ -107,8 +108,22 @@ namespace NotesAndTasks.Utilities
         {
             if (!Disposed)
             {
-                Stop();
-                Timer.Dispose();
+                // First stop any active effects
+                if (IsEffectActive)
+                {
+                    Stop();
+                }
+
+                // Ensure timer is stopped by setting infinite delay
+                Timer?.Change(Timeout.Infinite, Timeout.Infinite);
+
+                // Small delay to ensure any pending timer callbacks complete
+                Thread.Sleep(50);
+
+                // Now safe to dispose the timer
+                Timer?.Dispose();
+                Timer = null;
+
                 Disposed = true;
                 GC.SuppressFinalize(this);
             }
