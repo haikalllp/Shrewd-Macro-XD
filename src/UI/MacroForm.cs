@@ -443,6 +443,151 @@ namespace NotesAndTasks
         }
 
         /// <summary>
+        /// Validates and corrects settings to ensure they're within valid ranges and follow app rules
+        /// </summary>
+        private void ValidateAndCorrectSettings(AppSettings settings)
+        {
+            if (settings == null) return;
+
+            try
+            {
+                // Validate and correct MacroSettings
+                if (settings.MacroSettings != null)
+                {
+                    // Ensure jitter strength is within valid range
+                    if (settings.MacroSettings.JitterStrength < 1)
+                    {
+                        uiManager.UpdateDebugInfo($"Correcting invalid JitterStrength: {settings.MacroSettings.JitterStrength} to 1");
+                        settings.MacroSettings.JitterStrength = 1;
+                    }
+                    else if (settings.MacroSettings.JitterStrength > 20)
+                    {
+                        uiManager.UpdateDebugInfo($"Correcting invalid JitterStrength: {settings.MacroSettings.JitterStrength} to 20");
+                        settings.MacroSettings.JitterStrength = 20;
+                    }
+
+                    // Ensure recoil reduction strength is within valid range
+                    if (settings.MacroSettings.RecoilReductionStrength < 1)
+                    {
+                        uiManager.UpdateDebugInfo($"Correcting invalid RecoilReductionStrength: {settings.MacroSettings.RecoilReductionStrength} to 1");
+                        settings.MacroSettings.RecoilReductionStrength = 1;
+                    }
+                    else if (settings.MacroSettings.RecoilReductionStrength > 20)
+                    {
+                        uiManager.UpdateDebugInfo($"Correcting invalid RecoilReductionStrength: {settings.MacroSettings.RecoilReductionStrength} to 20");
+                        settings.MacroSettings.RecoilReductionStrength = 20;
+                    }
+
+                    // Ensure we don't have both always modes enabled simultaneously
+                    if (settings.MacroSettings.AlwaysJitterMode && settings.MacroSettings.AlwaysRecoilReductionMode)
+                    {
+                        uiManager.UpdateDebugInfo("Correcting conflict: Both AlwaysJitterMode and AlwaysRecoilReductionMode were enabled");
+                        settings.MacroSettings.AlwaysJitterMode = true;
+                        settings.MacroSettings.AlwaysRecoilReductionMode = false;
+                    }
+                }
+                else
+                {
+                    uiManager.UpdateDebugInfo("Missing MacroSettings, creating defaults");
+                    settings.MacroSettings = new MacroSettings();
+                }
+
+                // Validate and correct UISettings
+                if (settings.UISettings != null)
+                {
+                    // Ensure window position is valid
+                    if (settings.UISettings.WindowPosition.IsEmpty || 
+                        settings.UISettings.WindowPosition.X < 0 || 
+                        settings.UISettings.WindowPosition.Y < 0)
+                    {
+                        uiManager.UpdateDebugInfo($"Correcting invalid WindowPosition: {settings.UISettings.WindowPosition}");
+                        settings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
+                    }
+
+                    // Ensure window size is valid
+                    if (settings.UISettings.WindowSize.IsEmpty || 
+                        settings.UISettings.WindowSize.Width < 300 || 
+                        settings.UISettings.WindowSize.Height < 200)
+                    {
+                        uiManager.UpdateDebugInfo($"Correcting invalid WindowSize: {settings.UISettings.WindowSize}");
+                        settings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
+                    }
+                }
+                else
+                {
+                    uiManager.UpdateDebugInfo("Missing UISettings, creating defaults");
+                    settings.UISettings = new UISettings();
+                }
+
+                // Validate and correct HotkeySettings
+                if (settings.HotkeySettings != null)
+                {
+                    // Validate MacroKey
+                    if (settings.HotkeySettings.MacroKey == null)
+                    {
+                        uiManager.UpdateDebugInfo("Missing MacroKey, creating default");
+                        settings.HotkeySettings.MacroKey = new InputBinding(Keys.Capital, InputType.Keyboard);
+                    }
+                    else if (settings.HotkeySettings.MacroKey.Key == Keys.None)
+                    {
+                        uiManager.UpdateDebugInfo("Invalid MacroKey, resetting to default");
+                        settings.HotkeySettings.MacroKey.Key = Keys.Capital;
+                        settings.HotkeySettings.MacroKey.Type = InputType.Keyboard;
+                        settings.HotkeySettings.MacroKey.DisplayName = Keys.Capital.ToString();
+                    }
+
+                    // Validate SwitchKey
+                    if (settings.HotkeySettings.SwitchKey == null)
+                    {
+                        uiManager.UpdateDebugInfo("Missing SwitchKey, creating default");
+                        settings.HotkeySettings.SwitchKey = new InputBinding(Keys.Q, InputType.Keyboard);
+                    }
+                    else if (settings.HotkeySettings.SwitchKey.Key == Keys.None)
+                    {
+                        uiManager.UpdateDebugInfo("Invalid SwitchKey, resetting to default");
+                        settings.HotkeySettings.SwitchKey.Key = Keys.Q;
+                        settings.HotkeySettings.SwitchKey.Type = InputType.Keyboard;
+                        settings.HotkeySettings.SwitchKey.DisplayName = Keys.Q.ToString();
+                    }
+
+                    // Ensure MacroKey and SwitchKey DisplayNames match their respective Keys
+                    if (string.IsNullOrEmpty(settings.HotkeySettings.MacroKey.DisplayName) ||
+                        settings.HotkeySettings.MacroKey.DisplayName != settings.HotkeySettings.MacroKey.Key.ToString())
+                    {
+                        uiManager.UpdateDebugInfo("Correcting MacroKey DisplayName");
+                        settings.HotkeySettings.MacroKey.DisplayName = settings.HotkeySettings.MacroKey.Key.ToString();
+                    }
+
+                    if (string.IsNullOrEmpty(settings.HotkeySettings.SwitchKey.DisplayName) ||
+                        settings.HotkeySettings.SwitchKey.DisplayName != settings.HotkeySettings.SwitchKey.Key.ToString())
+                    {
+                        uiManager.UpdateDebugInfo("Correcting SwitchKey DisplayName");
+                        settings.HotkeySettings.SwitchKey.DisplayName = settings.HotkeySettings.SwitchKey.Key.ToString();
+                    }
+
+                    // Ensure MacroKey and SwitchKey are not the same when they have the same input type
+                    if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                        settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
+                    {
+                        uiManager.UpdateDebugInfo("Correcting conflicting hotkeys: MacroKey and SwitchKey were the same");
+                        settings.HotkeySettings.SwitchKey.Key = Keys.Q;
+                        settings.HotkeySettings.SwitchKey.Type = InputType.Keyboard;
+                        settings.HotkeySettings.SwitchKey.DisplayName = Keys.Q.ToString();
+                    }
+                }
+                else
+                {
+                    uiManager.UpdateDebugInfo("Missing HotkeySettings, creating defaults");
+                    settings.HotkeySettings = new HotkeySettings();
+                }
+            }
+            catch (Exception ex)
+            {
+                uiManager.UpdateDebugInfo($"Error in ValidateAndCorrectSettings: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Loads saved settings from the settings manager and applies them to the form.
         /// Validates all settings before applying them and falls back to defaults if validation fails.
         /// </summary>
@@ -450,7 +595,10 @@ namespace NotesAndTasks
         {
             try
             {
+                // Force reload settings from file to ensure we have the latest values
+                ConfigurationManager.Instance.LoadSettings();
                 var settings = ConfigurationManager.Instance.CurrentSettings;
+                
                 if (settings == null)
                 {
                     uiManager.UpdateDebugInfo("Invalid settings detected, resetting to defaults");
@@ -465,37 +613,113 @@ namespace NotesAndTasks
                                           $"AlwaysRecoil: {settings.MacroSettings.AlwaysRecoilReductionMode}, " +
                                           $"MinimizeToTray: {settings.UISettings.MinimizeToTray}");
 
-                // Force reload settings from file to ensure we have the latest values
-                ConfigurationManager.Instance.LoadSettings();
-                settings = ConfigurationManager.Instance.CurrentSettings;
+                // Validate and correct settings before applying them
+                ValidateAndCorrectSettings(settings);
 
-                // Apply validated settings to UI
-                trackBarJitter.Value = settings.MacroSettings.JitterStrength;
-                trackBarRecoilReduction.Value = settings.MacroSettings.RecoilReductionStrength;
-                chkAlwaysJitter.Checked = settings.MacroSettings.AlwaysJitterMode;
-                chkAlwaysRecoilReduction.Checked = settings.MacroSettings.AlwaysRecoilReductionMode;
-                chkMinimizeToTray.Checked = settings.UISettings.MinimizeToTray;
+                // Safety check for trackbar values to prevent exception
+                int jitterStrength = settings.MacroSettings.JitterStrength;
+                if (jitterStrength < trackBarJitter.Minimum) jitterStrength = trackBarJitter.Minimum;
+                if (jitterStrength > trackBarJitter.Maximum) jitterStrength = trackBarJitter.Maximum;
+                
+                int recoilStrength = settings.MacroSettings.RecoilReductionStrength;
+                if (recoilStrength < trackBarRecoilReduction.Minimum) recoilStrength = trackBarRecoilReduction.Minimum;
+                if (recoilStrength > trackBarRecoilReduction.Maximum) recoilStrength = trackBarRecoilReduction.Maximum;
 
-                // Apply settings to macro manager
-                macroManager.SetJitterStrength(settings.MacroSettings.JitterStrength);
-                macroManager.SetRecoilReductionStrength(settings.MacroSettings.RecoilReductionStrength);
-                macroManager.SetAlwaysJitterMode(settings.MacroSettings.AlwaysJitterMode);
-                macroManager.SetAlwaysRecoilReductionMode(settings.MacroSettings.AlwaysRecoilReductionMode);
-
-                // Apply hotkey settings
-                if (settings.HotkeySettings?.MacroKey != null && settings.HotkeySettings?.SwitchKey != null)
+                // Apply validated settings to UI with exception handling for each control
+                try
                 {
-                    // Convert InputType to ToggleType for the HotkeyManager methods
-                    var macroKeyToggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
-                    var switchKeyToggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.SwitchKey.Type);
-                    
-                    hotkeyManager.SetMacroKey(settings.HotkeySettings.MacroKey.Key, macroKeyToggleType);
-                    hotkeyManager.SetSwitchKey(settings.HotkeySettings.SwitchKey.Key, switchKeyToggleType);
+                    trackBarJitter.Value = jitterStrength;
+                    lblJitterStrengthValue.Text = jitterStrength.ToString();
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error setting jitter trackbar: {ex.Message}");
+                    trackBarJitter.Value = trackBarJitter.Minimum;
+                }
+
+                try
+                {
+                    trackBarRecoilReduction.Value = recoilStrength;
+                    lblRecoilReductionStrengthValue.Text = recoilStrength.ToString();
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error setting recoil trackbar: {ex.Message}");
+                    trackBarRecoilReduction.Value = trackBarRecoilReduction.Minimum;
+                }
+
+                try
+                {
+                    chkAlwaysJitter.Checked = settings.MacroSettings.AlwaysJitterMode;
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error setting AlwaysJitter checkbox: {ex.Message}");
+                    chkAlwaysJitter.Checked = false;
+                }
+
+                try
+                {
+                    chkAlwaysRecoilReduction.Checked = settings.MacroSettings.AlwaysRecoilReductionMode;
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error setting AlwaysRecoilReduction checkbox: {ex.Message}");
+                    chkAlwaysRecoilReduction.Checked = false;
+                }
+
+                try
+                {
+                    chkMinimizeToTray.Checked = settings.UISettings.MinimizeToTray;
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error setting MinimizeToTray checkbox: {ex.Message}");
+                    chkMinimizeToTray.Checked = false;
+                }
+
+                // Apply settings to macro manager with validation
+                try
+                {
+                    macroManager.SetJitterStrength(jitterStrength);
+                    macroManager.SetRecoilReductionStrength(recoilStrength);
+                    macroManager.SetAlwaysJitterMode(settings.MacroSettings.AlwaysJitterMode);
+                    macroManager.SetAlwaysRecoilReductionMode(settings.MacroSettings.AlwaysRecoilReductionMode);
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error applying settings to macro manager: {ex.Message}");
+                }
+
+                // Apply hotkey settings with validation
+                try
+                {
+                    if (settings.HotkeySettings?.MacroKey != null && settings.HotkeySettings?.SwitchKey != null)
+                    {
+                        // Convert InputType to ToggleType for the HotkeyManager methods
+                        var macroKeyToggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
+                        var switchKeyToggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.SwitchKey.Type);
+                        
+                        hotkeyManager.SetMacroKey(settings.HotkeySettings.MacroKey.Key, macroKeyToggleType);
+                        hotkeyManager.SetSwitchKey(settings.HotkeySettings.SwitchKey.Key, switchKeyToggleType);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error applying hotkey settings: {ex.Message}");
+                    hotkeyManager.ResetToDefaults();
                 }
 
                 // Update UI elements
-                uiManager.UpdateTitle();
-                uiManager.UpdateModeLabels();
+                try
+                {
+                    uiManager.UpdateTitle();
+                    uiManager.UpdateModeLabels();
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error updating UI elements: {ex.Message}");
+                }
                 
                 // Verify that applied settings match the values in the file
                 uiManager.UpdateDebugInfo($"Applied settings - JitterStrength: {trackBarJitter.Value}, " +
@@ -520,18 +744,54 @@ namespace NotesAndTasks
         {
             try
             {
+                uiManager.UpdateDebugInfo("Saving current settings...");
+                
                 var settings = ConfigurationManager.Instance.CurrentSettings;
-                settings.MacroSettings.JitterStrength = trackBarJitter.Value;
-                settings.MacroSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
-                settings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
-                settings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
-                settings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
-                ConfigurationManager.Instance.SaveSettings();
-                uiManager.UpdateDebugInfo("Settings saved successfully");
+                if (settings == null)
+                {
+                    uiManager.UpdateDebugInfo("Error: Current settings object is null");
+                    return;
+                }
+                
+                // Save current UI values to settings
+                try
+                {
+                    settings.MacroSettings.JitterStrength = trackBarJitter.Value;
+                    settings.MacroSettings.RecoilReductionStrength = trackBarRecoilReduction.Value;
+                    settings.MacroSettings.AlwaysJitterMode = chkAlwaysJitter.Checked;
+                    settings.MacroSettings.AlwaysRecoilReductionMode = chkAlwaysRecoilReduction.Checked;
+                    settings.UISettings.MinimizeToTray = chkMinimizeToTray.Checked;
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error preparing settings for save: {ex.Message}");
+                    return;
+                }
+                
+                // Validate and correct any issues before saving
+                ValidateAndCorrectSettings(settings);
+                
+                // Log the values we're about to save
+                uiManager.UpdateDebugInfo($"Saving settings - JitterStrength: {settings.MacroSettings.JitterStrength}, " +
+                                          $"RecoilReduction: {settings.MacroSettings.RecoilReductionStrength}, " +
+                                          $"AlwaysJitter: {settings.MacroSettings.AlwaysJitterMode}, " +
+                                          $"AlwaysRecoil: {settings.MacroSettings.AlwaysRecoilReductionMode}, " +
+                                          $"MinimizeToTray: {settings.UISettings.MinimizeToTray}");
+                
+                // Save the settings
+                try
+                {
+                    ConfigurationManager.Instance.SaveSettings();
+                    uiManager.UpdateDebugInfo("Settings saved successfully");
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error saving settings: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {
-                uiManager.UpdateDebugInfo($"Error saving settings: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Critical error in SaveCurrentSettings: {ex.Message}");
             }
         }
 
@@ -542,33 +802,134 @@ namespace NotesAndTasks
         {
             try
             {
-                // Reset UI controls
-                trackBarJitter.Value = 3;
-                trackBarRecoilReduction.Value = 1;
-                chkAlwaysJitter.Checked = false;
-                chkAlwaysRecoilReduction.Checked = false;
-                chkMinimizeToTray.Checked = false;
+                uiManager.UpdateDebugInfo("Resetting to default settings...");
+                
+                // Reset MacroManager first (safely)
+                try
+                {
+                    macroManager.SetJitterStrength(3);
+                    macroManager.SetRecoilReductionStrength(1);
+                    macroManager.SetAlwaysJitterMode(false);
+                    macroManager.SetAlwaysRecoilReductionMode(false);
+                    uiManager.UpdateDebugInfo("Reset MacroManager settings");
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error resetting MacroManager: {ex.Message}");
+                }
 
-                // Reset MacroManager
-                macroManager.SetJitterStrength(3);
-                macroManager.SetRecoilReductionStrength(1);
-                macroManager.SetAlwaysJitterMode(false);
-                macroManager.SetAlwaysRecoilReductionMode(false);
+                // Reset HotkeyManager safely
+                try
+                {
+                    hotkeyManager.ResetToDefaults();
+                    uiManager.UpdateDebugInfo("Reset hotkey settings");
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error resetting HotkeyManager: {ex.Message}");
+                }
 
-                // Reset hotkeys
-                hotkeyManager.ResetToDefaults();
+                // Reset UI controls safely with proper bounds checking
+                try
+                {
+                    // Default values
+                    int defaultJitterStrength = 3;
+                    int defaultRecoilStrength = 1;
+                    
+                    // Ensure values are within trackbar bounds
+                    if (defaultJitterStrength < trackBarJitter.Minimum) defaultJitterStrength = trackBarJitter.Minimum;
+                    if (defaultJitterStrength > trackBarJitter.Maximum) defaultJitterStrength = trackBarJitter.Maximum;
+                    
+                    if (defaultRecoilStrength < trackBarRecoilReduction.Minimum) defaultRecoilStrength = trackBarRecoilReduction.Minimum;
+                    if (defaultRecoilStrength > trackBarRecoilReduction.Maximum) defaultRecoilStrength = trackBarRecoilReduction.Maximum;
+                    
+                    // Apply default values to trackbars
+                    trackBarJitter.Value = defaultJitterStrength;
+                    lblJitterStrengthValue.Text = defaultJitterStrength.ToString();
+                    
+                    trackBarRecoilReduction.Value = defaultRecoilStrength;
+                    lblRecoilReductionStrengthValue.Text = defaultRecoilStrength.ToString();
+                    
+                    // Reset checkboxes
+                    chkAlwaysJitter.Checked = false;
+                    chkAlwaysRecoilReduction.Checked = false;
+                    chkMinimizeToTray.Checked = false;
+                    
+                    uiManager.UpdateDebugInfo("Reset UI controls");
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error resetting UI controls: {ex.Message}");
+                }
 
-                // Save default settings
-                SaveCurrentSettings();
+                // Create a fresh default settings object
+                try
+                {
+                    var defaultSettings = new AppSettings();
+                    
+                    // Set default values
+                    defaultSettings.MacroSettings.JitterStrength = 3;
+                    defaultSettings.MacroSettings.RecoilReductionStrength = 1;
+                    defaultSettings.MacroSettings.AlwaysJitterMode = false;
+                    defaultSettings.MacroSettings.AlwaysRecoilReductionMode = false;
+                    defaultSettings.MacroSettings.JitterEnabled = false;
+                    defaultSettings.MacroSettings.RecoilReductionEnabled = false;
+                    defaultSettings.UISettings.MinimizeToTray = false;
+                    defaultSettings.UISettings.ShowStatusInTitle = true;
+                    defaultSettings.UISettings.ShowTrayNotifications = true;
+                    defaultSettings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
+                    defaultSettings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
+                    defaultSettings.HotkeySettings.MacroKey = new InputBinding(Keys.Capital, InputType.Keyboard);
+                    defaultSettings.HotkeySettings.SwitchKey = new InputBinding(Keys.Q, InputType.Keyboard);
+                    
+                    // Validate the new settings
+                    ValidateAndCorrectSettings(defaultSettings);
+                    
+                    // Set as current settings and save
+                    var configManager = ConfigurationManager.Instance;
+                    
+                    // Use reflection to set the private field directly if necessary
+                    var fieldInfo = configManager.GetType().GetField("_currentSettings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (fieldInfo != null)
+                    {
+                        fieldInfo.SetValue(configManager, defaultSettings);
+                        uiManager.UpdateDebugInfo("Set new default settings using reflection");
+                    }
+                    
+                    // Save the settings
+                    configManager.SaveSettings();
+                    uiManager.UpdateDebugInfo("Saved default settings");
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error creating or saving default settings: {ex.Message}");
+                    
+                    // Fallback: Just save current UI values
+                    try
+                    {
+                        SaveCurrentSettings();
+                    }
+                    catch
+                    {
+                        // Last resort: do nothing more
+                    }
+                }
 
                 // Update UI
-                uiManager.UpdateTitle();
-                uiManager.UpdateModeLabels();
-                uiManager.UpdateDebugInfo("Settings reset to defaults");
+                try
+                {
+                    uiManager.UpdateTitle();
+                    uiManager.UpdateModeLabels();
+                    uiManager.UpdateDebugInfo("Settings reset to defaults");
+                }
+                catch (Exception ex)
+                {
+                    uiManager.UpdateDebugInfo($"Error updating UI after reset: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {
-                uiManager.UpdateDebugInfo($"Error resetting settings: {ex.Message}");
+                uiManager.UpdateDebugInfo($"Critical error in ResetToDefaultSettings: {ex.Message}");
             }
         }
 

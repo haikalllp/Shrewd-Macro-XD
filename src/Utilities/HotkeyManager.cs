@@ -68,9 +68,30 @@ namespace NotesAndTasks.Utilities
         /// <param name="type">The type of toggle.</param>
         public void SetMacroKey(Keys key, ToggleType type)
         {
+            if (key == Keys.None)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: Ignoring attempt to set MacroKey to None");
+                return;
+            }
+
+            // Prevent using reserved system keys
+            if (key == Keys.LWin || key == Keys.RWin || key == Keys.Apps || key == Keys.Sleep)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: Ignoring attempt to set MacroKey to reserved system key: {key}");
+                return;
+            }
+
+            // Prevent both keys being the same
+            if (key == switchKey && ConvertToggleTypeToInputType(type) == ConvertToggleTypeToInputType(toggleType))
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: MacroKey and SwitchKey cannot be the same");
+                return;
+            }
+
             macroKey = key;
             toggleType = type;
             MacroKeyChanged?.Invoke(this, key);
+            DebugInfoUpdated?.Invoke(this, $"Set macro key to {key} with toggle type {type}");
             SaveSettings();
         }
 
@@ -80,8 +101,29 @@ namespace NotesAndTasks.Utilities
         /// <param name="key">The key to set.</param>
         public void SetSwitchKey(Keys key)
         {
+            if (key == Keys.None)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: Ignoring attempt to set SwitchKey to None");
+                return;
+            }
+
+            // Prevent using reserved system keys
+            if (key == Keys.LWin || key == Keys.RWin || key == Keys.Apps || key == Keys.Sleep)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: Ignoring attempt to set SwitchKey to reserved system key: {key}");
+                return;
+            }
+
+            // Prevent both keys being the same
+            if (key == macroKey && toggleType == ToggleType.Keyboard)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: SwitchKey and MacroKey cannot be the same");
+                return;
+            }
+
             switchKey = key;
             SwitchKeyChanged?.Invoke(this, key);
+            DebugInfoUpdated?.Invoke(this, $"Set switch key to {key}");
             SaveSettings();
         }
 
@@ -92,8 +134,29 @@ namespace NotesAndTasks.Utilities
         /// <param name="type">The toggle type (keyboard or mouse).</param>
         public void SetSwitchKey(Keys key, ToggleType type)
         {
+            if (key == Keys.None)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: Ignoring attempt to set SwitchKey to None");
+                return;
+            }
+
+            // Prevent using reserved system keys
+            if (key == Keys.LWin || key == Keys.RWin || key == Keys.Apps || key == Keys.Sleep)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: Ignoring attempt to set SwitchKey to reserved system key: {key}");
+                return;
+            }
+
+            // Prevent both keys being the same
+            if (key == macroKey && ConvertToggleTypeToInputType(type) == ConvertToggleTypeToInputType(toggleType))
+            {
+                DebugInfoUpdated?.Invoke(this, $"Warning: SwitchKey and MacroKey cannot be the same");
+                return;
+            }
+
             switchKey = key;
             SwitchKeyChanged?.Invoke(this, key);
+            DebugInfoUpdated?.Invoke(this, $"Set switch key to {key} with toggle type {type}");
             SaveSettings(type);
         }
 
@@ -102,12 +165,78 @@ namespace NotesAndTasks.Utilities
         /// </summary>
         public void LoadSettings()
         {
-            var settings = ConfigurationManager.Instance.CurrentSettings;
-            if (settings != null)
+            try
             {
+                var settings = ConfigurationManager.Instance.CurrentSettings;
+                if (settings?.HotkeySettings == null)
+                {
+                    DebugInfoUpdated?.Invoke(this, "Failed to load hotkey settings: Settings are null");
+                    ResetToDefaults();
+                    return;
+                }
+
+                if (settings.HotkeySettings.MacroKey == null || settings.HotkeySettings.SwitchKey == null)
+                {
+                    DebugInfoUpdated?.Invoke(this, "Failed to load hotkey settings: MacroKey or SwitchKey is null");
+                    ResetToDefaults();
+                    return;
+                }
+
+                // Validate keys
+                if (settings.HotkeySettings.MacroKey.Key == Keys.None)
+                {
+                    DebugInfoUpdated?.Invoke(this, "Invalid MacroKey value: None");
+                    settings.HotkeySettings.MacroKey.Key = Keys.Capital;
+                    settings.HotkeySettings.MacroKey.Type = InputType.Keyboard;
+                }
+
+                if (settings.HotkeySettings.SwitchKey.Key == Keys.None)
+                {
+                    DebugInfoUpdated?.Invoke(this, "Invalid SwitchKey value: None");
+                    settings.HotkeySettings.SwitchKey.Key = Keys.Q;
+                    settings.HotkeySettings.SwitchKey.Type = InputType.Keyboard;
+                }
+
+                // Prevent reserved system keys
+                if (settings.HotkeySettings.MacroKey.Key == Keys.LWin || 
+                    settings.HotkeySettings.MacroKey.Key == Keys.RWin || 
+                    settings.HotkeySettings.MacroKey.Key == Keys.Apps || 
+                    settings.HotkeySettings.MacroKey.Key == Keys.Sleep)
+                {
+                    DebugInfoUpdated?.Invoke(this, $"Reserved system key detected for MacroKey: {settings.HotkeySettings.MacroKey.Key}");
+                    settings.HotkeySettings.MacroKey.Key = Keys.Capital;
+                    settings.HotkeySettings.MacroKey.Type = InputType.Keyboard;
+                }
+
+                if (settings.HotkeySettings.SwitchKey.Key == Keys.LWin || 
+                    settings.HotkeySettings.SwitchKey.Key == Keys.RWin || 
+                    settings.HotkeySettings.SwitchKey.Key == Keys.Apps || 
+                    settings.HotkeySettings.SwitchKey.Key == Keys.Sleep)
+                {
+                    DebugInfoUpdated?.Invoke(this, $"Reserved system key detected for SwitchKey: {settings.HotkeySettings.SwitchKey.Key}");
+                    settings.HotkeySettings.SwitchKey.Key = Keys.Q;
+                    settings.HotkeySettings.SwitchKey.Type = InputType.Keyboard;
+                }
+
+                // Prevent keys from being the same
+                if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                    settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
+                {
+                    DebugInfoUpdated?.Invoke(this, "MacroKey and SwitchKey are the same, resetting SwitchKey");
+                    settings.HotkeySettings.SwitchKey.Key = Keys.Q;
+                    settings.HotkeySettings.SwitchKey.Type = InputType.Keyboard;
+                }
+
                 macroKey = settings.HotkeySettings.MacroKey.Key;
                 switchKey = settings.HotkeySettings.SwitchKey.Key;
                 toggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
+                
+                DebugInfoUpdated?.Invoke(this, $"Hotkey settings loaded - MacroKey: {macroKey}, SwitchKey: {switchKey}");
+            }
+            catch (Exception ex)
+            {
+                DebugInfoUpdated?.Invoke(this, $"Error loading hotkey settings: {ex.Message}");
+                ResetToDefaults();
             }
         }
 

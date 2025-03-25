@@ -68,14 +68,36 @@ namespace NotesAndTasks.UI
         /// </summary>
         public void UpdateTitle()
         {
-            string jitterMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" :
-                (macroManager.IsJitterEnabled ? "Jitter" : "Jitter (OFF)");
+            try
+            {
+                if (form == null || macroManager == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update title - form or macroManager is null");
+                    return;
+                }
 
-            string recoilMode = macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" :
-                (macroManager.IsJitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction");
+                string jitterMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" :
+                    (macroManager.IsJitterEnabled ? "Jitter" : "Jitter (OFF)");
 
-            form.Text = $"Notes&Tasks [{(macroManager.IsEnabled ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
-            UpdateModeLabels();
+                string recoilMode = macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" :
+                    (macroManager.IsJitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction");
+
+                form.Text = $"Notes&Tasks [{(macroManager.IsEnabled ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
+                UpdateModeLabels();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateTitle: {ex.Message}");
+                // Use a safe default title if something goes wrong
+                try
+                {
+                    form.Text = "Notes&Tasks";
+                }
+                catch
+                {
+                    // Ignore further errors
+                }
+            }
         }
 
         /// <summary>
@@ -84,9 +106,33 @@ namespace NotesAndTasks.UI
         /// <param name="key">The key name to display.</param>
         public void UpdateCurrentKey(string key)
         {
-            if (lblCurrentKeyValue != null)
+            try
             {
+                if (lblCurrentKeyValue == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update current key - label is null");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Empty key name provided to UpdateCurrentKey");
+                    key = "None";
+                }
+
+                // Ensure we're on the UI thread
+                if (lblCurrentKeyValue.InvokeRequired)
+                {
+                    lblCurrentKeyValue.Invoke(new Action<string>(UpdateCurrentKey), key);
+                    return;
+                }
+
                 lblCurrentKeyValue.Text = key;
+                UpdateDebugInfo($"Current key updated to: {key}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateCurrentKey: {ex.Message}");
             }
         }
 
@@ -96,9 +142,33 @@ namespace NotesAndTasks.UI
         /// <param name="key">The key name to display.</param>
         public void UpdateSwitchKey(string key)
         {
-            if (lblMacroSwitchKeyValue != null)
+            try
             {
+                if (lblMacroSwitchKeyValue == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update switch key - label is null");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Empty key name provided to UpdateSwitchKey");
+                    key = "None";
+                }
+
+                // Ensure we're on the UI thread
+                if (lblMacroSwitchKeyValue.InvokeRequired)
+                {
+                    lblMacroSwitchKeyValue.Invoke(new Action<string>(UpdateSwitchKey), key);
+                    return;
+                }
+
                 lblMacroSwitchKeyValue.Text = key;
+                UpdateDebugInfo($"Switch key updated to: {key}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateSwitchKey: {ex.Message}");
             }
         }
 
@@ -111,6 +181,20 @@ namespace NotesAndTasks.UI
         {
             try
             {
+                if (lblJitterStrengthValue == null || form == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update jitter strength - UI elements are null");
+                    return;
+                }
+
+                // Validate strength within acceptable range
+                if (strength < 1 || strength > 20)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Jitter strength value {strength} is outside valid range (1-20)");
+                    strength = Math.Clamp(strength, 1, 20);
+                }
+
+                // Ensure we're on the UI thread
                 if (form.InvokeRequired)
                 {
                     form.Invoke(new Action<int>(UpdateJitterStrength), strength);
@@ -122,7 +206,7 @@ namespace NotesAndTasks.UI
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error updating jitter strength: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error updating jitter strength: {ex.Message}");
             }
         }
 
@@ -135,6 +219,20 @@ namespace NotesAndTasks.UI
         {
             try
             {
+                if (lblRecoilReductionStrengthValue == null || form == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update recoil reduction strength - UI elements are null");
+                    return;
+                }
+
+                // Validate strength within acceptable range
+                if (strength < 1 || strength > 20)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Recoil reduction strength value {strength} is outside valid range (1-20)");
+                    strength = Math.Clamp(strength, 1, 20);
+                }
+
+                // Ensure we're on the UI thread
                 if (form.InvokeRequired)
                 {
                     form.Invoke(new Action<int>(UpdateRecoilReductionStrength), strength);
@@ -146,7 +244,7 @@ namespace NotesAndTasks.UI
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error updating recoil reduction strength: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error updating recoil reduction strength: {ex.Message}");
             }
         }
 
@@ -157,13 +255,34 @@ namespace NotesAndTasks.UI
         /// <param name="key">The key name to display.</param>
         public void UpdateMacroSwitchKey(string key)
         {
-            if (form.InvokeRequired)
+            try
             {
-                form.Invoke(new Action<string>(UpdateMacroSwitchKey), key);
-                return;
+                if (lblMacroSwitchKeyValue == null || form == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update macro switch key - UI elements are null");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Empty key name provided to UpdateMacroSwitchKey");
+                    key = "None";
+                }
+
+                // Ensure we're on the UI thread
+                if (form.InvokeRequired)
+                {
+                    form.Invoke(new Action<string>(UpdateMacroSwitchKey), key);
+                    return;
+                }
+
+                lblMacroSwitchKeyValue.Text = key;
+                UpdateDebugInfo($"Macro switch key updated to: {key}");
             }
-            lblMacroSwitchKeyValue.Text = key;
-            UpdateDebugInfo($"Macro switch key updated to: {key}");
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateMacroSwitchKey: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -172,14 +291,32 @@ namespace NotesAndTasks.UI
         /// </summary>
         public void UpdateModeLabels()
         {
-            if (form.InvokeRequired)
+            try
             {
-                form.Invoke(new Action(UpdateModeLabels));
-                return;
-            }
+                if (form == null || macroManager == null || 
+                    lblRecoilReductionActive == null || lblJitterActive == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot update mode labels - UI elements are null");
+                    return;
+                }
 
-            lblRecoilReductionActive.Text = (!macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
-            lblJitterActive.Text = (macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
+                // Ensure we're on the UI thread
+                if (form.InvokeRequired)
+                {
+                    form.Invoke(new Action(UpdateModeLabels));
+                    return;
+                }
+
+                lblRecoilReductionActive.Text = (!macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
+                lblJitterActive.Text = (macroManager.IsJitterEnabled && macroManager.IsEnabled) ? "[Active]" : "";
+                
+                System.Diagnostics.Debug.WriteLine($"Mode labels updated - Jitter: {(macroManager.IsJitterEnabled ? "active" : "inactive")}, " +
+                    $"Recoil: {(!macroManager.IsJitterEnabled ? "active" : "inactive")}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateModeLabels: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -187,11 +324,24 @@ namespace NotesAndTasks.UI
         /// </summary>
         public void ShowWindow()
         {
-            form.Show();
-            form.WindowState = FormWindowState.Normal;
-            form.Activate();
-            notifyIcon.Visible = false;
-            UpdateDebugInfo("Application restored from system tray");
+            try
+            {
+                if (form == null || notifyIcon == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot show window - form or notifyIcon is null");
+                    return;
+                }
+
+                form.Show();
+                form.WindowState = FormWindowState.Normal;
+                form.Activate();
+                notifyIcon.Visible = false;
+                UpdateDebugInfo("Application restored from system tray");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in ShowWindow: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -201,27 +351,49 @@ namespace NotesAndTasks.UI
         /// <param name="message">The debug message to display.</param>
         public void UpdateDebugInfo(string message)
         {
-            if (debugLabel.InvokeRequired)
+            try
             {
-                debugLabel.Invoke(new Action(() => UpdateDebugInfo(message)));
-                return;
+                if (debugLabel == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Debug message (not shown in UI): {message}");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(message))
+                {
+                    return; // Skip empty messages
+                }
+
+                // Ensure we're on the UI thread
+                if (debugLabel.InvokeRequired)
+                {
+                    debugLabel.Invoke(new Action(() => UpdateDebugInfo(message)));
+                    return;
+                }
+
+                string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+                string newLine = $"[{timestamp}] {message}";
+
+                // Keep last 100 lines of debug info
+                var lines = new List<string>(debugLabel.Lines ?? Array.Empty<string>());
+                lines.Add(newLine);
+                if (lines.Count > 100)
+                {
+                    lines.RemoveAt(0);
+                }
+                
+                debugLabel.Lines = lines.ToArray();
+
+                // Auto-scroll to bottom
+                debugLabel.SelectionStart = debugLabel.TextLength;
+                debugLabel.ScrollToCaret();
             }
-
-            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-            string newLine = $"[{timestamp}] {message}";
-
-            // Keep last 100 lines of debug info
-            var lines = debugLabel.Lines.ToList();
-            lines.Add(newLine);
-            if (lines.Count > 100)
+            catch (Exception ex)
             {
-                lines.RemoveAt(0);
+                // Last resort logging if debug panel fails
+                System.Diagnostics.Debug.WriteLine($"Error in UpdateDebugInfo: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Original message: {message}");
             }
-            debugLabel.Lines = lines.ToArray();
-
-            // Auto-scroll to bottom
-            debugLabel.SelectionStart = debugLabel.TextLength;
-            debugLabel.ScrollToCaret();
         }
         #endregion
 
@@ -231,11 +403,41 @@ namespace NotesAndTasks.UI
         /// </summary>
         private void InitializeTooltips()
         {
-            toolTip.SetToolTip(form.Controls.Find("chkAlwaysJitter", true).FirstOrDefault(), "Always keep Jitter enabled");
-            toolTip.SetToolTip(form.Controls.Find("trackBarJitter", true).FirstOrDefault(), "Adjust Jitter strength");
-            toolTip.SetToolTip(form.Controls.Find("chkAlwaysRecoilReduction", true).FirstOrDefault(), "Always keep Recoil Reduction enabled");
-            toolTip.SetToolTip(form.Controls.Find("trackBarRecoilReduction", true).FirstOrDefault(), "Adjust Recoil Reduction strength");
-            toolTip.SetToolTip(form.Controls.Find("chkMinimizeToTray", true).FirstOrDefault(), "Minimize to system tray when closing");
+            try
+            {
+                if (form == null || toolTip == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot initialize tooltips - form or toolTip is null");
+                    return;
+                }
+
+                // Dictionary of control names and their tooltip text for safer access
+                var tooltips = new Dictionary<string, string>
+                {
+                    { "chkAlwaysJitter", "Always keep Jitter enabled" },
+                    { "trackBarJitter", "Adjust Jitter strength" },
+                    { "chkAlwaysRecoilReduction", "Always keep Recoil Reduction enabled" },
+                    { "trackBarRecoilReduction", "Adjust Recoil Reduction strength" },
+                    { "chkMinimizeToTray", "Minimize to system tray when closing" }
+                };
+
+                foreach (var tooltip in tooltips)
+                {
+                    var control = form.Controls.Find(tooltip.Key, true).FirstOrDefault();
+                    if (control != null)
+                    {
+                        toolTip.SetToolTip(control, tooltip.Value);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Control '{tooltip.Key}' not found for tooltip");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in InitializeTooltips: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -245,16 +447,34 @@ namespace NotesAndTasks.UI
         {
             try
             {
-                using var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                if (form == null || notifyIcon == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Cannot initialize icon - form or notifyIcon is null");
+                    return;
+                }
+
+                string appPath = Application.ExecutablePath;
+                if (string.IsNullOrEmpty(appPath) || !System.IO.File.Exists(appPath))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Application executable path is invalid: {appPath}");
+                    return;
+                }
+
+                using var icon = Icon.ExtractAssociatedIcon(appPath);
                 if (icon != null)
                 {
                     form.Icon = (Icon)icon.Clone();
                     notifyIcon.Icon = (Icon)icon.Clone();
+                    System.Diagnostics.Debug.WriteLine("Application icon initialized successfully");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Failed to extract icon from executable");
                 }
             }
             catch (Exception ex)
             {
-                UpdateDebugInfo($"Error loading icon: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error loading icon: {ex.Message}");
             }
         }
         #endregion
