@@ -5,6 +5,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Linq;
 using NotesAndTasks.Models;
+using System.Text.Json.Serialization;
 
 namespace NotesAndTasks.Configuration
 {
@@ -95,7 +96,11 @@ namespace NotesAndTasks.Configuration
             {
                 _jsonOptions = new JsonSerializerOptions
                 {
-                    WriteIndented = true
+                    WriteIndented = true,
+                    IncludeFields = true,
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
 
                 // Register custom converters
@@ -180,26 +185,67 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void LoadSettingsFromPath(string path)
         {
-            string jsonContent = File.ReadAllText(path);
-            var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
-
-            // Always set default window position and size
-            loadedSettings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
-            loadedSettings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
-
-            var validationArgs = new SettingsValidationEventArgs(loadedSettings);
-            SettingsValidating?.Invoke(this, validationArgs);
-
-            if (validationArgs.IsValid && ValidateSettings(loadedSettings))
+            try
             {
-                var previousSettings = _currentSettings;
-                _currentSettings = loadedSettings;
-                OnSettingsChanged("All", previousSettings, _currentSettings);
+                string jsonContent = File.ReadAllText(path);
+                
+                // Create a new instance if _currentSettings is null
+                if (_currentSettings == null)
+                {
+                    _currentSettings = new AppSettings();
+                }
+
+                // Deserialize directly into the existing instance
+                var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
+
+                // Copy values from loaded settings to existing instance
+                if (loadedSettings != null)
+                {
+                    // Copy MacroSettings values
+                    _currentSettings.MacroSettings.JitterStrength = loadedSettings.MacroSettings.JitterStrength;
+                    _currentSettings.MacroSettings.RecoilReductionStrength = loadedSettings.MacroSettings.RecoilReductionStrength;
+                    _currentSettings.MacroSettings.JitterEnabled = loadedSettings.MacroSettings.JitterEnabled;
+                    _currentSettings.MacroSettings.RecoilReductionEnabled = loadedSettings.MacroSettings.RecoilReductionEnabled;
+                    _currentSettings.MacroSettings.AlwaysJitterMode = loadedSettings.MacroSettings.AlwaysJitterMode;
+                    _currentSettings.MacroSettings.AlwaysRecoilReductionMode = loadedSettings.MacroSettings.AlwaysRecoilReductionMode;
+
+                    // Copy UISettings values
+                    _currentSettings.UISettings.MinimizeToTray = loadedSettings.UISettings.MinimizeToTray;
+                    _currentSettings.UISettings.ShowDebugPanel = loadedSettings.UISettings.ShowDebugPanel;
+                    _currentSettings.UISettings.ShowStatusInTitle = loadedSettings.UISettings.ShowStatusInTitle;
+                    _currentSettings.UISettings.ShowTrayNotifications = loadedSettings.UISettings.ShowTrayNotifications;
+                    _currentSettings.UISettings.WindowPosition = loadedSettings.UISettings.WindowPosition;
+                    _currentSettings.UISettings.WindowSize = loadedSettings.UISettings.WindowSize;
+
+                    // Copy HotkeySettings values
+                    _currentSettings.HotkeySettings.MacroKey.Key = loadedSettings.HotkeySettings.MacroKey.Key;
+                    _currentSettings.HotkeySettings.MacroKey.Type = loadedSettings.HotkeySettings.MacroKey.Type;
+                    _currentSettings.HotkeySettings.MacroKey.DisplayName = loadedSettings.HotkeySettings.MacroKey.DisplayName;
+                    _currentSettings.HotkeySettings.SwitchKey.Key = loadedSettings.HotkeySettings.SwitchKey.Key;
+                    _currentSettings.HotkeySettings.SwitchKey.Type = loadedSettings.HotkeySettings.SwitchKey.Type;
+                    _currentSettings.HotkeySettings.SwitchKey.DisplayName = loadedSettings.HotkeySettings.SwitchKey.DisplayName;
+                }
+
+                var validationArgs = new SettingsValidationEventArgs(_currentSettings);
+                SettingsValidating?.Invoke(this, validationArgs);
+
+                if (!validationArgs.IsValid || !ValidateSettings(_currentSettings))
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed, creating defaults");
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
+                }
+                else
+                {
+                    // Notify that settings have changed
+                    OnSettingsChanged("All", _currentSettings, _currentSettings);
+                }
             }
-            else
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
                 _currentSettings = CreateDefaultSettings();
-                SaveSettings(); // Save default settings
+                SaveSettings();
             }
         }
 

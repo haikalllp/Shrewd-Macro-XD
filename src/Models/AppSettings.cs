@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace NotesAndTasks.Models
 {
@@ -25,16 +26,19 @@ namespace NotesAndTasks.Models
         /// <summary>
         /// Gets the macro-related settings including jitter and recoil reduction
         /// </summary>
+        [JsonInclude]
         public MacroSettings MacroSettings => _macroSettings;
 
         /// <summary>
         /// Gets the UI-related settings
         /// </summary>
+        [JsonInclude]
         public UISettings UISettings => _uiSettings;
 
         /// <summary>
         /// Gets the hotkey configuration settings
         /// </summary>
+        [JsonInclude]
         public HotkeySettings HotkeySettings => _hotkeySettings;
 
         public event PropertyChangedEventHandler PropertyChanged;
