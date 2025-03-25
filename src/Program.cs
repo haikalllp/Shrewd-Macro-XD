@@ -83,7 +83,10 @@ namespace NotesAndTasks
                 try
                 {
                     // Initialize configuration manager before application starts
-                    var _ = ConfigurationManager.Instance;
+                    var configManager = ConfigurationManager.Instance;
+                    
+                    // Explicitly reload settings to ensure latest values are used
+                    configManager.LoadSettings();
                     
                     Application.Run(new MacroForm());
                 }

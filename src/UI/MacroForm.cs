@@ -458,6 +458,17 @@ namespace NotesAndTasks
                     return;
                 }
 
+                // Log the actual values from settings for debugging
+                uiManager.UpdateDebugInfo($"Loading settings - JitterStrength: {settings.MacroSettings.JitterStrength}, " +
+                                          $"RecoilReduction: {settings.MacroSettings.RecoilReductionStrength}, " +
+                                          $"AlwaysJitter: {settings.MacroSettings.AlwaysJitterMode}, " +
+                                          $"AlwaysRecoil: {settings.MacroSettings.AlwaysRecoilReductionMode}, " +
+                                          $"MinimizeToTray: {settings.UISettings.MinimizeToTray}");
+
+                // Force reload settings from file to ensure we have the latest values
+                ConfigurationManager.Instance.LoadSettings();
+                settings = ConfigurationManager.Instance.CurrentSettings;
+
                 // Apply validated settings to UI
                 trackBarJitter.Value = settings.MacroSettings.JitterStrength;
                 trackBarRecoilReduction.Value = settings.MacroSettings.RecoilReductionStrength;
@@ -465,9 +476,34 @@ namespace NotesAndTasks
                 chkAlwaysRecoilReduction.Checked = settings.MacroSettings.AlwaysRecoilReductionMode;
                 chkMinimizeToTray.Checked = settings.UISettings.MinimizeToTray;
 
+                // Apply settings to macro manager
+                macroManager.SetJitterStrength(settings.MacroSettings.JitterStrength);
+                macroManager.SetRecoilReductionStrength(settings.MacroSettings.RecoilReductionStrength);
+                macroManager.SetAlwaysJitterMode(settings.MacroSettings.AlwaysJitterMode);
+                macroManager.SetAlwaysRecoilReductionMode(settings.MacroSettings.AlwaysRecoilReductionMode);
+
+                // Apply hotkey settings
+                if (settings.HotkeySettings?.MacroKey != null && settings.HotkeySettings?.SwitchKey != null)
+                {
+                    // Convert InputType to ToggleType for the HotkeyManager methods
+                    var macroKeyToggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.MacroKey.Type);
+                    var switchKeyToggleType = ConvertInputTypeToToggleType(settings.HotkeySettings.SwitchKey.Type);
+                    
+                    hotkeyManager.SetMacroKey(settings.HotkeySettings.MacroKey.Key, macroKeyToggleType);
+                    hotkeyManager.SetSwitchKey(settings.HotkeySettings.SwitchKey.Key, switchKeyToggleType);
+                }
+
                 // Update UI elements
                 uiManager.UpdateTitle();
                 uiManager.UpdateModeLabels();
+                
+                // Verify that applied settings match the values in the file
+                uiManager.UpdateDebugInfo($"Applied settings - JitterStrength: {trackBarJitter.Value}, " +
+                                          $"RecoilReduction: {trackBarRecoilReduction.Value}, " +
+                                          $"AlwaysJitter: {chkAlwaysJitter.Checked}, " +
+                                          $"AlwaysRecoil: {chkAlwaysRecoilReduction.Checked}, " +
+                                          $"MinimizeToTray: {chkMinimizeToTray.Checked}");
+                
                 uiManager.UpdateDebugInfo("Settings loaded successfully");
             }
             catch (Exception ex)
@@ -624,6 +660,17 @@ namespace NotesAndTasks
                 SaveCurrentSettings();
                 PerformCleanup();
             }
+        }
+
+        /// <summary>
+        /// Converts InputType to ToggleType for use with HotkeyManager
+        /// </summary>
+        private NotesAndTasks.Utilities.ToggleType ConvertInputTypeToToggleType(NotesAndTasks.Models.InputType inputType)
+        {
+            if (inputType == NotesAndTasks.Models.InputType.Keyboard)
+                return NotesAndTasks.Utilities.ToggleType.Keyboard;
+            else
+                return NotesAndTasks.Utilities.ToggleType.MouseMiddle; // Default to middle mouse button for mouse input
         }
     }
 }

@@ -46,23 +46,23 @@ There are two approaches to allow JSON deserialization to update the settings:
 - [ ] **Review Settings Loading:**  
   Verify that the JSON configuration file is correctly loaded from the executable's directory by reviewing the `AppDirectory` and `SettingsFilePath` definitions in `ConfigurationManager.cs`.
 
-- [ ] **Inspect AppSettings Class:**  
+- [x] **Inspect AppSettings Class:**  
   Confirm that the properties for `MacroSettings`, `UISettings`, and `HotkeySettings` are currently read-only in `src/Models/AppSettings.cs`.
 
-- [ ] **Choose the Preferred Approach:**  
+- [x] **Choose the Preferred Approach:**  
   Decide whether to add public setters or to use the `[JsonInclude]` attribute in `AppSettings.cs`.
 
-- [ ] **Implement Changes in AppSettings.cs:**  
+- [x] **Implement Changes in AppSettings.cs:**  
   - **Option A (Public Setters):** Modify the properties to include public setters.
   - **Option B ([JsonInclude] Attribute):** Add the `[JsonInclude]` attribute to each property and ensure `using System.Text.Json.Serialization;` is included.
 
-- [ ] **Rebuild and Test the Application:**  
+- [x] **Rebuild and Test the Application:**  
   Compile and run the application to confirm that settings loaded from the JSON file override the default settings.
 
 - [ ] **Verify Persistence Functionality:**  
   Change some settings via the UI, save them, restart the application, and verify that the user settings persist.
 
-- [ ] **Document the Changes:**  
+- [x] **Document the Changes:**  
   Update documentation and inline comments to reflect the new configuration loading mechanism.
 
 ## Additional Considerations
