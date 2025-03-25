@@ -43,7 +43,7 @@ There are two approaches to allow JSON deserialization to update the settings:
 
 ## Detailed Steps and Progress Tracking
 
-- [ ] **Review Settings Loading:**  
+- [x] **Review Settings Loading:**  
   Verify that the JSON configuration file is correctly loaded from the executable's directory by reviewing the `AppDirectory` and `SettingsFilePath` definitions in `ConfigurationManager.cs`.
 
 - [x] **Inspect AppSettings Class:**  
@@ -59,7 +59,7 @@ There are two approaches to allow JSON deserialization to update the settings:
 - [x] **Rebuild and Test the Application:**  
   Compile and run the application to confirm that settings loaded from the JSON file override the default settings.
 
-- [ ] **Verify Persistence Functionality:**  
+- [x] **Verify Persistence Functionality:**  
   Change some settings via the UI, save them, restart the application, and verify that the user settings persist.
 
 - [x] **Document the Changes:**  
