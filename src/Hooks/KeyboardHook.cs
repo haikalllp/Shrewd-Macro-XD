@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace NotesAndTasks.Hooks
@@ -8,17 +7,8 @@ namespace NotesAndTasks.Hooks
     /// <summary>
     /// Provides low-level keyboard hook functionality for capturing keyboard input events.
     /// </summary>
-    public class KeyboardHook : IDisposable
+    public class KeyboardHook : BaseHook
     {
-        private IntPtr hookID = IntPtr.Zero;
-        private readonly NativeMethods.LowLevelHookProc hookCallback;
-        private bool disposed;
-
-        /// <summary>
-        /// Gets the Windows hook identifier.
-        /// </summary>
-        public IntPtr HookID => hookID;
-
         /// <summary>
         /// Event raised when a key is pressed.
         /// </summary>
@@ -30,56 +20,14 @@ namespace NotesAndTasks.Hooks
         public event EventHandler<KeyboardHookEventArgs> KeyUp;
 
         /// <summary>
-        /// Initializes a new instance of the KeyboardHook class.
+        /// Gets the Windows hook type for keyboard events.
         /// </summary>
-        public KeyboardHook()
-        {
-            hookCallback = HookCallback;
-        }
+        protected override int HookType => WinMessages.WH_KEYBOARD_LL;
 
         /// <summary>
-        /// Sets up the keyboard hook with the specified module handle.
+        /// The hook callback that processes keyboard input events.
         /// </summary>
-        /// <param name="moduleHandle">The handle to the module containing the hook procedure.</param>
-        public void SetHook(IntPtr moduleHandle)
-        {
-            if (hookID != IntPtr.Zero)
-                throw new InvalidOperationException("Hook is already set");
-
-            hookID = NativeMethods.SetWindowsHookEx(WinMessages.WH_KEYBOARD_LL, hookCallback, moduleHandle, 0);
-            if (hookID == IntPtr.Zero)
-                throw new InvalidOperationException("Failed to set keyboard hook");
-        }
-
-        /// <summary>
-        /// Starts monitoring keyboard events.
-        /// </summary>
-        public void Start()
-        {
-            if (hookID == IntPtr.Zero)
-            {
-                using var curProcess = System.Diagnostics.Process.GetCurrentProcess();
-                using var curModule = curProcess.MainModule;
-                if (curModule == null)
-                    throw new InvalidOperationException("Failed to get current module");
-
-                SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
-            }
-        }
-
-        /// <summary>
-        /// Stops monitoring keyboard events.
-        /// </summary>
-        public void Stop()
-        {
-            if (hookID != IntPtr.Zero)
-            {
-                NativeMethods.UnhookWindowsHookEx(hookID);
-                hookID = IntPtr.Zero;
-            }
-        }
-
-        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        protected override IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
             {
@@ -95,40 +43,7 @@ namespace NotesAndTasks.Hooks
                 }
             }
 
-            return NativeMethods.CallNextHookEx(hookID, nCode, wParam, lParam);
-        }
-
-        /// <summary>
-        /// Releases the unmanaged resources used by the KeyboardHook.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Releases the unmanaged resources used by the KeyboardHook and optionally releases the managed resources.
-        /// </summary>
-        /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    Stop();
-                }
-                disposed = true;
-            }
-        }
-
-        /// <summary>
-        /// Finalizes an instance of the KeyboardHook class.
-        /// </summary>
-        ~KeyboardHook()
-        {
-            Dispose(false);
+            return NativeMethods.CallNextHookEx(HookID, nCode, wParam, lParam);
         }
     }
 
