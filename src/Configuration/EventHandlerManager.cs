@@ -54,52 +54,71 @@ namespace NotesAndTasks.Configuration
         /// <param name="control">The control to register events for.</param>
         public void RegisterControlEvents<T>(T control) where T : Control
         {
-            if (control == null) return;
-
-            // Store event handlers
-            var handlers = new List<Delegate>();
-            eventHandlers[control.Name] = handlers;
-
-            // Common events
-            EventHandler clickHandler = (s, e) => OnControlClick(control, e);
-            control.Click += clickHandler;
-            handlers.Add(clickHandler);
-
-            // Mouse events
-            MouseEventHandler mouseDownHandler = (s, e) => OnControlMouseDown(control, e);
-            control.MouseDown += mouseDownHandler;
-            handlers.Add(mouseDownHandler);
-
-            MouseEventHandler mouseUpHandler = (s, e) => OnControlMouseUp(control, e);
-            control.MouseUp += mouseUpHandler;
-            handlers.Add(mouseUpHandler);
-
-            // Type-specific events
-            if (control is TrackBar trackBar)
+            try
             {
-                EventHandler valueChangedHandler = (s, e) => OnTrackBarValueChanged(trackBar, e);
-                trackBar.ValueChanged += valueChangedHandler;
-                handlers.Add(valueChangedHandler);
+                if (control == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Attempted to register events for null control");
+                    return;
+                }
 
-                EventHandler scrollHandler = (s, e) => OnTrackBarScroll(trackBar, e);
-                trackBar.Scroll += scrollHandler;
-                handlers.Add(scrollHandler);
+                if (string.IsNullOrEmpty(control.Name))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Control has no name, using control type as key");
+                    control.Name = typeof(T).Name + "_" + Guid.NewGuid().ToString().Substring(0, 8);
+                }
+
+                // Store event handlers
+                var handlers = new List<Delegate>();
+                eventHandlers[control.Name] = handlers;
+
+                // Common events
+                EventHandler clickHandler = (s, e) => OnControlClick(control, e);
+                control.Click += clickHandler;
+                handlers.Add(clickHandler);
+
+                // Mouse events
+                MouseEventHandler mouseDownHandler = (s, e) => OnControlMouseDown(control, e);
+                control.MouseDown += mouseDownHandler;
+                handlers.Add(mouseDownHandler);
+
+                MouseEventHandler mouseUpHandler = (s, e) => OnControlMouseUp(control, e);
+                control.MouseUp += mouseUpHandler;
+                handlers.Add(mouseUpHandler);
+
+                // Type-specific events
+                if (control is TrackBar trackBar)
+                {
+                    EventHandler valueChangedHandler = (s, e) => OnTrackBarValueChanged(trackBar, e);
+                    trackBar.ValueChanged += valueChangedHandler;
+                    handlers.Add(valueChangedHandler);
+
+                    EventHandler scrollHandler = (s, e) => OnTrackBarScroll(trackBar, e);
+                    trackBar.Scroll += scrollHandler;
+                    handlers.Add(scrollHandler);
+                }
+                else if (control is CheckBox checkBox)
+                {
+                    EventHandler checkedChangedHandler = (s, e) => OnCheckBoxCheckedChanged(checkBox, e);
+                    checkBox.CheckedChanged += checkedChangedHandler;
+                    handlers.Add(checkedChangedHandler);
+                }
+                else if (control is TextBox textBox)
+                {
+                    EventHandler textChangedHandler = (s, e) => OnTextBoxTextChanged(textBox, e);
+                    textBox.TextChanged += textChangedHandler;
+                    handlers.Add(textChangedHandler);
+
+                    KeyEventHandler keyDownHandler = (s, e) => OnTextBoxKeyDown(textBox, e);
+                    textBox.KeyDown += keyDownHandler;
+                    handlers.Add(keyDownHandler);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Registered events for control: {control.Name} ({typeof(T).Name})");
             }
-            else if (control is CheckBox checkBox)
+            catch (Exception ex)
             {
-                EventHandler checkedChangedHandler = (s, e) => OnCheckBoxCheckedChanged(checkBox, e);
-                checkBox.CheckedChanged += checkedChangedHandler;
-                handlers.Add(checkedChangedHandler);
-            }
-            else if (control is TextBox textBox)
-            {
-                EventHandler textChangedHandler = (s, e) => OnTextBoxTextChanged(textBox, e);
-                textBox.TextChanged += textChangedHandler;
-                handlers.Add(textChangedHandler);
-
-                KeyEventHandler keyDownHandler = (s, e) => OnTextBoxKeyDown(textBox, e);
-                textBox.KeyDown += keyDownHandler;
-                handlers.Add(keyDownHandler);
+                System.Diagnostics.Debug.WriteLine($"Error registering events for control: {ex.Message}");
             }
         }
 
@@ -108,11 +127,31 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void RegisterEventHandler(string eventName, Delegate handler)
         {
-            if (!eventHandlers.ContainsKey(eventName))
+            try
             {
-                eventHandlers[eventName] = new List<Delegate>();
+                if (string.IsNullOrEmpty(eventName))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Attempted to register event handler with null or empty event name");
+                    eventName = $"Unknown_{Guid.NewGuid()}";
+                }
+
+                if (handler == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Attempted to register null handler for event {eventName}");
+                    return;
+                }
+
+                if (!eventHandlers.ContainsKey(eventName))
+                {
+                    eventHandlers[eventName] = new List<Delegate>();
+                }
+                eventHandlers[eventName].Add(handler);
+                System.Diagnostics.Debug.WriteLine($"Registered event handler for: {eventName}");
             }
-            eventHandlers[eventName].Add(handler);
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error registering event handler: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -120,20 +159,41 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         public void UnregisterControlEvents(Control control)
         {
-            if (control == null) return;
-
-            var handlersToRemove = new List<string>();
-            foreach (var kvp in eventHandlers)
+            try
             {
-                if (kvp.Key.StartsWith($"{control.Name}_"))
+                if (control == null)
                 {
-                    handlersToRemove.Add(kvp.Key);
+                    System.Diagnostics.Debug.WriteLine("Warning: Attempted to unregister events for null control");
+                    return;
                 }
-            }
 
-            foreach (var handlerName in handlersToRemove)
+                if (string.IsNullOrEmpty(control.Name))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Cannot unregister events for control with no name");
+                    return;
+                }
+
+                // Find all handlers related to this control
+                var handlersToRemove = new List<string>();
+                foreach (var kvp in eventHandlers)
+                {
+                    if (kvp.Key.StartsWith($"{control.Name}_") || kvp.Key == control.Name)
+                    {
+                        handlersToRemove.Add(kvp.Key);
+                    }
+                }
+
+                // Remove all found handlers
+                foreach (var handlerName in handlersToRemove)
+                {
+                    eventHandlers.Remove(handlerName);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Unregistered {handlersToRemove.Count} event handlers for control: {control.Name}");
+            }
+            catch (Exception ex)
             {
-                eventHandlers.Remove(handlerName);
+                System.Diagnostics.Debug.WriteLine($"Error unregistering events for control: {ex.Message}");
             }
         }
 
@@ -142,24 +202,67 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void OnSettingsChanged(object sender, SettingsChangedEventArgs e)
         {
-            if (e.Section == "All")
+            try
             {
-                // Process all sections
-                HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
-                HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
-                HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
+                if (e == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Received null SettingsChangedEventArgs");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(e.Section))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Received empty section in SettingsChangedEventArgs");
+                    return;
+                }
+
+                // Validate settings objects
+                if (e.NewSettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: New settings object is null");
+                    return;
+                }
+
+                switch (e.Section)
+                {
+                    case "All":
+                        // Process all sections
+                        HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
+                        HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
+                        HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
+                        break;
+                    case "MacroSettings":
+                        if (e.NewSettings.MacroSettings == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: MacroSettings is null in new settings");
+                            return;
+                        }
+                        HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
+                        break;
+                    case "HotkeySettings":
+                        if (e.NewSettings.HotkeySettings == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: HotkeySettings is null in new settings");
+                            return;
+                        }
+                        HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
+                        break;
+                    case "UISettings":
+                        if (e.NewSettings.UISettings == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: UISettings is null in new settings");
+                            return;
+                        }
+                        HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
+                        break;
+                    default:
+                        System.Diagnostics.Debug.WriteLine($"Warning: Unknown settings section: {e.Section}");
+                        break;
+                }
             }
-            else if (e.Section == "MacroSettings")
+            catch (Exception ex)
             {
-                HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
-            }
-            else if (e.Section == "HotkeySettings")
-            {
-                HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
-            }
-            else if (e.Section == "UISettings")
-            {
-                HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
+                System.Diagnostics.Debug.WriteLine($"Error in OnSettingsChanged: {ex.Message}");
             }
         }
 
@@ -168,37 +271,84 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void OnSettingsValidating(object sender, SettingsValidationEventArgs e)
         {
-            var settings = e.Settings;
-            if (settings == null)
+            try
             {
-                e.IsValid = false;
-                e.Message = "Settings cannot be null";
-                return;
-            }
+                if (e == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: Received null SettingsValidationEventArgs");
+                    return;
+                }
 
-            // Validate macro settings
-            if (settings.MacroSettings.AlwaysJitterMode && settings.MacroSettings.AlwaysRecoilReductionMode)
-            {
-                e.IsValid = false;
-                e.Message = "Cannot enable both AlwaysJitterMode and AlwaysRecoilReductionMode simultaneously";
-                return;
-            }
+                var settings = e.Settings;
+                if (settings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "Settings cannot be null";
+                    return;
+                }
 
-            // Validate hotkey settings
-            if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
-                settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
-            {
-                e.IsValid = false;
-                e.Message = "Macro key and switch key cannot be the same";
-                return;
-            }
+                // Validate macro settings
+                if (settings.MacroSettings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "MacroSettings cannot be null";
+                    return;
+                }
 
-            // Validate UI settings
-            if (settings.UISettings.WindowSize.Width <= 0 || settings.UISettings.WindowSize.Height <= 0)
+                if (settings.MacroSettings.AlwaysJitterMode && settings.MacroSettings.AlwaysRecoilReductionMode)
+                {
+                    e.IsValid = false;
+                    e.Message = "Cannot enable both AlwaysJitterMode and AlwaysRecoilReductionMode simultaneously";
+                    return;
+                }
+
+                // Validate hotkey settings
+                if (settings.HotkeySettings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "HotkeySettings cannot be null";
+                    return;
+                }
+
+                if (settings.HotkeySettings.MacroKey == null || settings.HotkeySettings.SwitchKey == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "MacroKey or SwitchKey is null";
+                    return;
+                }
+
+                if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                    settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
+                {
+                    e.IsValid = false;
+                    e.Message = "Macro key and switch key cannot be the same";
+                    return;
+                }
+
+                // Validate UI settings
+                if (settings.UISettings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "UISettings cannot be null";
+                    return;
+                }
+
+                if (settings.UISettings.WindowSize.Width <= 0 || settings.UISettings.WindowSize.Height <= 0)
+                {
+                    e.IsValid = false;
+                    e.Message = "Window size dimensions must be positive";
+                    return;
+                }
+
+                // All checks passed
+                e.IsValid = true;
+                e.Message = "Settings validation successful";
+            }
+            catch (Exception ex)
             {
                 e.IsValid = false;
-                e.Message = "Window size dimensions must be positive";
-                return;
+                e.Message = $"Error during settings validation: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine(e.Message);
             }
         }
 
@@ -207,13 +357,33 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void OnSettingsBackupCompleted(object sender, SettingsBackupEventArgs e)
         {
-            if (e.Success)
+            try
             {
-                System.Diagnostics.Debug.WriteLine($"Backup completed successfully: {e.BackupPath}");
+                if (e == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Received null SettingsBackupEventArgs");
+                    return;
+                }
+
+                if (e.Success)
+                {
+                    if (string.IsNullOrEmpty(e.BackupPath))
+                    {
+                        System.Diagnostics.Debug.WriteLine("Warning: Backup completed but backup path is empty");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Backup completed successfully: {e.BackupPath}");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Backup failed: {e.ErrorMessage}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Backup failed: {e.ErrorMessage}");
+                System.Diagnostics.Debug.WriteLine($"Error in OnSettingsBackupCompleted: {ex.Message}");
             }
         }
 
