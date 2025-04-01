@@ -1,0 +1,29 @@
+# Add patterns to ignore here, one per line
+# Example:
+# *.log
+# tmp/
+
+# General
+.cursor/*
+.git/*
+.gitignore
+.idea/*
+.vs/*
+.vscode/*
+bin/*
+obj/*
+
+# Temporary docs
+.docs/implementation_plan.md
+.docs/implementation_profile.md
+.docs/improvement.md
+newDirectoryStructure.md
+
+# RepoMix files
+.repomix/*
+.repomixignore
+repomix.config.json
+
+# Other files
+Notes&Tasks Debug.ink
+Notes&Tasks Stable.ink

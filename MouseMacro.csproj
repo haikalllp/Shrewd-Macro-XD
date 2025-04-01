@@ -7,7 +7,7 @@
     <UacUIApproved>true</UacUIApproved>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Notes&amp;Tasks</AssemblyName>
-    <RootNamespace>Notes&amp;Tasks</RootNamespace>
+    <RootNamespace>NotesAndTasks</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ApplicationIcon>assets\logo.ico</ApplicationIcon>
     <Title>Notes &amp; Tasks</Title>
@@ -29,14 +29,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="src\**\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
+    <Compile Include="src\**\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
 
@@ -45,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
+    <EmbeddedResource Update="src\UI\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>

@@ -1,7 +1,9 @@
 # Mouse Macro Application Architecture
 
 ## Introduction
-This document provides an overview of the Mouse Macro Application architecture. The application is designed to create and manage mouse macros, featuring a modern dark-themed UI for keybind configuration and settings management.IMPORTANT For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
+This document provides an overview of the Mouse Macro Application architecture. The application is designed to create 
+and manage mouse macros, featuring a modern dark-themed UI for keybind configuration and settings management.
+IMPORTANT NOTE: For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
 
 ## System Overview
 
@@ -29,560 +31,152 @@ This document provides an overview of the Mouse Macro Application architecture. 
    - Administrator privileges
    - DirectX 9.0c or later
 
-## Project Structure
+## Usage Guide
 
-### Directory Organization
-```
-MouseMacro/
-├── assets/                  # Application resources
-│   ├── logo.ico            # Application icon
-├── bin/                    # Compiled binaries
-│   ├── Debug/             # Debug build output
-│   └── Release/           # Release build output
-├── docs/                   # Documentation
-├── obj/                    # Intermediate build files
-│   ├── Debug/             # Debug build intermediates
-│   │   └── net6.0-windows/
-│   │       ├── ref/       # Assembly reference files
-│   │       ├── refint/    # Reference interface files
-│   │       └── *.cache    # Build cache files
-│   └── Release/           # Release build intermediates
-├── src/                    # Source code
-│   ├── MacroForm.cs       # Main form implementation
-│   ├── MacroForm.Designer.cs # Form designer code
-│   ├── ModernButton.cs    # Custom button control
-│   ├── ModernTrackBar.cs  # Custom trackbar control
-│   └── Program.cs         # Application entry point
-├── MouseMacro.csproj      # Project configuration
-├── README.md              # Project documentation and setup guide
-└── app.manifest           # Application manifest
-```
+### Installation
+1. Download the latest release from the releases page
+2. Extract the archive to your desired location
+3. Run NotesTasks.exe (no installation required)
+
+### First-Time Setup
+1. Launch the application
+2. Configure hotkeys:
+   - Set Macro Toggle Key (default: Caps Lock)
+   - Set Mode Switch Key (default: Q)
+3. Adjust feature settings:
+   - Jitter strength (1-20)
+   - Recoil reduction strength (1-20)
+4. Choose toggle modes:
+   - Hold: Features active while key held
+   - Toggle: Features toggle on/off with key press
+
+### Basic Operation
+1. **Starting the Macro**:
+   - Press the Macro Toggle Key to enable/disable
+   - Status shown in window title and system tray
+
+2. **Switching Modes**:
+   - Press Mode Switch Key to cycle between:
+     - Jitter mode
+     - Recoil reduction mode
+
+3. **Quick Settings**:
+   - Use trackbars for real-time strength adjustment
+   - Toggle "Always On" for persistent effects
+   - Minimize to tray for discrete operation
+
+### Advanced Features
+1. **Custom Patterns**:
+   - Jitter patterns optimized for different scenarios
+   - Recoil reduction with dynamic scaling
+   - Combined mode synchronization
+
+2. **Performance Optimization**:
+   - Timer-based execution for consistent timing
+   - Resource-efficient hook implementation
+   - Automatic cleanup on exit
+
+## Build Process
+
+### Development Environment Setup
+1. **Required Tools**:
+   - Visual Studio 2022 or later
+   - .NET 6.0 SDK
+   - Git for version control
+
+2. **Getting Started**:
+   ```powershell
+   git clone https://github.com/yourusername/MouseMacro.git
+   cd MouseMacro
+   dotnet restore
+   ```
+
+### Build Configuration
+1. **Debug Build**:
+   ```powershell
+   dotnet build -c Debug
+   ```
+   - Includes debug symbols
+   - Enhanced logging
+   - Development features enabled
+
+2. **Release Build**:
+   ```powershell
+   dotnet build -c Release
+   ```
+   - Optimized for performance
+   - Minimal logging
+   - Production-ready
+
+### Testing
+1. **Unit Tests**:
+   ```powershell
+   dotnet test
+   ```
+   - Validates core functionality
+   - Tests hook implementation
+   - Verifies configuration management
+
+2. **Manual Testing**:
+   - UI responsiveness
+   - Feature functionality
+   - Resource usage
+   - Error handling
 
 ## Core Components
 
 ### 1. Input System
-- **Low-Level Hooks**
-  - Keyboard Hook (WH_KEYBOARD_LL)
-  - Mouse Hook (WH_MOUSE_LL)
-  - Global event capture
-  
-- **Input Simulation**
-  - SendInput API implementation
-  - Physical mouse movement simulation
-  - Game compatibility optimizations
-
-- **Toggle System**
-  - Keyboard key support
-  - Mouse button support (Mouse3-5)
-  - State tracking via GetAsyncKeyState
-
-### 2. Macro Engine
-- **Recoil Reduction System**
-  - Vertical compensation
-  - Three-tier strength distribution:
-    - Tier 1 (1-6): Linear scaling
-    - Tier 2 (7-16): Enhanced scaling
-    - Tier 3 (17-20): Maximum impact
-  - Dynamic strength adjustment
-  - Default strength: 1
-  
-- **Jitter System**
-  - Complex movement patterns
-  - Strength control (1-20)
-  - Optional activation
-  - Default strength: 3
-  
-- **Mode Switching**
-  - Toggle between Jitter and Recoil Reduction modes
-  - Default switch key: Q
-  - Always mode options (locks to either Jitter or Recoil Reduction mode at all times)
-  - Independent mode states
-
-- **Timer Management**
-  - Dual timer implementation
-  - Independent operation
-  - Performance optimized
-
-### 3. User Interface
-- **Main Window**
-  - Modern dark theme with consistent color scheme
-  - Responsive layout with fluid transitions
-  - DPI scaling support
-  - Professional visual design
-  
-- **Custom Controls**
-  - ModernButton
-    - Customizable hover and click effects
-    - Smooth color transitions
-    - Consistent styling with theme
-    - Professional rounded corners
-  - ModernTrackBar
-    - Custom slider design
-    - Visual value feedback
-    - Smooth drag operations
-    - Theme-consistent appearance
-  
-- **Standard Controls**
-  - Macro Toggle key display/configuration (Default: Capital)
-  - Macro Switch key configuration (Default: Q)
-  - Strength sliders (1-20)
-  - Mode toggles and indicators
-  - Always mode checkboxes
-  - Debug panel (collapsible)
-  
-- **System Tray**
-  - Minimize to tray support
-  - Context menu
-  - Status indication
-
-### 4. Process Management
-- **Instance Control**
-  - Global mutex implementation
-  - Single instance enforcement
-  - Clean termination handling
-  
-- **Security**
-  - UAC integration
-  - Privilege management
-  - Secure API access
-
-### 5. Settings Configuration System
-- **Configuration Manager (`ConfigurationManager.cs`)**
-  - Singleton pattern implementation
-  - Thread-safe operations using `ReaderWriterLockSlim`
-  - JSON-based configuration storage
-  - Automatic configuration backup
-  - Event-driven configuration changes
-  - Validation system
-
-#### 5.1 Configuration Components
+#### Low-Level Hooks
 ```csharp
-// Root configuration
-public class AppConfiguration : ICloneable
+// KeyboardHook.cs
+public class KeyboardHook : IDisposable
 {
-    public JitterConfiguration JitterSettings { get; set; }
-    public RecoilConfiguration RecoilSettings { get; set; }
-    public HotkeyConfiguration HotkeySettings { get; set; }
-    public UIConfiguration UISettings { get; set; }
-    public BackupConfiguration BackupSettings { get; set; }
-}
+    private IntPtr hookID = IntPtr.Zero;
+    private readonly NativeMethods.LowLevelHookProc hookCallback;
+    private bool disposed;
 
-// Feature-specific configurations
-public class JitterConfiguration : ICloneable
-public class RecoilConfiguration : ICloneable
-public class HotkeyConfiguration : ICloneable
-public class UIConfiguration : ICloneable
-public class BackupConfiguration : ICloneable
-```
+    public event EventHandler<KeyboardHookEventArgs> KeyDown;
+    public event EventHandler<KeyboardHookEventArgs> KeyUp;
 
-#### 5.2 Configuration Events
-```csharp
-// Event Arguments
-public class ConfigurationChangedEventArgs : EventArgs
-public class ConfigurationValidationEventArgs : EventArgs
-public class ConfigurationBackupEventArgs : EventArgs
-
-// Event Handlers
-public delegate void ConfigurationChangedEventHandler(object sender, ConfigurationChangedEventArgs e);
-public delegate void ConfigurationValidationEventHandler(object sender, ConfigurationValidationEventArgs e);
-public delegate void ConfigurationBackupEventHandler(object sender, ConfigurationBackupEventArgs e);
-```
-
-#### 5.3 Configuration Validation
-```csharp
-public static class Validation
-{
-    // Core validation methods
-    public static void ValidateStrength(int strength, int minValue, int maxValue, string paramName)
-    public static void ValidateStringNotNullOrEmpty(string value, string paramName)
-    public static void ValidateNotNull<T>(T value, string paramName)
-    public static void ValidateHandle(IntPtr handle, string paramName)
-    public static bool ValidateHookCode(int nCode)
-}
-
-public static class SettingsValidation
-{
-    // Settings-specific validation
-    public static bool ValidateSettings(Settings settings, int minStrength, int maxStrength)
-    public static bool IsValidHotkey(Keys key)
-    public static bool ValidateStrengthValue(int strength, int min, int max)
-    public static bool ValidateModeStates(bool jitterEnabled, bool recoilEnabled)
-}
-```
-
-#### Validation Features
-1. **Input Validation**
-   - Parameter validation
-   - Range checking
-   - Null checks
-   - Empty string prevention
-   
-2. **Settings Validation**
-   - Configuration integrity
-   - Hotkey validation
-   - Mode state validation
-   - Strength range validation
-   
-3. **Handle Validation**
-   - Windows handle validation
-   - Hook code validation
-   - Resource validation
-
-4. **Recovery Mechanisms**
-   - Default value fallback
-   - State preservation
-   - Error reporting
-   - Automatic recovery
-
-### 5.4 Error Handling
-
-#### 1. Validation Errors
-```csharp
-try
-{
-    Validation.ValidateStrength(strength, min, max, paramName);
-}
-catch (ArgumentOutOfRangeException ex)
-{
-    // Reset to default value
-    strength = defaultValue;
-    UpdateDebugInfo($"Reset to default strength: {ex.Message}");
-}
-```
-
-#### 2. Runtime Errors
-```csharp
-try
-{
-    // Critical operation
-}
-catch (Exception ex)
-{
-    UpdateDebugInfo($"Error: {ex.Message}");
-    // Cleanup and recovery
-    CleanupResources();
-    RestoreState();
-}
-```
-
-#### 3. Resource Management
-```csharp
-protected override void Dispose(bool disposing)
-{
-    if (disposing)
+    public void Start()
     {
-        // Cleanup resources
-        jitterTimer?.Dispose();
-        keyboardHookID = IntPtr.Zero;
-        mouseHookID = IntPtr.Zero;
+        if (hookID == IntPtr.Zero)
+        {
+            using var curProcess = Process.GetCurrentProcess();
+            using var curModule = curProcess.MainModule;
+            SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
+        }
     }
-    base.Dispose(disposing);
 }
-```
 
-#### 4. Debug System
-```csharp
-private void UpdateDebugInfo(string message)
+// MouseHook.cs
+public class MouseHook : IDisposable
 {
-    if (debugLabel.InvokeRequired)
+    private IntPtr hookID = IntPtr.Zero;
+    private readonly NativeMethods.LowLevelHookProc hookProc;
+    private bool disposed;
+
+    public event EventHandler<MouseHookEventArgs> MouseDown;
+    public event EventHandler<MouseHookEventArgs> MouseUp;
+
+    public void Start()
     {
-        debugLabel.Invoke(new Action(() => UpdateDebugInfo(message)));
-        return;
+        if (hookID == IntPtr.Zero)
+        {
+            using var curProcess = Process.GetCurrentProcess();
+            using var curModule = curProcess.MainModule;
+            SetHook(NativeMethods.GetModuleHandle(curModule.ModuleName));
+        }
     }
-
-    string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-    string newLine = $"[{timestamp}] {message}";
-    
-    // Keep last 100 lines
-    var lines = debugLabel.Lines.ToList();
-    lines.Add(newLine);
-    if (lines.Count > 100)
-        lines.RemoveAt(0);
-        
-    debugLabel.Lines = lines.ToArray();
-    debugLabel.SelectionStart = debugLabel.TextLength;
-    debugLabel.ScrollToCaret();
 }
 ```
 
-### 6. Event Handler System
-
-#### 6.1 Event Handler Manager
+#### Input Simulation
 ```csharp
-public class EventHandlerManager : IDisposable
+// InputSimulator.cs
+public class InputSimulator
 {
-    private readonly Dictionary<string, List<Delegate>> eventHandlers;
-    private readonly ConfigurationManager configManager;
-    
-    // Event registration methods
-    public void RegisterControlEvents(Control control)
-    public void UnregisterControlEvents(Control control)
-    private void RegisterEventHandler(string eventName, Delegate handler)
-    
-    // Configuration event handlers
-    private void OnConfigurationChanged(object sender, ConfigurationChangedEventArgs e)
-    private void OnConfigurationValidating(object sender, ConfigurationValidationEventArgs e)
-    private void OnConfigurationBackupCompleted(object sender, ConfigurationBackupEventArgs e)
-}
-```
-
-#### 6.2 Event Handler Extensions
-```csharp
-public static class EventHandlerExtensions
-{
-    // Generic registration
-    public static T RegisterEvents<T>(this T control, EventHandlerManager manager)
-    public static T UnregisterEvents<T>(this T control, EventHandlerManager manager)
-    
-    // Control-specific registration
-    public static TrackBar RegisterTrackBarEvents(...)
-    public static CheckBox RegisterCheckBoxEvents(...)
-    public static Button RegisterButtonEvents(...)
-    public static TextBox RegisterTextBoxEvents(...)
-}
-```
-
-#### 6.3 Event Categories
-1. **Configuration Events**
-   - Configuration changes
-   - Validation events
-   - Backup events
-
-2. **Control Events**
-   - TrackBar events (ValueChanged, Scroll)
-   - CheckBox events (CheckedChanged)
-   - Button events (Click, MouseDown, MouseUp)
-   - TextBox events (TextChanged, KeyDown)
-
-3. **System Events**
-   - Window events
-   - Application lifecycle events
-   - Error events
-
-#### 6.4 Event Handler Features
-- Centralized event management
-- Automatic cleanup on disposal
-- Type-safe event registration
-- Fluent API support
-- Event tracking and logging
-- Error handling and recovery
-
-### 7. Project Structure Update
-```
-MouseMacro/
-├── src/
-│   ├── Configuration/           # Configuration system
-│   │   ├── ConfigurationManager.cs
-│   │   ├── AppConfiguration.cs
-│   │   ├── ConfigurationEvents.cs
-│   │   ├── EventHandlerManager.cs
-│   │   └── EventHandlerExtensions.cs
-│   ├── Controls/               # UI Controls
-│   │   ├── ModernButton.cs
-│   │   └── ModernTrackBar.cs
-│   ├── MacroForm.cs           # Main form
-│   ├── MacroForm.Designer.cs  # Form designer
-│   └── Program.cs             # Entry point
-```
-
-## Macro Implementation Details
-
-### 1. Core Macro Logic
-- **Language**: C#
-- **Primary Components**:
-  - Recoil reduction system
-  - Jitter pattern generation
-  - State management
-  - Timer-based execution
-
-#### 1.1 Recoil Reduction System
-- **Implementation**:
-  ```csharp
-  private void OnRecoilReductionTimer(object state)
-  {
-      if (IsRecoilReductionActive)
-      {
-          int strength = recoilReductionStrength.Value;
-          int scaledStrength = CalculateScaledStrength(strength);
-          SendInput.MoveMouse(0, scaledStrength);
-      }
-  }
-
-  private int CalculateScaledStrength(int strength)
-  {
-      if (strength <= 6) // Tier 1
-          return strength;
-      else if (strength <= 13) // Tier 2
-          return 6 + (strength - 6) * 2;
-      else // Tier 3
-          return 20 + (strength - 13) * 3;
-  }
-  ```
-- **Features**:
-  - Vertical movement compensation
-  - Three-tier strength scaling system
-  - Dynamic strength calculation
-  - Optimized performance
-  - Smooth movement patterns
-
-#### 1.2 Jitter System
-- **Pattern Definition**:
-  ```csharp
-  private readonly (int dx, int dy)[] jitterPattern = {
-      (0, 6), (7, 7), (-7, -7), (7, -7), (-7, 7),
-      (0, -6), (-6, 0), (6, 0), (5, 5), (-5, -5)
-  };
-  ```
-- **Implementation**:
-  ```csharp
-  private void OnJitterTimer(object state)
-  {
-      if (IsJitterActive && currentPattern < jitterPattern.Length)
-      {
-          var (dx, dy) = jitterPattern[currentPattern];
-          SendInput.MoveMouse(
-              dx * jitterStrength.Value / 10,
-              dy * jitterStrength.Value / 10
-          );
-          currentPattern = (currentPattern + 1) % jitterPattern.Length;
-      }
-  }
-  ```
-- **Features**:
-  - Complex movement patterns
-  - Pattern cycling
-  - Strength scaling
-  - Independent activation
-
-### 2. State Management
-
-#### 2.1 Activation States
-```csharp
-private bool IsRecoilReductionActive => 
-    MacroEnabled && 
-    (GetAsyncKeyState(VK_LBUTTON) < 0) && 
-    (GetAsyncKeyState(VK_RBUTTON) < 0);
-
-private bool IsJitterActive =>
-    MacroEnabled && 
-    (JitterEnabled || alwaysJitterMode) && 
-    !alwaysRecoilReductionMode && 
-    IsRecoilReductionActive;
-```
-
-#### 2.2 Mode Management
-```csharp
-private void ToggleMacroMode()
-{
-    // If either always mode is on, we can't switch modes
-    if (alwaysJitterMode || alwaysRecoilReductionMode)
-        return;
-
-    // Toggle between jitter and recoil reduction modes
-    jitterEnabled = !jitterEnabled;
-    UpdateModeLabels();
-}
-
-private void UpdateModeLabels()
-{
-    lblJitterActive.Text = jitterEnabled || alwaysJitterMode ? "[Active]" : "";
-    lblRecoilReductionActive.Text = !jitterEnabled || alwaysRecoilReductionMode ? "[Active]" : "";
-}
-```
-
-#### 2.3 Toggle System
-- **Keyboard Implementation**:
-  ```csharp
-  private IntPtr KeyboardProc(int nCode, IntPtr wParam, IntPtr lParam)
-  {
-      if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
-      {
-          var kb = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
-          if (kb.vkCode == ToggleKey)
-          {
-              MacroEnabled = !MacroEnabled;
-              UpdateWindowTitle();
-          }
-      }
-      return CallNextHookEx(KeyboardHook, nCode, wParam, lParam);
-  }
-  ```
-
-- **Mouse Implementation**:
-  ```csharp
-  private IntPtr MouseProc(int nCode, IntPtr wParam, IntPtr lParam)
-  {
-      if (nCode >= 0)
-      {
-          var mouseData = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-          if (wParam == (IntPtr)WM_XBUTTONDOWN)
-          {
-              int button = mouseData.mouseData >> 16;
-              if (button == ToggleButton)
-              {
-                  MacroEnabled = !MacroEnabled;
-                  UpdateWindowTitle();
-              }
-          }
-      }
-      return CallNextHookEx(MouseHook, nCode, wParam, lParam);
-  }
-  ```
-
-### 3. Timer System
-
-#### 3.1 Timer Configuration
-```csharp
-private readonly System.Windows.Forms.Timer recoilReductionTimer;
-private readonly System.Windows.Forms.Timer jitterTimer;
-
-private void InitializeTimers()
-{
-    recoilReductionTimer = new System.Windows.Forms.Timer
-    {
-        Interval = 16,  // ~60Hz
-        Enabled = true
-    };
-    recoilReductionTimer.Tick += OnRecoilReductionTimer;
-
-    jitterTimer = new System.Windows.Forms.Timer
-    {
-        Interval = 25,  // 40Hz
-        Enabled = true
-    };
-    jitterTimer.Tick += OnJitterTimer;
-}
-```
-
-#### 3.2 Performance Optimization
-- **Timer Intervals**:
-  - Recoil Reduction: 16ms (60Hz) for smooth movement
-  - Jitter: 25ms (40Hz) for pattern execution
-  - Balanced for performance and responsiveness
-
-- **Resource Management**:
-  ```csharp
-  protected override void Dispose(bool disposing)
-  {
-      if (disposing)
-      {
-          recoilReductionTimer?.Dispose();
-          jitterTimer?.Dispose();
-      }
-      base.Dispose(disposing);
-  }
-  ```
-
-### 4. Input Simulation
-
-#### 4.1 SendInput Implementation
-```csharp
-public static class SendInput
-{
-    [DllImport("user32.dll")]
-    private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-
-    public static void MoveMouse(int dx, int dy)
+    public void MoveMouse(int dx, int dy)
     {
         var input = new INPUT
         {
@@ -606,139 +200,360 @@ public static class SendInput
 }
 ```
 
-#### 4.2 Low-Level Hooks
-```csharp
-private const int WH_KEYBOARD_LL = 13;
-private const int WH_MOUSE_LL = 14;
+### 2. Macro Engine
 
-private IntPtr SetWindowsHookEx(int idHook, HookProc lpfn)
+#### Base Effect Manager
+```csharp
+// MacroEffectBase.cs
+public abstract class MacroEffectBase : IDisposable
 {
-    using var curProcess = Process.GetCurrentProcess();
-    using var curModule = curProcess.MainModule;
-    return SetWindowsHookEx(idHook, lpfn, 
-        GetModuleHandle(curModule.ModuleName), 0);
+    protected readonly InputSimulator InputSimulator;
+    protected bool Disposed = false;
+    protected int EffectStrength;
+    protected bool IsEffectActive = false;
+    protected System.Threading.Timer Timer;
+
+    public event EventHandler<bool> StateChanged;
+    public bool IsActive => IsEffectActive;
+    public int Strength { get; protected set; }
+
+    protected abstract void OnTimerTick(object state);
 }
 ```
 
-### 5. Debug System
-
-#### 5.1 State Monitoring
+#### Recoil Reduction System
 ```csharp
-private void UpdateDebugInfo()
+// RecoilReductionManager.cs
+public class RecoilReductionManager : MacroEffectBase
 {
-    if (debugTextBox.Visible)
+    public RecoilReductionManager(InputSimulator inputSimulator) : base(inputSimulator, 1)
     {
-        var info = $"[{DateTime.Now:HH:mm:ss.fff}] " +
-                   $"Macro: {(MacroEnabled ? "ON" : "OFF")} | " +
-                   $"Recoil Reduction: {(IsRecoilReductionActive ? "Active" : "Inactive")} | " +
-                   $"Jitter: {(IsJitterActive ? "Active" : "Inactive")} | " +
-                   $"LMB: {(GetAsyncKeyState(VK_LBUTTON) < 0)} | " +
-                   $"RMB: {(GetAsyncKeyState(VK_RBUTTON) < 0)}";
+    }
+
+    protected override void OnTimerTick(object state)
+    {
+        if (!IsActive) return;
+        try
+        {
+            InputSimulator.SimulateRecoilReduction(Strength);
+        }
+        catch (Exception)
+        {
+            Stop();
+        }
+    }
+}
+```
+
+#### Jitter System
+```csharp
+// JitterManager.cs
+public class JitterManager : MacroEffectBase
+{
+    private int currentStep = 0;
+    private readonly (int dx, int dy)[] jitterPattern;
+
+    public JitterManager(InputSimulator inputSimulator) : base(inputSimulator, 3)
+    {
+    }
+
+    protected override void OnTimerTick(object state)
+    {
+        if (!IsActive) return;
+        try
+        {
+            var pattern = jitterPattern[currentStep];
+            InputSimulator.SimulateJitterMovement(pattern, Strength);
+            currentStep = (currentStep + 1) % jitterPattern.Length;
+        }
+        catch (Exception)
+        {
+            Stop();
+        }
+    }
+}
+```
+
+### 3. Configuration System
+
+#### Configuration Models
+```csharp
+// AppSettings.cs
+public class AppSettings : INotifyPropertyChanged
+{
+    public MacroSettings MacroSettings { get; }
+    public UISettings UISettings { get; }
+    public HotkeySettings HotkeySettings { get; }
+}
+
+// MacroSettings.cs
+public class MacroSettings : INotifyPropertyChanged
+{
+    [Range(1, 20)]
+    public int JitterStrength { get; set; } = 3;
+    [Range(1, 20)]
+    public int RecoilReductionStrength { get; set; } = 1;
+    public bool JitterEnabled { get; set; }
+    public bool RecoilReductionEnabled { get; set; }
+    public bool AlwaysJitterMode { get; set; }
+    public bool AlwaysRecoilReductionMode { get; set; }
+}
+
+// UISettings.cs
+public class UISettings : INotifyPropertyChanged
+{
+    public bool MinimizeToTray { get; set; }
+    public bool ShowDebugPanel { get; set; }
+    public bool ShowStatusInTitle { get; set; }
+    public Point WindowPosition { get; set; }
+    public Size WindowSize { get; set; }
+}
+
+// HotkeySettings.cs
+public class HotkeySettings : INotifyPropertyChanged
+{
+    public InputBinding MacroKey { get; set; }
+    public InputBinding SwitchKey { get; set; }
+}
+```
+
+#### Configuration Management
+```csharp
+// ConfigurationManager.cs
+public class ConfigurationManager : IDisposable
+{
+    private static readonly string AppDirectory = Path.GetDirectoryName(Application.ExecutablePath);
+    private static readonly string SettingsFilePath = Path.Combine(AppDirectory, "settings.json");
+    private static readonly string SettingsBackupDirectoryPath = Path.Combine(AppDirectory, "Backups");
+    private static readonly int MaxBackupCount = 5;
+
+    private readonly ReaderWriterLockSlim _configLock = new ReaderWriterLockSlim();
+    private readonly JsonSerializerOptions _jsonOptions;
+    private AppSettings _currentSettings;
+
+    public event EventHandler<SettingsChangedEventArgs> SettingsChanged;
+    public event EventHandler<SettingsValidationEventArgs> SettingsValidating;
+    public event EventHandler<SettingsBackupEventArgs> SettingsBackupCompleted;
+
+    public void LoadSettings()
+    {
+        _configLock.EnterWriteLock();
+        try
+        {
+            if (File.Exists(SettingsFilePath))
+            {
+                LoadSettingsFromPath(SettingsFilePath);
+            }
+            else
+            {
+                _currentSettings = CreateDefaultSettings();
+                SaveSettings();
+            }
+        }
+        finally
+        {
+            _configLock.ExitWriteLock();
+        }
+    }
+}
+```
+
+#### Configuration Events
+```csharp
+// ConfigurationEvents.cs
+public class ConfigurationChangedEventArgs : EventArgs
+{
+    public string Section { get; }
+    public AppSettings PreviousConfig { get; }
+    public AppSettings NewConfig { get; }
+}
+
+public class ConfigurationValidationEventArgs : EventArgs
+{
+    public bool IsValid { get; set; }
+    public string Message { get; set; }
+    public AppSettings Configuration { get; }
+}
+
+public class ConfigurationBackupEventArgs : EventArgs
+{
+    public string BackupPath { get; }
+    public bool Success { get; }
+    public string ErrorMessage { get; }
+}
+```
+
+### 4. UI System
+
+#### Main Form
+```csharp
+// MacroForm.cs
+public partial class MacroForm : Form
+{
+    private readonly KeyboardHook keyboardHook;
+    private readonly MouseHook mouseHook;
+    private readonly MacroManager macroManager;
+    private readonly HotkeyManager hotkeyManager;
+    private readonly UIManager uiManager;
+    private readonly ToolTip toolTip;
+
+    public MacroForm()
+    {
+        InitializeComponent();
         
-        debugTextBox.AppendText(info + Environment.NewLine);
-    }
-}
-```
-
-#### 5.2 Performance Monitoring
-```csharp
-private readonly Stopwatch perfTimer = new();
-private void MeasurePerformance(Action action, string operation)
-{
-    if (debugTextBox.Visible)
-    {
-        perfTimer.Restart();
-        action();
-        perfTimer.Stop();
+        // Initialize managers and hooks
+        macroManager = new MacroManager();
+        hotkeyManager = new HotkeyManager(macroManager);
+        keyboardHook = new KeyboardHook();
+        mouseHook = new MouseHook();
         
-        UpdateDebugInfo($"{operation}: {perfTimer.ElapsedMilliseconds}ms");
-    }
-    else
-    {
-        action();
+        // Initialize UI Manager
+        uiManager = new UIManager(
+            this, macroManager, hotkeyManager,
+            debugLabel, lblJitterActive, lblRecoilReductionActive,
+            lblCurrentKeyValue, lblMacroSwitchKeyValue,
+            lblJitterStrengthValue, lblRecoilReductionStrengthValue,
+            notifyIcon, toolTip
+        );
     }
 }
 ```
 
-## Build System
+#### UI Manager
+```csharp
+// UIManager.cs
+public class UIManager : IDisposable
+{
+    private readonly Form form;
+    private readonly MacroManager macroManager;
+    private readonly HotkeyManager hotkeyManager;
+    private readonly TextBox debugLabel;
+    private readonly Label lblJitterActive;
+    private readonly Label lblRecoilReductionActive;
+    private readonly NotifyIcon notifyIcon;
+    private readonly ToolTip toolTip;
 
-### Configurations
-1. **Debug Build**
-   - Location: `bin/Debug/net6.0-windows/`
-   - Debug symbols and logging
-   - Development features enabled
-   
-2. **Release Build**
-   - Location: `bin/Release/net6.0-windows/`
-   - Optimized performance
-   - Production ready
+    public void UpdateTitle()
+    {
+        string jitterMode = macroManager.IsAlwaysJitterMode ? "Always Jitter" :
+            (macroManager.IsJitterEnabled ? "Jitter" : "Jitter (OFF)");
 
-### Build Process
-- **Automated Script**: `build.bat`
-  - Admin privilege elevation
-  - Environment preparation
-  - Dual configuration builds
-  - Error handling
+        string recoilMode = macroManager.IsAlwaysRecoilReductionMode ? "Always Recoil Reduction" :
+            (macroManager.IsJitterEnabled ? "Recoil Reduction (OFF)" : "Recoil Reduction");
 
-## Usage Guide
+        form.Text = $"Notes&Tasks [{(macroManager.IsEnabled ? "ON" : "OFF")}] - {jitterMode} / {recoilMode} Mode";
+    }
+}
+```
 
-### Application Lifecycle
-1. **Startup**
-   - Admin rights elevation
-   - Single instance check
-   - System tray initialization
+### 5. Event System
 
-2. **Runtime**
-   - Background operation
-   - Resource optimization
-   - State management
-   
-3. **Shutdown**
-   - Clean termination
-   - Resource cleanup
-   - Settings preservation
+#### Event Categories
+1. **UI Events**
+   - Form state changes
+   - Control value updates
+   - Window management events
 
-### Troubleshooting
-1. **Common Issues**
-   - Instance conflicts
-   - Admin privileges
-   - Performance optimization
-   - Resource management
+2. **Configuration Events**
+   - Settings changes
+   - Validation events
+   - Backup completion events
 
-2. **Debug Mode**
-   - Real-time monitoring
-   - Event logging
-   - Performance metrics
-   - Error tracking
+3. **Macro Events**
+   - State changes
+   - Mode switches
+   - Effect start/stop events
 
-## Performance Optimization
-1. **Resource Management**
-   - Efficient hook handling
-   - Minimal GC impact
-   - Handle management
-   
-2. **CPU Usage**
-   - Timer optimization
-   - Event throttling
-   - Efficient state checks
+### 6. Performance Optimization
 
-## Security Considerations
-1. **Process Protection**
-   - Mutex implementation
-   - Process name obfuscation
-   
-2. **Privilege Management**
-   - Manifest-based elevation
-   - Runtime privilege checks
-   - Secure API access
+#### Resource Management
+```csharp
+protected virtual void Dispose(bool disposing)
+{
+    if (!disposed)
+    {
+        if (disposing)
+        {
+            Stop();
+            Timer?.Dispose();
+        }
+        disposed = true;
+    }
+}
+```
 
-## Maintenance
-1. **Regular Updates**
-   - Runtime compatibility
-   - Security patches
-   - Feature updates
-   
-2. **Code Maintenance**
-   - Performance optimization
-   - Security audits
-   - Documentation updates
+## Build Configurations
+
+### Debug Build
+- Location: `bin/Debug/net6.0-windows/`
+- Debug symbols enabled
+- Logging enabled
+- Development features active
+
+### Release Build
+- Location: `bin/Release/net6.0-windows/`
+- Optimized performance
+- Production ready
+- Minimal logging
+
+## Project Structure
+
+### Directory Organization
+```
+MouseMacro/
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon
+├── bin/                    # Compiled binaries
+│   ├── Debug/             # Debug build output
+│   └── Release/           # Release build output
+├── docs/                   # Documentation
+├── obj/                    # Intermediate build files
+│   ├── Debug/             # Debug build intermediates
+│   │   └── net6.0-windows/
+│   │       ├── ref/       # Assembly reference files
+│   │       ├── refint/    # Reference interface files
+│   │       └── *.cache    # Build cache files
+│   └── Release/           # Release build intermediates
+├── src/
+│   ├── UI/                    # User interface components
+│   │   ├── Controls/         # Custom UI controls
+│   │   │   ├── ModernButton.cs
+│   │   │   └── ModernTrackBar.cs
+│   │   ├── MacroForm.cs
+│   │   ├── MacroForm.Designer.cs
+│   │   ├── MacroForm.resx
+│   │   ├── Resources.Designer.cs
+│   │   └── Resources.resx
+│   │   └── UIManager.cs      # UI manager
+│   ├── Configuration.resx
+│   ├── Configuration/        # Configuration management
+│   │   ├── ConfigurationEvents.cs
+│   │   ├── ConfigurationManager.cs
+│   │   ├── EventHandlerExtensions.cs
+│   │   ├── EventHandlerManager.cs
+│   │   ├── Settings.cs
+│   │   ├── SettingsManager.cs
+│   │   ├── SettingsValidation.cs
+│   │   └── Validation.cs
+│   ├── Hooks/               # System hooks
+│   │   ├── KeyboardHook.cs
+│   │   ├── MouseHook.cs
+│   │   ├── NativeMethods.cs
+│   │   └── WinMessages.cs
+│   ├── Models/              # Data models
+│   │   ├── AppSettings.cs
+│   │   ├── MacroSettings.cs
+│   │   ├── UISettings.cs
+│   │   └── HotkeySettings.cs
+│   ├── Utilities/           # Core functionality
+│   │   ├── InputSimulator.cs
+│   │   ├── JitterManager.cs
+│   │   ├── MacroManager.cs
+│   │   └── RecoilReductionManager.cs
+│   └── Program.cs
+├── tests/                   # Unit tests
+├── docs/                    # Documentation
+├── app.manifest            # Application manifest
+├── MouseMacro.csproj       # Project configuration
+└── README.md               # Project documentation
+```

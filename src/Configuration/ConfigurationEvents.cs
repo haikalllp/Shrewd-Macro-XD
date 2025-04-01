@@ -1,83 +1,99 @@
 using System;
+using NotesAndTasks.Models;
 
 namespace NotesAndTasks.Configuration
 {
     /// <summary>
-    /// Event arguments for configuration change events.
+    /// Event arguments for when settings have changed
     /// </summary>
-    public class ConfigurationChangedEventArgs : EventArgs
+    public class SettingsChangedEventArgs : EventArgs
     {
         /// <summary>
-        /// Gets the configuration section that was changed.
+        /// Gets the section of settings that changed
         /// </summary>
         public string Section { get; }
 
         /// <summary>
-        /// Gets the previous configuration state.
+        /// Gets the previous settings
         /// </summary>
-        public AppConfiguration PreviousConfig { get; }
+        public AppSettings PreviousSettings { get; }
 
         /// <summary>
-        /// Gets the new configuration state.
+        /// Gets the new settings
         /// </summary>
-        public AppConfiguration NewConfig { get; }
+        public AppSettings NewSettings { get; }
 
-        public ConfigurationChangedEventArgs(string section, AppConfiguration previousConfig, AppConfiguration newConfig)
+        /// <summary>
+        /// Initializes a new instance of the SettingsChangedEventArgs class
+        /// </summary>
+        /// <param name="section">The section that changed</param>
+        /// <param name="previousSettings">The previous settings</param>
+        /// <param name="newSettings">The new settings</param>
+        public SettingsChangedEventArgs(string section, AppSettings previousSettings, AppSettings newSettings)
         {
             Section = section;
-            PreviousConfig = previousConfig;
-            NewConfig = newConfig;
+            PreviousSettings = previousSettings;
+            NewSettings = newSettings;
         }
     }
 
     /// <summary>
-    /// Event arguments for configuration validation events.
+    /// Event arguments for settings validation
     /// </summary>
-    public class ConfigurationValidationEventArgs : EventArgs
+    public class SettingsValidationEventArgs : EventArgs
     {
         /// <summary>
-        /// Gets or sets whether the configuration is valid.
+        /// Gets or sets whether the settings are valid
         /// </summary>
-        public bool IsValid { get; set; }
+        public bool IsValid { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the validation message.
+        /// Gets or sets the validation error message
         /// </summary>
         public string Message { get; set; }
 
         /// <summary>
-        /// Gets the configuration being validated.
+        /// Gets the settings being validated
         /// </summary>
-        public AppConfiguration Configuration { get; }
+        public AppSettings Settings { get; }
 
-        public ConfigurationValidationEventArgs(AppConfiguration configuration)
+        /// <summary>
+        /// Initializes a new instance of the SettingsValidationEventArgs class
+        /// </summary>
+        /// <param name="settings">The settings to validate</param>
+        public SettingsValidationEventArgs(AppSettings settings)
         {
-            Configuration = configuration;
-            IsValid = true;
+            Settings = settings;
         }
     }
 
     /// <summary>
-    /// Event arguments for configuration backup events.
+    /// Event arguments for settings backup completion
     /// </summary>
-    public class ConfigurationBackupEventArgs : EventArgs
+    public class SettingsBackupEventArgs : EventArgs
     {
         /// <summary>
-        /// Gets the backup file path.
+        /// Gets the path to the backup file
         /// </summary>
         public string BackupPath { get; }
 
         /// <summary>
-        /// Gets whether the backup was successful.
+        /// Gets whether the backup was successful
         /// </summary>
         public bool Success { get; }
 
         /// <summary>
-        /// Gets any error message if the backup failed.
+        /// Gets the error message if backup failed
         /// </summary>
         public string ErrorMessage { get; }
 
-        public ConfigurationBackupEventArgs(string backupPath, bool success, string errorMessage = null)
+        /// <summary>
+        /// Initializes a new instance of the SettingsBackupEventArgs class
+        /// </summary>
+        /// <param name="backupPath">The path to the backup file</param>
+        /// <param name="success">Whether the backup was successful</param>
+        /// <param name="errorMessage">The error message if backup failed</param>
+        public SettingsBackupEventArgs(string backupPath, bool success, string errorMessage = null)
         {
             BackupPath = backupPath;
             Success = success;
@@ -86,17 +102,17 @@ namespace NotesAndTasks.Configuration
     }
 
     /// <summary>
-    /// Delegate for configuration change events.
+    /// Delegate for settings change events
     /// </summary>
-    public delegate void ConfigurationChangedEventHandler(object sender, ConfigurationChangedEventArgs e);
+    public delegate void SettingsChangedEventHandler(object sender, SettingsChangedEventArgs e);
 
     /// <summary>
-    /// Delegate for configuration validation events.
+    /// Delegate for settings validation events
     /// </summary>
-    public delegate void ConfigurationValidationEventHandler(object sender, ConfigurationValidationEventArgs e);
+    public delegate void SettingsValidationEventHandler(object sender, SettingsValidationEventArgs e);
 
     /// <summary>
-    /// Delegate for configuration backup events.
+    /// Delegate for settings backup completion events
     /// </summary>
-    public delegate void ConfigurationBackupEventHandler(object sender, ConfigurationBackupEventArgs e);
+    public delegate void SettingsBackupEventHandler(object sender, SettingsBackupEventArgs e);
 } 

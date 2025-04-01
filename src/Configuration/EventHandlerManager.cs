@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using NotesAndTasks.Models;
 
 namespace NotesAndTasks.Configuration
 {
@@ -22,6 +23,7 @@ namespace NotesAndTasks.Configuration
         {
             this.configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
             this.eventHandlers = new Dictionary<string, List<Delegate>>();
+
             RegisterConfigurationEvents();
         }
 
@@ -30,20 +32,20 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void RegisterConfigurationEvents()
         {
-            // Configuration change handlers
-            RegisterEventHandler("ConfigChanged", 
-                new ConfigurationChangedEventHandler(OnConfigurationChanged));
-            configManager.ConfigurationChanged += OnConfigurationChanged;
+            // Settings change handlers
+            RegisterEventHandler("SettingsChanged", 
+                new EventHandler<SettingsChangedEventArgs>(OnSettingsChanged));
+            configManager.SettingsChanged += OnSettingsChanged;
 
-            // Configuration validation handlers
-            RegisterEventHandler("ConfigValidating",
-                new ConfigurationValidationEventHandler(OnConfigurationValidating));
-            configManager.ConfigurationValidating += OnConfigurationValidating;
+            // Settings validation handlers
+            RegisterEventHandler("SettingsValidating",
+                new EventHandler<SettingsValidationEventArgs>(OnSettingsValidating));
+            configManager.SettingsValidating += OnSettingsValidating;
 
-            // Configuration backup handlers
-            RegisterEventHandler("ConfigBackup",
-                new ConfigurationBackupEventHandler(OnConfigurationBackupCompleted));
-            configManager.ConfigurationBackupCompleted += OnConfigurationBackupCompleted;
+            // Settings backup handlers
+            RegisterEventHandler("SettingsBackup",
+                new EventHandler<SettingsBackupEventArgs>(OnSettingsBackupCompleted));
+            configManager.SettingsBackupCompleted += OnSettingsBackupCompleted;
         }
 
         /// <summary>
@@ -52,52 +54,71 @@ namespace NotesAndTasks.Configuration
         /// <param name="control">The control to register events for.</param>
         public void RegisterControlEvents<T>(T control) where T : Control
         {
-            if (control == null) return;
-
-            // Store event handlers
-            var handlers = new List<Delegate>();
-            eventHandlers[control.Name] = handlers;
-
-            // Common events
-            EventHandler clickHandler = (s, e) => OnControlClick(control, e);
-            control.Click += clickHandler;
-            handlers.Add(clickHandler);
-
-            // Mouse events
-            MouseEventHandler mouseDownHandler = (s, e) => OnControlMouseDown(control, e);
-            control.MouseDown += mouseDownHandler;
-            handlers.Add(mouseDownHandler);
-
-            MouseEventHandler mouseUpHandler = (s, e) => OnControlMouseUp(control, e);
-            control.MouseUp += mouseUpHandler;
-            handlers.Add(mouseUpHandler);
-
-            // Type-specific events
-            if (control is TrackBar trackBar)
+            try
             {
-                EventHandler valueChangedHandler = (s, e) => OnTrackBarValueChanged(trackBar, e);
-                trackBar.ValueChanged += valueChangedHandler;
-                handlers.Add(valueChangedHandler);
+                if (control == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Attempted to register events for null control");
+                    return;
+                }
 
-                EventHandler scrollHandler = (s, e) => OnTrackBarScroll(trackBar, e);
-                trackBar.Scroll += scrollHandler;
-                handlers.Add(scrollHandler);
+                if (string.IsNullOrEmpty(control.Name))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Control has no name, using control type as key");
+                    control.Name = typeof(T).Name + "_" + Guid.NewGuid().ToString().Substring(0, 8);
+                }
+
+                // Store event handlers
+                var handlers = new List<Delegate>();
+                eventHandlers[control.Name] = handlers;
+
+                // Common events
+                EventHandler clickHandler = (s, e) => OnControlClick(control, e);
+                control.Click += clickHandler;
+                handlers.Add(clickHandler);
+
+                // Mouse events
+                MouseEventHandler mouseDownHandler = (s, e) => OnControlMouseDown(control, e);
+                control.MouseDown += mouseDownHandler;
+                handlers.Add(mouseDownHandler);
+
+                MouseEventHandler mouseUpHandler = (s, e) => OnControlMouseUp(control, e);
+                control.MouseUp += mouseUpHandler;
+                handlers.Add(mouseUpHandler);
+
+                // Type-specific events
+                if (control is TrackBar trackBar)
+                {
+                    EventHandler valueChangedHandler = (s, e) => OnTrackBarValueChanged(trackBar, e);
+                    trackBar.ValueChanged += valueChangedHandler;
+                    handlers.Add(valueChangedHandler);
+
+                    EventHandler scrollHandler = (s, e) => OnTrackBarScroll(trackBar, e);
+                    trackBar.Scroll += scrollHandler;
+                    handlers.Add(scrollHandler);
+                }
+                else if (control is CheckBox checkBox)
+                {
+                    EventHandler checkedChangedHandler = (s, e) => OnCheckBoxCheckedChanged(checkBox, e);
+                    checkBox.CheckedChanged += checkedChangedHandler;
+                    handlers.Add(checkedChangedHandler);
+                }
+                else if (control is TextBox textBox)
+                {
+                    EventHandler textChangedHandler = (s, e) => OnTextBoxTextChanged(textBox, e);
+                    textBox.TextChanged += textChangedHandler;
+                    handlers.Add(textChangedHandler);
+
+                    KeyEventHandler keyDownHandler = (s, e) => OnTextBoxKeyDown(textBox, e);
+                    textBox.KeyDown += keyDownHandler;
+                    handlers.Add(keyDownHandler);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Registered events for control: {control.Name} ({typeof(T).Name})");
             }
-            else if (control is CheckBox checkBox)
+            catch (Exception ex)
             {
-                EventHandler checkedChangedHandler = (s, e) => OnCheckBoxCheckedChanged(checkBox, e);
-                checkBox.CheckedChanged += checkedChangedHandler;
-                handlers.Add(checkedChangedHandler);
-            }
-            else if (control is TextBox textBox)
-            {
-                EventHandler textChangedHandler = (s, e) => OnTextBoxTextChanged(textBox, e);
-                textBox.TextChanged += textChangedHandler;
-                handlers.Add(textChangedHandler);
-
-                KeyEventHandler keyDownHandler = (s, e) => OnTextBoxKeyDown(textBox, e);
-                textBox.KeyDown += keyDownHandler;
-                handlers.Add(keyDownHandler);
+                System.Diagnostics.Debug.WriteLine($"Error registering events for control: {ex.Message}");
             }
         }
 
@@ -106,11 +127,31 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         private void RegisterEventHandler(string eventName, Delegate handler)
         {
-            if (!eventHandlers.ContainsKey(eventName))
+            try
             {
-                eventHandlers[eventName] = new List<Delegate>();
+                if (string.IsNullOrEmpty(eventName))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Attempted to register event handler with null or empty event name");
+                    eventName = $"Unknown_{Guid.NewGuid()}";
+                }
+
+                if (handler == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Attempted to register null handler for event {eventName}");
+                    return;
+                }
+
+                if (!eventHandlers.ContainsKey(eventName))
+                {
+                    eventHandlers[eventName] = new List<Delegate>();
+                }
+                eventHandlers[eventName].Add(handler);
+                System.Diagnostics.Debug.WriteLine($"Registered event handler for: {eventName}");
             }
-            eventHandlers[eventName].Add(handler);
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error registering event handler: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -118,194 +159,311 @@ namespace NotesAndTasks.Configuration
         /// </summary>
         public void UnregisterControlEvents(Control control)
         {
-            if (control == null) return;
-
-            var handlersToRemove = new List<string>();
-            foreach (var kvp in eventHandlers)
+            try
             {
-                if (kvp.Key.StartsWith($"{control.Name}_"))
+                if (control == null)
                 {
-                    handlersToRemove.Add(kvp.Key);
+                    System.Diagnostics.Debug.WriteLine("Warning: Attempted to unregister events for null control");
+                    return;
                 }
-            }
 
-            foreach (var handlerName in handlersToRemove)
+                if (string.IsNullOrEmpty(control.Name))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Cannot unregister events for control with no name");
+                    return;
+                }
+
+                // Find all handlers related to this control
+                var handlersToRemove = new List<string>();
+                foreach (var kvp in eventHandlers)
+                {
+                    if (kvp.Key.StartsWith($"{control.Name}_") || kvp.Key == control.Name)
+                    {
+                        handlersToRemove.Add(kvp.Key);
+                    }
+                }
+
+                // Remove all found handlers
+                foreach (var handlerName in handlersToRemove)
+                {
+                    eventHandlers.Remove(handlerName);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Unregistered {handlersToRemove.Count} event handlers for control: {control.Name}");
+            }
+            catch (Exception ex)
             {
-                eventHandlers.Remove(handlerName);
+                System.Diagnostics.Debug.WriteLine($"Error unregistering events for control: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Configuration changed event handler.
+        /// Handles settings changes
         /// </summary>
-        private void OnConfigurationChanged(object sender, ConfigurationChangedEventArgs e)
+        private void OnSettingsChanged(object sender, SettingsChangedEventArgs e)
         {
             try
             {
-                // Handle configuration changes based on section
+                if (e == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Received null SettingsChangedEventArgs");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(e.Section))
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Received empty section in SettingsChangedEventArgs");
+                    return;
+                }
+
+                // Validate settings objects
+                if (e.NewSettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error: New settings object is null");
+                    return;
+                }
+
                 switch (e.Section)
                 {
-                    case "JitterSettings":
-                        HandleJitterSettingsChanged(e.PreviousConfig, e.NewConfig);
+                    case "All":
+                        // Process all sections
+                        HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
+                        HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
+                        HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
                         break;
-                    case "RecoilSettings":
-                        HandleRecoilSettingsChanged(e.PreviousConfig, e.NewConfig);
+                    case "MacroSettings":
+                        if (e.NewSettings.MacroSettings == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: MacroSettings is null in new settings");
+                            return;
+                        }
+                        HandleMacroSettingsChanges(e.PreviousSettings, e.NewSettings);
                         break;
                     case "HotkeySettings":
-                        HandleHotkeySettingsChanged(e.PreviousConfig, e.NewConfig);
+                        if (e.NewSettings.HotkeySettings == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: HotkeySettings is null in new settings");
+                            return;
+                        }
+                        HandleHotkeySettingsChanges(e.PreviousSettings, e.NewSettings);
                         break;
                     case "UISettings":
-                        HandleUISettingsChanged(e.PreviousConfig, e.NewConfig);
+                        if (e.NewSettings.UISettings == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: UISettings is null in new settings");
+                            return;
+                        }
+                        HandleUISettingsChanges(e.PreviousSettings, e.NewSettings);
+                        break;
+                    default:
+                        System.Diagnostics.Debug.WriteLine($"Warning: Unknown settings section: {e.Section}");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error handling configuration change: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in OnSettingsChanged: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Configuration validating event handler.
+        /// Handles settings validation
         /// </summary>
-        private void OnConfigurationValidating(object sender, ConfigurationValidationEventArgs e)
+        private void OnSettingsValidating(object sender, SettingsValidationEventArgs e)
         {
             try
             {
-                // Perform additional validation if needed
-                if (e.Configuration != null)
+                if (e == null)
                 {
-                    ValidateConfigurationConsistency(e);
+                    System.Diagnostics.Debug.WriteLine("Error: Received null SettingsValidationEventArgs");
+                    return;
                 }
+
+                var settings = e.Settings;
+                if (settings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "Settings cannot be null";
+                    return;
+                }
+
+                // Validate macro settings
+                if (settings.MacroSettings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "MacroSettings cannot be null";
+                    return;
+                }
+
+                if (settings.MacroSettings.AlwaysJitterMode && settings.MacroSettings.AlwaysRecoilReductionMode)
+                {
+                    e.IsValid = false;
+                    e.Message = "Cannot enable both AlwaysJitterMode and AlwaysRecoilReductionMode simultaneously";
+                    return;
+                }
+
+                // Validate hotkey settings
+                if (settings.HotkeySettings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "HotkeySettings cannot be null";
+                    return;
+                }
+
+                if (settings.HotkeySettings.MacroKey == null || settings.HotkeySettings.SwitchKey == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "MacroKey or SwitchKey is null";
+                    return;
+                }
+
+                if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                    settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
+                {
+                    e.IsValid = false;
+                    e.Message = "Macro key and switch key cannot be the same";
+                    return;
+                }
+
+                // Validate UI settings
+                if (settings.UISettings == null)
+                {
+                    e.IsValid = false;
+                    e.Message = "UISettings cannot be null";
+                    return;
+                }
+
+                if (settings.UISettings.WindowSize.Width <= 0 || settings.UISettings.WindowSize.Height <= 0)
+                {
+                    e.IsValid = false;
+                    e.Message = "Window size dimensions must be positive";
+                    return;
+                }
+
+                // All checks passed
+                e.IsValid = true;
+                e.Message = "Settings validation successful";
             }
             catch (Exception ex)
             {
                 e.IsValid = false;
-                e.Message = $"Validation error: {ex.Message}";
-                System.Diagnostics.Debug.WriteLine($"Error during configuration validation: {ex.Message}");
+                e.Message = $"Error during settings validation: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine(e.Message);
             }
         }
 
         /// <summary>
-        /// Configuration backup completed event handler.
+        /// Handles settings backup completion
         /// </summary>
-        private void OnConfigurationBackupCompleted(object sender, ConfigurationBackupEventArgs e)
+        private void OnSettingsBackupCompleted(object sender, SettingsBackupEventArgs e)
         {
             try
             {
+                if (e == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Warning: Received null SettingsBackupEventArgs");
+                    return;
+                }
+
                 if (e.Success)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Configuration backup created successfully at: {e.BackupPath}");
+                    if (string.IsNullOrEmpty(e.BackupPath))
+                    {
+                        System.Diagnostics.Debug.WriteLine("Warning: Backup completed but backup path is empty");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Backup completed successfully: {e.BackupPath}");
+                    }
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"Configuration backup failed: {e.ErrorMessage}");
+                    System.Diagnostics.Debug.WriteLine($"Backup failed: {e.ErrorMessage}");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error handling backup completion: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in OnSettingsBackupCompleted: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Validates configuration consistency.
+        /// Handles changes to macro settings.
         /// </summary>
-        private void ValidateConfigurationConsistency(ConfigurationValidationEventArgs e)
+        private void HandleMacroSettingsChanges(AppSettings previousSettings, AppSettings newSettings)
         {
-            var config = e.Configuration;
-
-            // Validate mode consistency
-            if (config.JitterSettings.AlwaysEnabled && config.RecoilSettings.AlwaysEnabled)
+            if (previousSettings?.MacroSettings.JitterStrength != newSettings.MacroSettings.JitterStrength)
             {
-                e.IsValid = false;
-                e.Message = "Both jitter and recoil reduction cannot be in always-enabled mode";
-                return;
+                System.Diagnostics.Debug.WriteLine($"Jitter strength changed from {previousSettings?.MacroSettings.JitterStrength} to {newSettings.MacroSettings.JitterStrength}");
             }
 
-            // Validate hotkey conflicts
-            if (config.HotkeySettings.MacroToggleKey == config.HotkeySettings.ModeSwitchKey)
+            if (previousSettings?.MacroSettings.JitterEnabled != newSettings.MacroSettings.JitterEnabled)
             {
-                e.IsValid = false;
-                e.Message = "Macro toggle key and mode switch key cannot be the same";
-                return;
+                System.Diagnostics.Debug.WriteLine($"Jitter enabled changed from {previousSettings?.MacroSettings.JitterEnabled} to {newSettings.MacroSettings.JitterEnabled}");
             }
 
-            // Validate backup settings
-            if (config.BackupSettings.AutoBackupEnabled)
+            if (previousSettings?.MacroSettings.AlwaysJitterMode != newSettings.MacroSettings.AlwaysJitterMode)
             {
-                if (config.BackupSettings.BackupIntervalHours < 1)
-                {
-                    e.IsValid = false;
-                    e.Message = "Backup interval must be at least 1 hour";
-                    return;
-                }
-                if (config.BackupSettings.MaxBackupCount < 1)
-                {
-                    e.IsValid = false;
-                    e.Message = "Maximum backup count must be at least 1";
-                    return;
-                }
+                System.Diagnostics.Debug.WriteLine($"Always jitter mode changed from {previousSettings?.MacroSettings.AlwaysJitterMode} to {newSettings.MacroSettings.AlwaysJitterMode}");
             }
-        }
 
-        /// <summary>
-        /// Handles changes to jitter settings.
-        /// </summary>
-        private void HandleJitterSettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
-        {
-            if (previousConfig?.JitterSettings.Strength != newConfig.JitterSettings.Strength)
+            if (previousSettings?.MacroSettings.RecoilReductionStrength != newSettings.MacroSettings.RecoilReductionStrength)
             {
-                System.Diagnostics.Debug.WriteLine($"Jitter strength changed from {previousConfig?.JitterSettings.Strength} to {newConfig.JitterSettings.Strength}");
+                System.Diagnostics.Debug.WriteLine($"Recoil reduction strength changed from {previousSettings?.MacroSettings.RecoilReductionStrength} to {newSettings.MacroSettings.RecoilReductionStrength}");
             }
-            if (previousConfig?.JitterSettings.IsEnabled != newConfig.JitterSettings.IsEnabled)
-            {
-                System.Diagnostics.Debug.WriteLine($"Jitter enabled state changed from {previousConfig?.JitterSettings.IsEnabled} to {newConfig.JitterSettings.IsEnabled}");
-            }
-        }
 
-        /// <summary>
-        /// Handles changes to recoil reduction settings.
-        /// </summary>
-        private void HandleRecoilSettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
-        {
-            if (previousConfig?.RecoilSettings.Strength != newConfig.RecoilSettings.Strength)
+            if (previousSettings?.MacroSettings.RecoilReductionEnabled != newSettings.MacroSettings.RecoilReductionEnabled)
             {
-                System.Diagnostics.Debug.WriteLine($"Recoil reduction strength changed from {previousConfig?.RecoilSettings.Strength} to {newConfig.RecoilSettings.Strength}");
+                System.Diagnostics.Debug.WriteLine($"Recoil reduction enabled changed from {previousSettings?.MacroSettings.RecoilReductionEnabled} to {newSettings.MacroSettings.RecoilReductionEnabled}");
             }
-            if (previousConfig?.RecoilSettings.IsEnabled != newConfig.RecoilSettings.IsEnabled)
+
+            if (previousSettings?.MacroSettings.AlwaysRecoilReductionMode != newSettings.MacroSettings.AlwaysRecoilReductionMode)
             {
-                System.Diagnostics.Debug.WriteLine($"Recoil reduction enabled state changed from {previousConfig?.RecoilSettings.IsEnabled} to {newConfig.RecoilSettings.IsEnabled}");
+                System.Diagnostics.Debug.WriteLine($"Always recoil reduction mode changed from {previousSettings?.MacroSettings.AlwaysRecoilReductionMode} to {newSettings.MacroSettings.AlwaysRecoilReductionMode}");
             }
         }
 
         /// <summary>
         /// Handles changes to hotkey settings.
         /// </summary>
-        private void HandleHotkeySettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
+        private void HandleHotkeySettingsChanges(AppSettings previousSettings, AppSettings newSettings)
         {
-            if (previousConfig?.HotkeySettings.MacroToggleKey != newConfig.HotkeySettings.MacroToggleKey)
+            if (previousSettings?.HotkeySettings.MacroKey.Key != newSettings.HotkeySettings.MacroKey.Key || 
+                previousSettings?.HotkeySettings.MacroKey.Type != newSettings.HotkeySettings.MacroKey.Type)
             {
-                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousConfig?.HotkeySettings.MacroToggleKey} to {newConfig.HotkeySettings.MacroToggleKey}");
+                System.Diagnostics.Debug.WriteLine($"Macro toggle key changed from {previousSettings?.HotkeySettings.MacroKey.DisplayName} to {newSettings.HotkeySettings.MacroKey.DisplayName}");
             }
-            if (previousConfig?.HotkeySettings.ModeSwitchKey != newConfig.HotkeySettings.ModeSwitchKey)
+
+            if (previousSettings?.HotkeySettings.SwitchKey.Key != newSettings.HotkeySettings.SwitchKey.Key ||
+                previousSettings?.HotkeySettings.SwitchKey.Type != newSettings.HotkeySettings.SwitchKey.Type)
             {
-                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousConfig?.HotkeySettings.ModeSwitchKey} to {newConfig.HotkeySettings.ModeSwitchKey}");
+                System.Diagnostics.Debug.WriteLine($"Mode switch key changed from {previousSettings?.HotkeySettings.SwitchKey.DisplayName} to {newSettings.HotkeySettings.SwitchKey.DisplayName}");
             }
         }
 
         /// <summary>
         /// Handles changes to UI settings.
         /// </summary>
-        private void HandleUISettingsChanged(AppConfiguration previousConfig, AppConfiguration newConfig)
+        private void HandleUISettingsChanges(AppSettings previousSettings, AppSettings newSettings)
         {
-            if (previousConfig?.UISettings.MinimizeToTray != newConfig.UISettings.MinimizeToTray)
+            if (previousSettings?.UISettings.MinimizeToTray != newSettings.UISettings.MinimizeToTray)
             {
-                System.Diagnostics.Debug.WriteLine($"Minimize to tray setting changed from {previousConfig?.UISettings.MinimizeToTray} to {newConfig.UISettings.MinimizeToTray}");
+                System.Diagnostics.Debug.WriteLine($"Minimize to tray changed from {previousSettings?.UISettings.MinimizeToTray} to {newSettings.UISettings.MinimizeToTray}");
             }
-            if (previousConfig?.UISettings.ShowDebugPanel != newConfig.UISettings.ShowDebugPanel)
+
+            if (previousSettings?.UISettings.ShowDebugPanel != newSettings.UISettings.ShowDebugPanel)
             {
-                System.Diagnostics.Debug.WriteLine($"Debug panel visibility changed from {previousConfig?.UISettings.ShowDebugPanel} to {newConfig.UISettings.ShowDebugPanel}");
+                System.Diagnostics.Debug.WriteLine($"Show debug panel changed from {previousSettings?.UISettings.ShowDebugPanel} to {newSettings.UISettings.ShowDebugPanel}");
+            }
+
+            if (previousSettings?.UISettings.ShowStatusInTitle != newSettings.UISettings.ShowStatusInTitle)
+            {
+                System.Diagnostics.Debug.WriteLine($"Show status in title changed from {previousSettings?.UISettings.ShowStatusInTitle} to {newSettings.UISettings.ShowStatusInTitle}");
+            }
+
+            if (previousSettings?.UISettings.ShowTrayNotifications != newSettings.UISettings.ShowTrayNotifications)
+            {
+                System.Diagnostics.Debug.WriteLine($"Show tray notifications changed from {previousSettings?.UISettings.ShowTrayNotifications} to {newSettings.UISettings.ShowTrayNotifications}");
             }
         }
 
@@ -369,9 +527,9 @@ namespace NotesAndTasks.Configuration
                 if (disposing)
                 {
                     // Unregister all event handlers
-                    configManager.ConfigurationChanged -= OnConfigurationChanged;
-                    configManager.ConfigurationValidating -= OnConfigurationValidating;
-                    configManager.ConfigurationBackupCompleted -= OnConfigurationBackupCompleted;
+                    configManager.SettingsChanged -= OnSettingsChanged;
+                    configManager.SettingsValidating -= OnSettingsValidating;
+                    configManager.SettingsBackupCompleted -= OnSettingsBackupCompleted;
 
                     eventHandlers.Clear();
                 }

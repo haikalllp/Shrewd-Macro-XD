@@ -1,24 +1,40 @@
 # Notes & Tasks (Mouse Macro)
 
-A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. IMPORTANT For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
+A professional Windows Forms application for advanced mouse input management, featuring recoil compensation and jitter pattern generation. IMPORTANT NOTE: For professional system integration the application presents itself as "Notes&Tasks" and "NotesAndTasks" 😊.
 
 ## Features
 
+- **Mouse Input Management**
+  - Jitter Effect: Jitter mouse movement patterns strength (1-20)
+  - Recoil Reduction: Vertical mouse movement compensation strength (1-20)
+  - Multiple Operation Modes: Toggle or Always-On for each effect
+  - Adjustable Effect Strengths: Fine-tune the intensity of each effect
+
+- **Modern UI**
+  - Dark Theme: Easy on the eyes during extended use
+  - System Tray Integration: Minimize to tray for discrete operation
+  - Real-time Status Display: Active effects and modes shown in window title
+  - Customizable Window Position and Size: Remembers your preferences
+
+#### Macro Engine
 - **Recoil Reduction System**
-  - Advanced vertical compensation with three-tier scaling:
+  - Three-tier strength scaling:
     - Tier 1 (1-6): Linear scaling with logarithmic base
     - Tier 2 (7-16): Enhanced scaling with 1.2x multiplier
     - Tier 3 (17-20): Exponential scaling with dynamic boost
   - Real-time strength adjustment (1-20)
-  - Default strength: 1
   - Optimized movement patterns
+  - Default strength: 1
+  - Advanced vertical compensation
+  - Dynamic pattern adjustment
 
 - **Jitter System**
   - Complex 24-point movement pattern
   - Dynamic strength scaling (1-20)
-  - Default strength: 3
   - Pattern cycling with smooth transitions
+  - Default strength: 3
   - Optimized for performance
+  - Pattern customization options
 
 - **Mode Switching**
   - Intelligent mode toggling
@@ -27,56 +43,61 @@ A professional Windows Forms application for advanced mouse input management, fe
   - Real-time mode state tracking
   - Visual state indicators
 
-- **Professional Integration**
-  - Clean system tray integration
-  - Modern dark theme UI
-  - DPI-aware scaling
-  - Single instance enforcement
-  - Professional window management
+#### Configuration System
+- **Configuration Models**
+  - `AppSettings`: Root configuration class containing all settings
+  - `MacroSettings`: Jitter and recoil reduction settings
+  - `UISettings`: Window and interface preferences
+  - `HotkeySettings`: Key bindings and hotkey configuration
+  - Legacy configuration files for backward compatibility
+  - settings save on loaded from and to JSON
+  
+- **Configuration Manager**
+  - Thread-safe operations with ReaderWriterLockSlim
+  - Standard location in %AppData%/NotesAndTasks
+  - Automatic backups with versioning
+  - Real-time validation with error recovery
+  - Event notifications for changes, validation, and backups
+  - Support for both new models and legacy configuration
+  
+- **Validation System**
+  - Data annotations for property validation
+  - Cross-property validation
+  - Pre-save validation checks
+  - Error reporting with context
+  - Recovery mechanisms
+  - Backward compatibility validation
 
-- **Configuration Management System**
-  - Thread-safe configuration handling
-  - JSON-based settings storage
-  - Automatic configuration backup
-  - Comprehensive validation system:
-    - Pre-save validation
-    - Type validation
-    - Range validation
-    - Cross-property validation
-  - Event-driven updates
-  - Configuration sections:
-    - Jitter settings
-    - Recoil reduction settings
-    - Hotkey bindings
-    - UI preferences
-    - Backup settings
+- **Event System**
+  - Configuration change tracking
+  - Validation event handling
+  - Backup completion notifications
+  - Error event propagation
+  - State change notifications
+  - Legacy event support
 
-- **Event Handler System**
-  - Centralized event management
-  - Automatic resource cleanup
-  - Type-safe event registration
-  - Fluent API for control events
-  - Comprehensive error handling:
-    - Exception tracking
-    - State recovery
-    - Debug logging
-  - Event categories:
-    - Configuration events
-    - Control events
-    - System events
+#### UI System
+- Modern dark theme interface
+- Real-time status indicators
+- Professional window management
+- System tray integration
+- DPI-aware scaling
+- Single instance enforcement
+- Clean system integration
 
-- **Debug System**
-  - Real-time state monitoring
-  - Performance tracking
-  - Event logging
-  - Error tracking
-  - Thread-safe logging
-
-- **Settings Saved with JSON**
-  - Settings saved automatically into a JSON file
-  - JSON file located at the executable directory
-  - Settings automatically saved while running the Application
-  - Settings automatically loaded upon starting the Application
+#### Event System
+- Centralized event management
+- Type-safe event registration
+- Automatic resource cleanup
+- Comprehensive error handling:
+  - Exception tracking
+  - State recovery
+  - Debug logging
+- Categories:
+  - UI events
+  - Configuration events
+  - Macro events
+  - System events
 
 ## Requirements
 
@@ -89,82 +110,46 @@ A professional Windows Forms application for advanced mouse input management, fe
 ### Software
 - Windows 10/11 (64-bit)
 - .NET 6.0 Runtime
-- Administrator privileges
+- Administrator privileges (required for input simulation)
 - DirectX 9.0c or later
-
-### Optional
-- Multi-button mouse for extended features
-- High refresh rate display (recommended)
-- SSD for faster startup (recommended)
+- Standard mouse and keyboard
 
 ## Installation
 
-1. **Download**
-   - Get the latest release from the releases page
-   - Choose between Debug and Release builds
-
-2. **Setup**
-   - Extract the files to your preferred location
-   - No installation required (portable application)
-   - Run `NotesAndTasks.exe` with administrator privileges
-
-## Building from Source
-
-### Method 1: Using Build Script
-1. Clone the repository
-2. Double-click `build.bat`
-   - Script automatically requests admin rights
-   - Builds both Debug and Release configurations
-
-### Method 2: Manual Build
-1. Open command prompt
-2. Navigate to project directory
-3. Run commands:
-   ```cmd
-   # Debug build
-   dotnet build -c Debug
-
-   # Release build
-   dotnet build -c Release
-   ```
-
-### Output Locations
-- Debug: `bin/Debug/net6.0-windows/NotesAndTasks.exe`
-- Release: `bin/Release/net6.0-windows/NotesAndTasks.exe`
+### Download Latest Release
+1. Download the latest `Notes&Tasks.exe` from the [releases page](https://github.com/yourusername/MouseMacro/releases)
+2. Extract the archive to your desired location
+3. Run `Notes&Tasks.exe` with administrator privileges
 
 ## Usage Guide
 
-### Basic Controls
-1. **Macro Toggle Key (Macro ON/OFF)**
-   - Click "Set Toggle Key" button
-   - Press any key to set as macro toggle
-   - Default: 'Capital' key
-   - Supports keyboard and mouse buttons (Mouse3-5)
-   - LMB/RMB reserved for activation
+### First-Time Setup
+1. Launch the application
+2. Configure hotkeys:
+   - Set Macro Toggle Key (default: Caps Lock)
+   - Set Mode Switch Key (default: Q)
+3. Adjust feature settings:
+   - Jitter strength (1-20)
+   - Recoil reduction strength (1-20)
+4. Choose toggle modes:
+   - Hold: Features active while key held
+   - Toggle: Features toggle on/off with key press
 
-2. **Mode Switch Key**
-   - Click "Set Switch Key" button
-   - Press any key to set as switch toggle
-   - Default: 'Q' key
-   - Supports keyboard and mouse buttons (Mouse3-5)
-   - LMB/RMB reserved for activation
+### Basic Operation
+1. **Starting the Macro**
+   - Press the Macro Toggle Key to enable/disable
+   - Status shown in window title and system tray
 
-3. **Strength Adjustment**
-   - Use slider to set strength (1-20)
-   - Changes apply immediately
-   - Recoil Reduction default: 1
-   - Jitter default: 3
+2. **Switching Modes**
+   - Press Mode Switch Key to cycle between:
+     - Jitter mode
+     - Recoil reduction mode
+     - Combined mode
 
-4. **Always Mode Options**
-   - Always Jitter Mode: Locks to jitter
-   - Always Recoil Reduction Mode: Locks to recoil reduction
-   - Prevents mode switching while active
-
-5. **System Tray**
-   - Optional minimize to tray
-   - Double-click tray icon to restore
-   - Right-click for context menu
-   - Clean exit via tray menu
+3. **Quick Settings**
+   - Use trackbars for real-time strength adjustment
+   - Toggle "Always On" for persistent effects
+   - Minimize to tray for discrete operation
 
 ### Usage Scenarios
 
@@ -213,27 +198,162 @@ A professional Windows Forms application for advanced mouse input management, fe
 - Visual indicators show current active mode
 - Window title reflects current state
 
-### Settings Configuration
-- **Configuration Manager**
-  - Thread-safe operations with ReaderWriterLockSlim
-  - Automatic backups with versioning
-  - Real-time validation with error recovery
-  - Event notifications with detailed state
-  
-- **Validation System**
-  - Comprehensive input validation
-  - Type safety checks
-  - Range validation
-  - Cross-property validation
-  - Error reporting with context
-  - Recovery mechanisms
+### Advanced Features
+1. **Custom Patterns**
+   - Jitter patterns optimized for different scenarios
+   - Recoil reduction with dynamic scaling
+   - Combined mode synchronization
 
-- **Event System**
-  - Configuration change tracking
-  - Validation event handling
-  - Backup completion notifications
-  - Error event propagation
-  - State change notifications
+2. **Performance Optimization**
+   - Timer-based execution for consistent timing
+   - Resource-efficient hook implementation
+   - Automatic cleanup on exit
+
+## Development
+
+### Environment Setup
+1. **Required Tools**
+   - Visual Studio 2022 or later
+   - .NET 6.0 SDK
+   - Git for version control
+
+2. **Getting Started**
+   ```powershell
+   git clone https://github.com/yourusername/MouseMacro.git
+   cd MouseMacro
+   ```
+
+### Build From Source Options
+
+#### Option 1: Using build.bat
+1. Double-click `build.bat` in the project root
+2. Script handles:
+   - Admin rights elevation
+   - NuGet package restoration
+   - Debug and Release builds
+   - Output directory creation
+
+#### Option 2: Using Visual Studio
+1. Open `MouseMacro.sln`
+2. Select build configuration (Debug/Release)
+3. Build solution (F6)
+
+#### Option 3: Using Command Line
+```powershell
+# Debug build
+dotnet build -c Debug
+
+# Release build
+dotnet build -c Release
+```
+
+### Output Locations
+- Release: `bin/Release/net6.0-windows/Notes&Tasks.exe`
+- Debug: `bin/Debug/net6.0-windows/Notes&Tasks.exe`
+
+### Configuration Files
+- Settings: `%AppData%/NotesAndTasks/config.json`
+- Backups: `%AppData%/NotesAndTasks/Backups/`
+
+### Testing
+1. **Unit Tests**
+   ```powershell
+   dotnet test
+   ```
+   - Validates core functionality
+   - Tests hook implementation
+   - Verifies configuration management
+
+2. **Manual Testing**
+   - UI responsiveness
+   - Feature functionality
+   - Resource usage
+   - Error handling
+
+### Project Structure
+```
+MouseMacro/
+├── assets/                  # Application resources
+│   ├── logo.ico            # Application icon
+├── bin/                    # Compiled binaries
+│   ├── Debug/             # Debug build output
+│   └── Release/           # Release build output
+├── docs/                   # Documentation
+├── obj/                    # Intermediate build files
+│   ├── Debug/             # Debug build intermediates
+│   │   └── net6.0-windows/
+│   │       ├── ref/       # Assembly reference files
+│   │       ├── refint/    # Reference interface files
+│   │       └── *.cache    # Build cache files
+│   └── Release/           # Release build intermediates
+├── src/
+│   ├── UI/                    # User interface components
+│   │   ├── Controls/         # Custom UI controls
+│   │   │   ├── ModernButton.cs
+│   │   │   └── ModernTrackBar.cs
+│   │   ├── MacroForm.cs
+│   │   ├── MacroForm.Designer.cs
+│   │   ├── MacroForm.resx
+│   │   ├── Resources.Designer.cs
+│   │   └── Resources.resx
+│   │   └── UIManager.cs      # UI manager
+│   ├── Configuration.resx
+│   ├── Configuration/        # Configuration management
+│   │   ├── ConfigurationEvents.cs
+│   │   ├── ConfigurationManager.cs
+│   │   ├── EventHandlerExtensions.cs
+│   │   ├── EventHandlerManager.cs
+│   │   ├── Settings.cs
+│   │   ├── SettingsManager.cs
+│   │   ├── SettingsValidation.cs
+│   │   └── Validation.cs
+│   ├── Hooks/               # System hooks
+│   │   ├── KeyboardHook.cs
+│   │   ├── MouseHook.cs
+│   │   ├── NativeMethods.cs
+│   │   └── WinMessages.cs
+│   ├── Models/              # Data models
+│   │   ├── AppSettings.cs
+│   │   ├── MacroSettings.cs
+│   │   ├── UISettings.cs
+│   │   └── HotkeySettings.cs
+│   ├── Utilities/           # Core functionality
+│   │   ├── InputSimulator.cs
+│   │   ├── JitterManager.cs
+│   │   ├── MacroManager.cs
+│   │   └── RecoilReductionManager.cs
+│   └── Program.cs
+├── tests/                   # Unit tests
+├── docs/                    # Documentation
+├── app.manifest            # Application manifest
+├── MouseMacro.csproj       # Project configuration
+└── README.md               # Project documentation
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Application Won't Start**
+   - Run as administrator
+   - Check for existing instance
+   - Verify .NET Runtime installation
+   - Check Task Manager for hung instances
+   - Verify file permissions
+
+2. **Performance Issues**
+   - Use Release build
+   - Check system resources
+   - Adjust timer intervals
+   - Monitor debug output
+   - Close resource-intensive applications
+
+3. **Configuration Problems**
+   - Delete corrupted config file
+   - Check file permissions
+   - Verify JSON format
+   - Reset to defaults
+   - Check backup configurations
 
 ### Error Handling
 - **Validation Errors**
@@ -249,66 +369,6 @@ A professional Windows Forms application for advanced mouse input management, fe
   - Debug logging
   - User feedback
 
-## Troubleshooting
-
-### Common Issues
-
-1. **"Another instance is running"**
-   - Check Task Manager
-   - End existing process if necessary
-   - Restart application
-
-2. **Admin Rights Required**
-   - Run as administrator
-   - Use build.bat for automatic elevation
-   - Check app.manifest settings
-
-3. **Performance Issues**
-   - Switch to Release build
-   - Check system resources
-   - Adjust timer intervals
-   - Monitor debug panel
-
-## Development
-
-### Environment Setup
-1. Install Visual Studio 2022 or later
-2. Install .NET 6.0 SDK
-3. Clone repository
-4. Open solution file
-
-### Project Structure
-```
-MouseMacro/
-├── assets/                  # Application resources
-│   ├── logo.ico            # Application icon
-├── bin/                    # Compiled binaries
-│   ├── Debug/             # Debug build output
-│   └── Release/           # Release build output
-├── docs/                   # Documentation
-│   ├── architecture.md    # Detailed architecture documentation
-├── src/                   # Source code
-│   ├── Configuration/     # Configuration system
-│   │   ├── ConfigurationManager.cs
-│   │   ├── AppConfiguration.cs
-│   │   ├── ConfigurationEvents.cs
-│   │   ├── EventHandlerManager.cs
-│   │   ├── EventHandlerExtensions.cs
-│   │   ├── SettingsValidation.cs
-│   │   └── Validation.cs
-│   ├── Controls/         # UI Controls
-│   │   ├── ModernButton.cs
-│   │   └── ModernTrackBar.cs
-│   ├── MacroForm.cs      # Main form implementation
-│   ├── MacroForm.Designer.cs
-│   ├── NativeMethods.cs  # Windows API interop
-│   ├── WinMessages.cs    # Windows message constants
-│   └── Program.cs        # Application entry point
-├── MouseMacro.csproj     # Project configuration
-├── README.md             # Project documentation
-└── app.manifest         # Application manifest
-```
-
 ## Contributing
 1. Fork the repository
 2. Create feature branch
@@ -317,7 +377,18 @@ MouseMacro/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+
+The MIT License is a permissive license that allows you to:
+- ✅ Use the software commercially
+- ✅ Modify the software
+- ✅ Distribute the software
+- ✅ Use the software privately
+- ✅ Sublicense the software
+
+Under the following conditions:
+- ℹ️ License and copyright notice must be included
+- ⚠️ Software is provided "as is", without warranty
 
 ## Acknowledgments
 

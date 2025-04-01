@@ -4,401 +4,625 @@ using System.Text.Json;
 using System.Threading;
 using System.Windows.Forms;
 using System.Linq;
+using NotesAndTasks.Models;
+using System.Text.Json.Serialization;
 
 namespace NotesAndTasks.Configuration
 {
     /// <summary>
-    /// Manages application configuration, providing thread-safe access to settings
-    /// and handling configuration persistence.
+    /// Manages application settings including loading, saving, validation, and backup
     /// </summary>
-    public class ConfigurationManager
+    public class ConfigurationManager : IDisposable
     {
-        private static readonly Lazy<ConfigurationManager> instance = 
-            new Lazy<ConfigurationManager>(() => new ConfigurationManager(), LazyThreadSafetyMode.ExecutionAndPublication);
+        // Application directory for storing configuration
+        private static readonly string AppDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        
+        // Settings file paths
+        private static readonly string SettingsFilePath = Path.Combine(AppDirectory, "settings.json");
+        private static readonly string SettingsBackupDirectoryPath = Path.Combine(AppDirectory, "Backups");
+        private static readonly int MaxBackupCount = 5;
+        private static readonly int MaxBackupAgeDays = 7; // Keep backups for 7 days maximum
 
-        private readonly ReaderWriterLockSlim configLock = new ReaderWriterLockSlim();
-        private readonly string configFilePath;
-        private AppConfiguration currentConfig;
-        private readonly JsonSerializerOptions jsonOptions;
+        // Legacy settings path for compatibility
+        private static readonly string LegacySettingsFilePath = Path.Combine(AppDirectory, "macro_config.json");
 
-        // Add these event declarations after the existing fields
-        public event ConfigurationChangedEventHandler ConfigurationChanged;
-        public event ConfigurationValidationEventHandler ConfigurationValidating;
-        public event ConfigurationBackupEventHandler ConfigurationBackupCompleted;
+        private readonly ReaderWriterLockSlim _configLock = new ReaderWriterLockSlim();
+        private readonly JsonSerializerOptions _jsonOptions;
+        private AppSettings _currentSettings;
+        private bool _disposed;
+
+        // Singleton instance
+        private static ConfigurationManager _instance;
+        private static readonly object _instanceLock = new object();
+
+        public event EventHandler<SettingsChangedEventArgs> SettingsChanged;
+        public event EventHandler<SettingsValidationEventArgs> SettingsValidating;
+        public event EventHandler<SettingsBackupEventArgs> SettingsBackupCompleted;
 
         /// <summary>
-        /// Gets the singleton instance of the ConfigurationManager.
+        /// Gets the singleton instance of the ConfigurationManager
         /// </summary>
-        public static ConfigurationManager Instance => instance.Value;
-
-        /// <summary>
-        /// Gets the current configuration. Thread-safe access to configuration values.
-        /// </summary>
-        public AppConfiguration CurrentConfig
+        public static ConfigurationManager Instance
         {
             get
             {
-                configLock.EnterReadLock();
+                if (_instance == null)
+                {
+                    lock (_instanceLock)
+                    {
+                        if (_instance == null)
+                        {
+                            try
+                            {
+                                _instance = new ConfigurationManager();
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Failed to create ConfigurationManager instance: {ex.Message}");
+                                throw;
+                            }
+                        }
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current application settings
+        /// </summary>
+        public AppSettings CurrentSettings
+        {
+            get
+            {
+                _configLock.EnterReadLock();
                 try
                 {
-                    return (AppConfiguration)currentConfig.Clone();
+                    return _currentSettings;
                 }
                 finally
                 {
-                    configLock.ExitReadLock();
+                    _configLock.ExitReadLock();
                 }
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the ConfigurationManager class
+        /// </summary>
         private ConfigurationManager()
         {
-            configFilePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "NotesAndTasks",
-                "config.json"
-            );
-
-            jsonOptions = new JsonSerializerOptions
+            try
             {
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true
-            };
+                _jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    IncludeFields = true,
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
 
-            InitializeConfiguration();
+                // Register custom converters
+                _jsonOptions.Converters.Add(new InputBindingConverter());
+
+                InitializeDirectories();
+                LoadSettings();
+
+                // If settings are still null after LoadSettings, create defaults
+                if (_currentSettings == null)
+                {
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to initialize ConfigurationManager: {ex.Message}");
+                // Create default settings even if initialization fails
+                _currentSettings = CreateDefaultSettings();
+                try
+                {
+                    SaveSettings();
+                }
+                catch
+                {
+                    // Ignore save errors during initialization
+                }
+            }
         }
 
         /// <summary>
-        /// Initializes the configuration system, creating default config if none exists.
+        /// Loads the settings from disk, creating default settings if none exist
         /// </summary>
-        private void InitializeConfiguration()
+        public void LoadSettings()
         {
+            _configLock.EnterWriteLock();
             try
             {
-                // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(configFilePath));
-
-                if (File.Exists(configFilePath))
+                System.Diagnostics.Debug.WriteLine("Starting LoadSettings process...");
+                
+                // Try to load settings from file
+                if (File.Exists(SettingsFilePath))
                 {
-                    LoadConfiguration();
+                    System.Diagnostics.Debug.WriteLine($"Settings file found at: {SettingsFilePath}");
+                    
+                    string jsonContent = File.ReadAllText(SettingsFilePath);
+                    System.Diagnostics.Debug.WriteLine($"Settings JSON: {jsonContent}");
+                    
+                    _currentSettings = null; // Force new instance
+                    LoadSettingsFromPath(SettingsFilePath);
                 }
                 else
                 {
-                    currentConfig = CreateDefaultConfiguration();
-                    SaveConfiguration();
+                    System.Diagnostics.Debug.WriteLine("Settings file not found, creating defaults");
+                    // If no settings exist, create defaults
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings(); // Save default settings
+                }
+
+                // Validate settings after loading
+                if (_currentSettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("_currentSettings is null after loading, creating defaults");
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error initializing configuration: {ex.Message}");
-                currentConfig = CreateDefaultConfiguration();
-            }
-        }
-
-        /// <summary>
-        /// Creates a default configuration with preset values.
-        /// </summary>
-        private AppConfiguration CreateDefaultConfiguration()
-        {
-            return new AppConfiguration
-            {
-                JitterSettings = new JitterConfiguration
+                System.Diagnostics.Debug.WriteLine($"Failed to load settings: {ex.Message}");
+                // Create default settings if loading fails
+                _currentSettings = CreateDefaultSettings();
+                try
                 {
-                    Strength = 3,
-                    IsEnabled = false,
-                    AlwaysEnabled = false
-                },
-                RecoilSettings = new RecoilConfiguration
-                {
-                    Strength = 1,
-                    IsEnabled = true,
-                    AlwaysEnabled = false
-                },
-                HotkeySettings = new HotkeyConfiguration
-                {
-                    MacroToggleKey = Keys.Capital.ToString(),
-                    ModeSwitchKey = Keys.Q.ToString()
-                },
-                UISettings = new UIConfiguration
-                {
-                    MinimizeToTray = false,
-                    ShowDebugPanel = false,
-                    WindowPosition = new System.Drawing.Point(100, 100),
-                    WindowSize = new System.Drawing.Size(800, 600)
-                },
-                BackupSettings = new BackupConfiguration
-                {
-                    AutoBackupEnabled = true,
-                    BackupIntervalHours = 24,
-                    MaxBackupCount = 5,
-                    BackupDirectory = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                        "NotesAndTasks",
-                        "Backups"
-                    )
+                    SaveSettings();
                 }
-            };
-        }
-
-        /// <summary>
-        /// Updates the configuration with new values and saves to disk.
-        /// </summary>
-        /// <param name="newConfig">The new configuration to apply.</param>
-        /// <param name="section">The section being updated.</param>
-        /// <returns>True if the update was successful, false otherwise.</returns>
-        public bool UpdateConfiguration(AppConfiguration newConfig, string section = "General")
-        {
-            if (newConfig == null)
-                throw new ArgumentNullException(nameof(newConfig));
-
-            configLock.EnterWriteLock();
-            try
-            {
-                // Raise validation event
-                var validationArgs = new ConfigurationValidationEventArgs(newConfig);
-                OnConfigurationValidating(validationArgs);
-
-                if (!validationArgs.IsValid || !ValidateConfiguration(newConfig))
+                catch
                 {
-                    System.Diagnostics.Debug.WriteLine($"Configuration validation failed: {validationArgs.Message}");
-                    return false;
+                    // Ignore save errors during load failure recovery
                 }
-
-                var previousConfig = currentConfig?.Clone() as AppConfiguration;
-                currentConfig = newConfig.Clone() as AppConfiguration;
-                SaveConfiguration();
-
-                // Raise change event
-                OnConfigurationChanged(new ConfigurationChangedEventArgs(section, previousConfig, currentConfig));
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error updating configuration: {ex.Message}");
-                return false;
             }
             finally
             {
-                configLock.ExitWriteLock();
+                _configLock.ExitWriteLock();
             }
         }
 
         /// <summary>
-        /// Validates the configuration values.
+        /// Loads settings from the specified file path
         /// </summary>
-        /// <param name="config">The configuration to validate.</param>
-        /// <returns>True if the configuration is valid, false otherwise.</returns>
-        private bool ValidateConfiguration(AppConfiguration config)
+        private void LoadSettingsFromPath(string path)
         {
-            if (config == null) return false;
-
             try
             {
-                // Validate Jitter settings
-                if (config.JitterSettings.Strength < 1 || config.JitterSettings.Strength > 20)
-                    return false;
-
-                // Validate Recoil settings
-                if (config.RecoilSettings.Strength < 1 || config.RecoilSettings.Strength > 20)
-                    return false;
-
-                // Validate hotkeys
-                if (string.IsNullOrEmpty(config.HotkeySettings.MacroToggleKey) ||
-                    string.IsNullOrEmpty(config.HotkeySettings.ModeSwitchKey))
-                    return false;
-
-                // Validate backup settings
-                if (config.BackupSettings.AutoBackupEnabled)
+                // Only proceed if the file exists
+                if (!File.Exists(path))
                 {
-                    if (config.BackupSettings.BackupIntervalHours < 1 ||
-                        config.BackupSettings.MaxBackupCount < 1 ||
-                        string.IsNullOrEmpty(config.BackupSettings.BackupDirectory))
-                        return false;
+                    System.Diagnostics.Debug.WriteLine($"Settings file not found at: {path}");
+                    return;
                 }
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Configuration validation error: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Loads the configuration from disk.
-        /// </summary>
-        private void LoadConfiguration()
-        {
-            configLock.EnterWriteLock();
-            try
-            {
-                string jsonContent = File.ReadAllText(configFilePath);
-                var loadedConfig = JsonSerializer.Deserialize<AppConfiguration>(jsonContent, jsonOptions);
-
-                if (ValidateConfiguration(loadedConfig))
+                string jsonContent = File.ReadAllText(path);
+                System.Diagnostics.Debug.WriteLine($"Loading settings from: {path}");
+                
+                // Create a fresh AppSettings instance - don't reuse existing
+                var loadedSettings = JsonSerializer.Deserialize<AppSettings>(jsonContent, _jsonOptions);
+                
+                if (loadedSettings != null)
                 {
-                    currentConfig = loadedConfig;
+                    System.Diagnostics.Debug.WriteLine("Settings deserialized successfully");
+                    
+                    // Debug loaded values
+                    System.Diagnostics.Debug.WriteLine($"Loaded JitterStrength: {loadedSettings.MacroSettings.JitterStrength}");
+                    System.Diagnostics.Debug.WriteLine($"Loaded RecoilReductionStrength: {loadedSettings.MacroSettings.RecoilReductionStrength}");
+                    System.Diagnostics.Debug.WriteLine($"Loaded MinimizeToTray: {loadedSettings.UISettings.MinimizeToTray}");
+                    System.Diagnostics.Debug.WriteLine($"Loaded MacroKey: {loadedSettings.HotkeySettings.MacroKey.Key}");
+                    System.Diagnostics.Debug.WriteLine($"Loaded SwitchKey: {loadedSettings.HotkeySettings.SwitchKey.Key}");
+                    
+                    // Validate settings
+                    if (!ValidateSettings(loadedSettings))
+                    {
+                        System.Diagnostics.Debug.WriteLine("Settings validation failed");
+                        if (_currentSettings == null)
+                        {
+                            _currentSettings = CreateDefaultSettings();
+                            SaveSettings();
+                        }
+                        return;
+                    }
+                    
+                    // Store previous settings for change notification if needed
+                    var previousSettings = _currentSettings;
+                    
+                    // Simply use the loaded settings directly
+                    _currentSettings = loadedSettings;
+                    
+                    System.Diagnostics.Debug.WriteLine("Settings loaded and applied successfully");
+                    
+                    // Notify about settings changes
+                    if (previousSettings != null)
+                    {
+                        OnSettingsChanged("All", previousSettings, _currentSettings);
+                    }
                 }
                 else
                 {
-                    currentConfig = CreateDefaultConfiguration();
-                    SaveConfiguration();
+                    System.Diagnostics.Debug.WriteLine("Failed to deserialize settings file");
+                    if (_currentSettings == null)
+                    {
+                        _currentSettings = CreateDefaultSettings();
+                        SaveSettings();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading configuration: {ex.Message}");
-                currentConfig = CreateDefaultConfiguration();
+                System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
+                if (_currentSettings == null)
+                {
+                    _currentSettings = CreateDefaultSettings();
+                    SaveSettings();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Copies settings from one instance to another
+        /// </summary>
+        private void CopySettings(AppSettings source, AppSettings target)
+        {
+            // Copy MacroSettings values
+            target.MacroSettings.JitterStrength = source.MacroSettings.JitterStrength;
+            target.MacroSettings.RecoilReductionStrength = source.MacroSettings.RecoilReductionStrength;
+            target.MacroSettings.JitterEnabled = source.MacroSettings.JitterEnabled;
+            target.MacroSettings.RecoilReductionEnabled = source.MacroSettings.RecoilReductionEnabled;
+            target.MacroSettings.AlwaysJitterMode = source.MacroSettings.AlwaysJitterMode;
+            target.MacroSettings.AlwaysRecoilReductionMode = source.MacroSettings.AlwaysRecoilReductionMode;
+
+            // Copy UISettings values
+            target.UISettings.MinimizeToTray = source.UISettings.MinimizeToTray;
+            target.UISettings.ShowDebugPanel = source.UISettings.ShowDebugPanel;
+            target.UISettings.ShowStatusInTitle = source.UISettings.ShowStatusInTitle;
+            target.UISettings.ShowTrayNotifications = source.UISettings.ShowTrayNotifications;
+            target.UISettings.WindowPosition = source.UISettings.WindowPosition;
+            target.UISettings.WindowSize = source.UISettings.WindowSize;
+
+            // Copy HotkeySettings values
+            target.HotkeySettings.MacroKey.Key = source.HotkeySettings.MacroKey.Key;
+            target.HotkeySettings.MacroKey.Type = source.HotkeySettings.MacroKey.Type;
+            target.HotkeySettings.MacroKey.DisplayName = source.HotkeySettings.MacroKey.DisplayName;
+            target.HotkeySettings.SwitchKey.Key = source.HotkeySettings.SwitchKey.Key;
+            target.HotkeySettings.SwitchKey.Type = source.HotkeySettings.SwitchKey.Type;
+            target.HotkeySettings.SwitchKey.DisplayName = source.HotkeySettings.SwitchKey.DisplayName;
+        }
+
+        /// <summary>
+        /// Saves the current settings to disk and creates a backup
+        /// </summary>
+        public void SaveSettings()
+        {
+            _configLock.EnterWriteLock();
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Starting SaveSettings process...");
+                
+                if (_currentSettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("_currentSettings is null, creating default settings");
+                    _currentSettings = CreateDefaultSettings();
+                }
+
+                // Validate before saving
+                if (!ValidateSettings(_currentSettings))
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed, cannot save");
+                    return;
+                }
+
+                CreateSettingsBackup();
+
+                string jsonContent = JsonSerializer.Serialize(_currentSettings, _jsonOptions);
+                System.Diagnostics.Debug.WriteLine($"Saving settings: {jsonContent}");
+                File.WriteAllText(SettingsFilePath, jsonContent);
+
+                System.Diagnostics.Debug.WriteLine("Settings saved successfully");
+                
+                // Don't call OnSettingsChanged here, since we're just saving existing settings
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}");
             }
             finally
             {
-                configLock.ExitWriteLock();
+                _configLock.ExitWriteLock();
             }
         }
 
-        /// <summary>
-        /// Saves the current configuration to disk.
-        /// </summary>
-        private void SaveConfiguration()
+        private void OnSettingsChanged(string section, AppSettings previousSettings, AppSettings newSettings)
         {
-            try
-            {
-                string jsonContent = JsonSerializer.Serialize(currentConfig, jsonOptions);
-                File.WriteAllText(configFilePath, jsonContent);
-
-                if (currentConfig.BackupSettings.AutoBackupEnabled)
-                {
-                    CreateConfigurationBackup();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving configuration: {ex.Message}");
-            }
+            var args = new SettingsChangedEventArgs(section, previousSettings, newSettings);
+            SettingsChanged?.Invoke(this, args);
         }
 
         /// <summary>
-        /// Creates a backup of the current configuration.
+        /// Creates a backup of the current settings file
         /// </summary>
-        private void CreateConfigurationBackup()
+        private void CreateSettingsBackup()
         {
+            if (!File.Exists(SettingsFilePath)) return;
+
             try
             {
-                string backupDir = currentConfig.BackupSettings.BackupDirectory;
-                Directory.CreateDirectory(backupDir);
-
                 string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                string backupPath = Path.Combine(backupDir, $"config_backup_{timestamp}.json");
+                string backupFile = Path.Combine(SettingsBackupDirectoryPath, $"settings_{timestamp}.json");
 
-                File.Copy(configFilePath, backupPath, true);
+                File.Copy(SettingsFilePath, backupFile, true);
+                CleanupOldBackups();
 
-                // Cleanup old backups
-                var backupFiles = Directory.GetFiles(backupDir, "config_backup_*.json")
-                    .OrderByDescending(f => f)
-                    .Skip(currentConfig.BackupSettings.MaxBackupCount);
+                var args = new SettingsBackupEventArgs(backupFile, true);
+                SettingsBackupCompleted?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                var args = new SettingsBackupEventArgs(null, false, ex.Message);
+                SettingsBackupCompleted?.Invoke(this, args);
+            }
+        }
 
-                foreach (var file in backupFiles)
+        /// <summary>
+        /// Removes old backup files exceeding the maximum count or age
+        /// </summary>
+        private void CleanupOldBackups()
+        {
+            try
+            {
+                var backupFiles = Directory.GetFiles(SettingsBackupDirectoryPath, "settings_*.json")
+                                         .Select(f => new FileInfo(f))
+                                         .OrderByDescending(f => f.LastWriteTime)
+                                         .ToList();
+
+                // Remove files exceeding count limit
+                var filesToDeleteCount = backupFiles.Skip(MaxBackupCount).ToList();
+                
+                // Remove files exceeding age limit
+                var cutoffDate = DateTime.Now.AddDays(-MaxBackupAgeDays);
+                var filesToDeleteAge = backupFiles.Where(f => f.LastWriteTime < cutoffDate).ToList();
+                
+                // Combine both lists and remove duplicates
+                var filesToDelete = filesToDeleteCount.Union(filesToDeleteAge);
+
+                foreach (var file in filesToDelete)
                 {
                     try
                     {
-                        File.Delete(file);
+                        file.Delete();
+                        System.Diagnostics.Debug.WriteLine($"Deleted old backup: {file.Name}");
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error deleting old backup {file}: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Failed to delete backup {file.Name}: {ex.Message}");
                     }
                 }
-
-                // Raise backup completed event
-                OnConfigurationBackupCompleted(new ConfigurationBackupEventArgs(backupPath, true));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error creating configuration backup: {ex.Message}");
-                OnConfigurationBackupCompleted(new ConfigurationBackupEventArgs(null, false, ex.Message));
+                System.Diagnostics.Debug.WriteLine($"Failed to cleanup backups: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Restores configuration from a backup file.
+        /// Creates necessary directories for settings storage
         /// </summary>
-        /// <param name="backupFilePath">Path to the backup file to restore from.</param>
-        /// <returns>True if restore was successful, false otherwise.</returns>
-        public bool RestoreFromBackup(string backupFilePath)
+        private void InitializeDirectories()
         {
-            if (!File.Exists(backupFilePath))
-                return false;
-
-            configLock.EnterWriteLock();
             try
             {
-                string jsonContent = File.ReadAllText(backupFilePath);
-                var restoredConfig = JsonSerializer.Deserialize<AppConfiguration>(jsonContent, jsonOptions);
-
-                if (ValidateConfiguration(restoredConfig))
+                // Create application directory if it doesn't exist
+                if (!Directory.Exists(AppDirectory))
                 {
-                    currentConfig = restoredConfig;
-                    SaveConfiguration();
-                    return true;
+                    Directory.CreateDirectory(AppDirectory);
                 }
-                return false;
+
+                // Create backup directory if it doesn't exist
+                if (!Directory.Exists(SettingsBackupDirectoryPath))
+                {
+                    Directory.CreateDirectory(SettingsBackupDirectoryPath);
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error restoring configuration: {ex.Message}");
-                return false;
-            }
-            finally
-            {
-                configLock.ExitWriteLock();
+                System.Diagnostics.Debug.WriteLine($"Failed to initialize directories: {ex.Message}");
+                throw; // Rethrow to handle in constructor
             }
         }
 
         /// <summary>
-        /// Gets a list of available configuration backups.
+        /// Creates a default settings with preset values
         /// </summary>
-        /// <returns>Array of backup file paths.</returns>
-        public string[] GetAvailableBackups()
+        private AppSettings CreateDefaultSettings()
         {
+            var settings = new AppSettings();
+            
+            // Set default values
+            settings.MacroSettings.JitterStrength = 3;
+            settings.MacroSettings.RecoilReductionStrength = 1;
+            settings.MacroSettings.AlwaysJitterMode = false;
+            settings.MacroSettings.AlwaysRecoilReductionMode = false;
+            settings.MacroSettings.JitterEnabled = false;
+            settings.MacroSettings.RecoilReductionEnabled = false;
+            settings.UISettings.MinimizeToTray = false;
+            settings.UISettings.ShowStatusInTitle = true;
+            settings.UISettings.ShowTrayNotifications = true;
+            settings.UISettings.WindowPosition = new System.Drawing.Point(100, 100);
+            settings.UISettings.WindowSize = new System.Drawing.Size(800, 600);
+            
+            // Default hotkeys
+            settings.HotkeySettings.MacroKey = new InputBinding(Keys.Capital, InputType.Keyboard);
+            settings.HotkeySettings.SwitchKey = new InputBinding(Keys.Q, InputType.Keyboard);
+            
+            return settings;
+        }
+
+        /// <summary>
+        /// Validates the settings
+        /// </summary>
+        private bool ValidateSettings(AppSettings settings)
+        {
+            if (settings == null)
+            {
+                System.Diagnostics.Debug.WriteLine("Settings validation failed: Settings object is null");
+                return false;
+            }
+
             try
             {
-                string backupDir = currentConfig.BackupSettings.BackupDirectory;
-                if (!Directory.Exists(backupDir))
-                    return Array.Empty<string>();
+                // Let subscribers validate the settings first
+                var validationArgs = new SettingsValidationEventArgs(settings);
+                SettingsValidating?.Invoke(this, validationArgs);
+                
+                // If a subscriber has marked the settings as invalid, return false
+                if (!validationArgs.IsValid)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Settings validation failed: {validationArgs.Message}");
+                    return false;
+                }
 
-                return Directory.GetFiles(backupDir, "config_backup_*.json")
-                    .OrderByDescending(f => f)
-                    .ToArray();
+                // Validate MacroSettings existence
+                if (settings.MacroSettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: MacroSettings is null");
+                    return false;
+                }
+                
+                // Validate UISettings existence
+                if (settings.UISettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: UISettings is null");
+                    return false;
+                }
+                
+                // Validate HotkeySettings existence
+                if (settings.HotkeySettings == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: HotkeySettings is null");
+                    return false;
+                }
+
+                // Validate MacroSettings values
+                if (settings.MacroSettings.JitterStrength < 1 || settings.MacroSettings.JitterStrength > 20)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Settings validation failed: Invalid JitterStrength value: {settings.MacroSettings.JitterStrength}");
+                    return false;
+                }
+                
+                if (settings.MacroSettings.RecoilReductionStrength < 1 || settings.MacroSettings.RecoilReductionStrength > 20)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Settings validation failed: Invalid RecoilReductionStrength value: {settings.MacroSettings.RecoilReductionStrength}");
+                    return false;
+                }
+
+                // Validate UISettings values
+                if (settings.UISettings.WindowPosition.IsEmpty)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: WindowPosition is empty");
+                    return false;
+                }
+                
+                if (settings.UISettings.WindowSize.IsEmpty || 
+                    settings.UISettings.WindowSize.Width < 300 || 
+                    settings.UISettings.WindowSize.Height < 200)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Settings validation failed: Invalid WindowSize: {settings.UISettings.WindowSize}");
+                    return false;
+                }
+
+                // Validate HotkeySettings values and nested objects
+                if (settings.HotkeySettings.MacroKey == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: MacroKey is null");
+                    return false;
+                }
+                
+                if (settings.HotkeySettings.SwitchKey == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: SwitchKey is null");
+                    return false;
+                }
+                
+                if (settings.HotkeySettings.MacroKey.Key == Keys.None)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: MacroKey.Key is None");
+                    return false;
+                }
+                
+                if (settings.HotkeySettings.SwitchKey.Key == Keys.None)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: SwitchKey.Key is None");
+                    return false;
+                }
+
+                // Validate that keys are not the same when they have the same input type
+                if (settings.HotkeySettings.MacroKey.Key == settings.HotkeySettings.SwitchKey.Key &&
+                    settings.HotkeySettings.MacroKey.Type == settings.HotkeySettings.SwitchKey.Type)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: MacroKey and SwitchKey are the same");
+                    return false;
+                }
+                
+                // Validate DisplayName consistency
+                if (string.IsNullOrEmpty(settings.HotkeySettings.MacroKey.DisplayName) ||
+                    settings.HotkeySettings.MacroKey.DisplayName != settings.HotkeySettings.MacroKey.Key.ToString())
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: MacroKey DisplayName mismatch");
+                    // Fix the display name rather than failing validation
+                    settings.HotkeySettings.MacroKey.DisplayName = settings.HotkeySettings.MacroKey.Key.ToString();
+                }
+                
+                if (string.IsNullOrEmpty(settings.HotkeySettings.SwitchKey.DisplayName) ||
+                    settings.HotkeySettings.SwitchKey.DisplayName != settings.HotkeySettings.SwitchKey.Key.ToString())
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: SwitchKey DisplayName mismatch");
+                    // Fix the display name rather than failing validation
+                    settings.HotkeySettings.SwitchKey.DisplayName = settings.HotkeySettings.SwitchKey.Key.ToString();
+                }
+
+                // Validate MacroSettings combinations
+                if (settings.MacroSettings.AlwaysJitterMode && settings.MacroSettings.AlwaysRecoilReductionMode)
+                {
+                    System.Diagnostics.Debug.WriteLine("Settings validation failed: Both AlwaysJitterMode and AlwaysRecoilReductionMode cannot be true simultaneously");
+                    // Fix the conflict rather than failing validation
+                    settings.MacroSettings.AlwaysJitterMode = true;
+                    settings.MacroSettings.AlwaysRecoilReductionMode = false;
+                }
+
+                System.Diagnostics.Debug.WriteLine("Settings validation passed successfully");
+                return true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error getting available backups: {ex.Message}");
-                return Array.Empty<string>();
+                System.Diagnostics.Debug.WriteLine($"Exception during settings validation: {ex.Message}");
+                return false;
             }
         }
 
-        /// <summary>
-        /// Raises the ConfigurationChanged event.
-        /// </summary>
-        protected virtual void OnConfigurationChanged(ConfigurationChangedEventArgs e)
+        protected virtual void Dispose(bool disposing)
         {
-            ConfigurationChanged?.Invoke(this, e);
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _configLock.Dispose();
+                }
+                _disposed = true;
+            }
         }
 
-        /// <summary>
-        /// Raises the ConfigurationValidating event.
-        /// </summary>
-        protected virtual void OnConfigurationValidating(ConfigurationValidationEventArgs e)
+        public void Dispose()
         {
-            ConfigurationValidating?.Invoke(this, e);
-        }
-
-        /// <summary>
-        /// Raises the ConfigurationBackupCompleted event.
-        /// </summary>
-        protected virtual void OnConfigurationBackupCompleted(ConfigurationBackupEventArgs e)
-        {
-            ConfigurationBackupCompleted?.Invoke(this, e);
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 } 
