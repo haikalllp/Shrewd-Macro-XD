@@ -1,15 +1,23 @@
 using System.Drawing.Drawing2D;
 using System.ComponentModel;
+using NotesAndTasks.UI.Utilities;
 
 namespace NotesAndTasks
 {
+    /// <summary>
+    /// A modern-styled button control with rounded corners, custom colors, and hover effects.
+    /// </summary>
     public class ModernButton : Button
     {
         private int borderRadius = 10;
-        private Color borderColor = Color.FromArgb(250, 91, 101);
-        private Color hoverBackColor = Color.FromArgb(214, 37, 106);
+        private Color borderColor = ColorPalette.AccentPrimary;
+        private Color hoverBackColor = ColorPalette.AccentSecondary;
         private bool isHovered = false;
 
+        /// <summary>
+        /// Gets or sets the radius of the button's rounded corners.
+        /// </summary>
+        /// <value>The border radius in pixels. Default value is 10.</value>
         [Category("Modern Button")]
         public int BorderRadius
         {
@@ -21,6 +29,10 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Gets or sets the color of the button's border.
+        /// </summary>
+        /// <value>The border color. Default is ColorPalette.AccentPrimary.</value>
         [Category("Modern Button")]
         public Color BorderColor
         {
@@ -32,6 +44,10 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Gets or sets the background color when the mouse hovers over the button.
+        /// </summary>
+        /// <value>The hover background color. Default is ColorPalette.AccentSecondary.</value>
         [Category("Modern Button")]
         public Color HoverBackColor
         {
@@ -43,12 +59,15 @@ namespace NotesAndTasks
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the ModernButton class with default styling.
+        /// </summary>
         public ModernButton()
         {
             FlatStyle = FlatStyle.Flat;
             FlatAppearance.BorderSize = 0;
-            BackColor = Color.FromArgb(30, 1, 62);
-            ForeColor = Color.White;
+            BackColor = ColorPalette.BackgroundDark;
+            ForeColor = ColorPalette.ForegroundLight;
             Font = new Font("JetBrains Mono", 10F, FontStyle.Regular, GraphicsUnit.Point);
             Size = new Size(150, 40);
             Cursor = Cursors.Hand;
@@ -66,6 +85,10 @@ namespace NotesAndTasks
             };
         }
 
+        /// <summary>
+        /// Raises the Paint event to render the button with custom styling.
+        /// </summary>
+        /// <param name="e">A PaintEventArgs that contains the event data.</param>
         protected override void OnPaint(PaintEventArgs e)
         {
             var graphicsPath = new GraphicsPath();
