@@ -219,7 +219,7 @@ A professional Windows Forms application for advanced mouse input management, fe
 
 2. **Getting Started**
    ```powershell
-   git clone https://github.com/haikalllp/Shrewd-Macro-XD
+   git clone https://github.com/haikalllp/Shrewd-Macro-XD.git
    cd MouseMacro
    ```
 
