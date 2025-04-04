@@ -117,7 +117,7 @@ A professional Windows Forms application for advanced mouse input management, fe
 ## Installation
 
 ### Download Latest Release
-1. Download the latest `Notes&Tasks.exe` from the [releases page](https://github.com/yourusername/MouseMacro/releases)
+1. Download the latest `Notes&Tasks.exe` from the [releases page](https://github.com/haikalllp/Shrewd-Macro-XD/releases)
 2. Extract the archive to your desired location
 3. Run `Notes&Tasks.exe` with administrator privileges
 
