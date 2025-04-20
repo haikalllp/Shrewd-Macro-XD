@@ -1,3 +1,4 @@
+# FIXED
 # Known Issues
 - Plateaued on settings from 3 - 5 (Speed and strength from 3-5 is same)
 
