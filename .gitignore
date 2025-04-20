@@ -17,19 +17,17 @@ obj/*
 # User-specific configuration
 *.userprefs
 
-# Nuget packages (if using NuGet)
+# Nuget packages
 *.nupkg
-obj/Debug/net6.0-windows/MouseMacro.assets.cache
-obj/Debug/net6.0-windows/MouseMacro.GeneratedMSBuildEditorConfig.editorconfig
 
-# RepoMix
+# Other
 .cursor/*
 .git/*
 .idea/*
 .vs/*
 .vscode/*
 .repomix/*
-bin/*
-obj/*
-
-
+.repomixignore
+.roomodes
+repomix-output.xml
+repomix.config.json
